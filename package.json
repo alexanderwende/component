@@ -10,7 +10,7 @@
     "/src/"
   ],
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "rimraf lib",
     "build": "rollup -c",
     "pretest": "rimraf dev coverage",
     "test": "tsc -p tsconfig.dev.json && karma start karma.config.js",
@@ -46,6 +46,9 @@
     "tslint": "^5.12.1",
     "tslint-clean-code": "^0.2.9",
     "typescript": "^3.2.4"
+  },
+  "dependencies": {
+    "lit-html": "^1.0.0-rc.2"
   },
   "publishConfig": {
     "access": "public"
