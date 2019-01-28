@@ -1,0 +1,26 @@
+/dev/
+/coverage/
+/node_modules/
+
+# Optional rollup-plugin-typescript2 cache directory
+/.rpt2_cache/
+
+# Optional npm cache directory
+.npm
+
+# IntelliJ Idea
+.idea
+*.iml
+*.iws
+
+# MacOS
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
