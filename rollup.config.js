@@ -13,6 +13,9 @@ export default [
         plugins: [
             pluginTypescript({
                 typescript: typescript,
+                include: [
+                    'src/**/*.ts'
+                ],
                 exclude: [
                     'node_modules',
                     'src/**/*.spec.ts'

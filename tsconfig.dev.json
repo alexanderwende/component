@@ -4,5 +4,8 @@
     "outDir": "dev",
     "declaration": false,
     "declarationMap": false
-  }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
 }

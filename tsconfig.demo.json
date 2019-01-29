@@ -1,12 +1,11 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "",
+    "outDir": "demo",
     "declaration": false,
     "declarationMap": false
   },
   "include": [
-    "src/**/*.ts"
+    "demo/**/*.ts"
   ],
 }

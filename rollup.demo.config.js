@@ -6,16 +6,16 @@ import pluginServe from 'rollup-plugin-serve';
 import typescript from 'typescript';
 
 export default {
-    input: 'main.ts',
+    input: 'demo/main.ts',
     output: {
-        file: 'main.bundle.js',
+        file: 'demo/main.bundle.js',
         format: 'iife',
         sourcemap: 'inline'
     },
     plugins: [
         pluginTypescript({
             typescript: typescript,
-            tsconfig: "./tsconfig.json",
+            tsconfig: "tsconfig.demo.json",
             clean: true
         }),
         // needed for imports from directories via index.ts files
@@ -26,7 +26,7 @@ export default {
         pluginCommonJS(),
         pluginServe({
             open: true,
-            historyApiFallback: true
+            contentBase: 'demo'
         })
     ]
 };

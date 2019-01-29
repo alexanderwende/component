@@ -1,1 +1,0 @@
-{"version":3,"file":"custom-element.d.ts","sourceRoot":"","sources":["../src/decorators/custom-element.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,mBAAmB,CAAC;AAEtD,MAAM,WAAW,wBAAyB,SAAQ,MAAM;IACpD,QAAQ,EAAE,MAAM,CAAC;IACjB,MAAM,CAAC,EAAE,OAAO,CAAC;IACjB,MAAM,CAAC,EAAE,OAAO,CAAC;CACpB;AAED,eAAO,MAAM,kCAAkC,EAAE,wBAIhD,CAAC;AAEF,eAAO,MAAM,aAAa,uHAczB,CAAC"}
