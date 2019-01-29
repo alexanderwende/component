@@ -18,7 +18,8 @@
     "prerelease": "npm run test && npm run build && git add lib && git diff-index --quiet HEAD || git commit -m \"chore(build): updating build files\"",
     "release": "release-it --no-npm.publish",
     "changelog": "auto-changelog -p --stdout",
-    "beforeStage": "auto-changelog -p"
+    "beforeStage": "auto-changelog -p",
+    "demo": "rollup -c demo/rollup.config.js"
   },
   "author": "Alexander Wende",
   "license": "BSD-3-Clause",
@@ -41,6 +42,7 @@
     "rollup-plugin-istanbul": "^2.0.1",
     "rollup-plugin-local-resolve": "^1.0.7",
     "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-serve": "^1.0.1",
     "rollup-plugin-terser": "^4.0.3",
     "rollup-plugin-typescript2": "^0.19.2",
     "tslint": "^5.12.1",
