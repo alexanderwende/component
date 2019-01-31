@@ -8,7 +8,7 @@ export class Checkbox extends CustomElement {
 
     @property({
         reflect: true,
-        notify:  true
+        notify: true
     })
     checked = false;
 
