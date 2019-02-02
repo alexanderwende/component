@@ -18,7 +18,28 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
     attribute?: string;
     observe?: boolean,
     notify?: boolean,
-    reflect?: boolean | string | PropertyReflector<Type>,
+    /**
+     * Controls how the property value will be reflected to attributes
+     *
+     * TODO: Improve description
+     * @remarks
+     * If true -> will be reflected automatically
+     * If string -> will pick up method from custom element
+     * If function -> will use that function with this being bound to custom element instance
+     *
+     * ```typescript
+     * class MyElement extends CustomElement {
+     *      // use a generic to support proper instance typing in the property reflector
+     *      @property<MyElement>({
+     *          reflect: (propertyKey: string, oldValue: any, newValue: any) {
+     *              // do something here with those values
+     *          }
+     *      })
+     *      myProperty = false;
+     * }
+     * ```
+     */
+    reflect?: boolean | keyof Type | PropertyReflector<Type>,
     hasChanged?: (oldValue: any, newValue: any) => boolean;
     toAttribute?: (value: any) => string | null;
     fromAttribute?: (value: string) => any;

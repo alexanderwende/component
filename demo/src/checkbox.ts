@@ -14,16 +14,16 @@ export class Checkbox extends CustomElement {
     customRole = 'checkbox';
 
     @property<Checkbox>({
-        // reflect: 'reflectChecked',
-        reflect: function (propertyKey: string, oldValue: any, newValue: any) {
-            if (this.customChecked) {
-                this.setAttribute('custom-checked', 'true');
-                this.setAttribute('aria-checked', 'true');
-            } else {
-                this.removeAttribute('custom-checked');
-                this.removeAttribute('aria-checked');
-            }
-         },
+        reflect: 'reflectChecked',
+        // reflect: function (propertyKey: string, oldValue: any, newValue: any) {
+        //     if (this.customChecked) {
+        //         this.setAttribute('custom-checked', 'true');
+        //         this.setAttribute('aria-checked', 'true');
+        //     } else {
+        //         this.removeAttribute('custom-checked');
+        //         this.removeAttribute('aria-checked');
+        //     }
+        // },
         notify: true,
         toAttribute: (value) => value ? 'true' : null,
         fromAttribute: (value) => value !== null
