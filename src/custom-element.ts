@@ -1,7 +1,9 @@
 import { html, render, TemplateResult } from 'lit-html';
-import { PropertyDeclaration } from './decorators/property';
+import { PropertyDeclaration, PropertyReflector } from './decorators/property';
 import { kebabCase } from './utils/string-utils';
 import { ListenerDeclaration } from './decorators/listener';
+
+const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
@@ -25,7 +27,7 @@ export interface CustomElementType<T extends CustomElement = CustomElement> {
 
     shadow: boolean;
 
-    propertyDeclarations: { [key: string]: PropertyDeclaration };
+    propertyDeclarations: { [key: string]: PropertyDeclaration<T> };
 
     listenerDeclarations: { [key: string]: ListenerDeclaration };
 
@@ -139,7 +141,28 @@ export class CustomElement extends HTMLElement {
             const newValue = this[propertyKey as keyof CustomElement];
 
             // TODO: only reflect if property change was not initiated by observed attribute
-            if (propertyDeclaration.reflect) this._reflect(propertyKey, oldValue, newValue);
+            if (propertyDeclaration.reflect) {
+
+                if (typeof propertyDeclaration.reflect === 'function') {
+
+                    propertyDeclaration.reflect.call(this, propertyKey, oldValue, newValue);
+
+                } else if (typeof propertyDeclaration.reflect === 'string') {
+
+                    try {
+
+                        (this[propertyDeclaration.reflect as keyof this] as unknown as PropertyReflector)(propertyKey, oldValue, newValue);
+
+                    } catch (error) {
+
+                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflect);
+                    }
+
+                } else {
+
+                    this._reflect(propertyKey, oldValue, newValue);
+                }
+            }
 
             // TODO: only notify, if property change was not initiated by setting it from
             //  the outside and not during constructor phase
@@ -197,6 +220,12 @@ export class CustomElement extends HTMLElement {
         }
     }
 
+    /**
+     * Bind custom element listeners.
+     *
+     * @internal
+     * @private
+     */
     protected _listen () {
 
         Object.entries((this.constructor as CustomElementType).listenerDeclarations).forEach(([listener, declaration]) => {
@@ -226,6 +255,12 @@ export class CustomElement extends HTMLElement {
         });
     }
 
+    /**
+     * Unbind custom element listeners.
+     *
+     * @internal
+     * @private
+     */
     protected _unlisten () {
 
         this._listenerDeclarations.forEach((declaration) => {
@@ -245,6 +280,7 @@ export class CustomElement extends HTMLElement {
             const propertyDeclaration = constructor.propertyDeclarations[propertyKey];
 
             // check if property is observed
+            console.log(`requestUpdate()... ${ propertyKey } observe: ${ propertyDeclaration.observe }`);
             if (!propertyDeclaration.observe) return this._updateRequest;
 
             // check if property has changed

@@ -1,5 +1,5 @@
 import { html, TemplateResult } from 'lit-html';
-import { customElement, CustomElement, property } from '../../src';
+import { customElement, CustomElement, property, PropertyReflector } from '../../src';
 import { listener } from '../../src/decorators/listener';
 
 @customElement({
@@ -8,20 +8,27 @@ import { listener } from '../../src/decorators/listener';
 export class Checkbox extends CustomElement {
 
     @property({
-        observe: false,
+        observe: true,
         reflect: true
     })
-    role = 'checkbox';
+    customRole = 'checkbox';
 
-    // TODO: what if we want to bind multiple attributes to a property, e.g.: checked and aria-selected
-    @property({
-        attribute: 'aria-checked',
-        reflect: true,
+    @property<Checkbox>({
+        // reflect: 'reflectChecked',
+        reflect: function (propertyKey: string, oldValue: any, newValue: any) {
+            if (this.customChecked) {
+                this.setAttribute('custom-checked', 'true');
+                this.setAttribute('aria-checked', 'true');
+            } else {
+                this.removeAttribute('custom-checked');
+                this.removeAttribute('aria-checked');
+            }
+         },
         notify: true,
         toAttribute: (value) => value ? 'true' : null,
         fromAttribute: (value) => value !== null
     })
-    checked = false;
+    customChecked = false;
 
     constructor () {
 
@@ -33,7 +40,21 @@ export class Checkbox extends CustomElement {
     })
     onClick (event: MouseEvent) {
 
-        this.checked = !this.checked;
+        this.customChecked = !this.customChecked;
+    }
+
+    reflectChecked () {
+
+        if (this.customChecked) {
+
+            this.setAttribute('custom-checked', 'true');
+            this.setAttribute('aria-checked', 'true');
+
+        } else {
+
+            this.removeAttribute('custom-checked');
+            this.removeAttribute('aria-checked');
+        }
     }
 
     template (): TemplateResult {
@@ -46,7 +67,8 @@ export class Checkbox extends CustomElement {
                     height: 1rem;
                     border: 1px solid #999;
                 }
-                :host([checked=true]) {
+                :host([checked=true]),
+                :host([aria-checked=true]) {
                     background-color: #ccc;
                 }
             </style>`;

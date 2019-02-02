@@ -1,4 +1,6 @@
-import { CustomElementType } from '../custom-element';
+import { CustomElementType, CustomElement } from '../custom-element';
+
+export type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
 
 /**
  * A {@link CustomElement} property declaration
@@ -6,11 +8,17 @@ import { CustomElementType } from '../custom-element';
  * @property observe    True if the property change should be observed and cause an update
  * @property notify     True if the property change should trigger a custom event
  */
-export interface PropertyDeclaration {
+export interface PropertyDeclaration<Type extends CustomElement = CustomElement> {
+    /**
+     * The name of the associated attribute
+     *
+     * @remarks
+     * Will be the camel-cased property name if not specified.
+     */
     attribute?: string;
     observe?: boolean,
     notify?: boolean,
-    reflect?: boolean,
+    reflect?: boolean | string | PropertyReflector<Type>,
     hasChanged?: (oldValue: any, newValue: any) => boolean;
     toAttribute?: (value: any) => string | null;
     fromAttribute?: (value: string) => any;
@@ -33,7 +41,7 @@ export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
  *
  * @param options The property declaration
  */
-export const property = (options: PropertyDeclaration = {}) => {
+export const property = <Type extends CustomElement = CustomElement>(options: PropertyDeclaration<Type> = {}) => {
 
     return (target: Object, propertyKey: string): void => {
 
@@ -49,14 +57,14 @@ export const property = (options: PropertyDeclaration = {}) => {
                 return get.call(this);
             },
             set (value: any): void {
-                // console.log(`setting ${propertyKey}...`, value);
+                console.log(`setting ${propertyKey}...`, value);
                 const oldValue = this[propertyKey];
                 set.call(this, value);
                 this.requestUpdate(propertyKey, oldValue, value);
             }
         });
 
-        const constructor = target.constructor as CustomElementType;
+        const constructor = target.constructor as CustomElementType<Type>;
 
         constructor.propertyDeclarations[propertyKey] = { ...DEFAULT_PROPERTY_DECLARATION, ...options };
     };
