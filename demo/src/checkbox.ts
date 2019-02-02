@@ -1,5 +1,6 @@
 import { html, TemplateResult } from 'lit-html';
 import { customElement, CustomElement, property } from '../../src';
+import { listener } from '../../src/decorators/listener';
 
 @customElement({
     selector: 'check-box'
@@ -7,18 +8,29 @@ import { customElement, CustomElement, property } from '../../src';
 export class Checkbox extends CustomElement {
 
     @property({
+        observe: false,
+        reflect: true
+    })
+    role = 'checkbox';
+
+    // TODO: what if we want to bind multiple attributes to a property, e.g.: checked and aria-selected
+    @property({
+        attribute: 'aria-checked',
         reflect: true,
-        notify: true
+        notify: true,
+        toAttribute: (value) => value ? 'true' : null,
+        fromAttribute: (value) => value !== null
     })
     checked = false;
 
     constructor () {
 
         super();
-
-        this.addEventListener('click', this.onClick.bind(this));
     }
 
+    @listener({
+        event: 'click'
+    })
     onClick (event: MouseEvent) {
 
         this.checked = !this.checked;

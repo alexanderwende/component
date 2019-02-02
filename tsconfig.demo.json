@@ -4,8 +4,5 @@
     "outDir": "demo",
     "declaration": false,
     "declarationMap": false
-  },
-  "include": [
-    "demo/**/*.ts"
-  ],
+  }
 }

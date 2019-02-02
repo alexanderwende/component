@@ -1,6 +1,23 @@
 import { html, render, TemplateResult } from 'lit-html';
 import { PropertyDeclaration } from './decorators/property';
 import { kebabCase } from './utils/string-utils';
+import { ListenerDeclaration } from './decorators/listener';
+
+/**
+ * Extends the static {@link ListenerDeclaration} to include the bound listener
+ */
+interface InstanceListenerDeclaration extends ListenerDeclaration {
+
+    /**
+     * The bound listener will be stored here, so it can be removed it later
+     */
+    listener: EventListener;
+
+    /**
+     * The event target will always be resolved to an actual {@link EventTarget}
+     */
+    target: EventTarget;
+}
 
 export interface CustomElementType<T extends CustomElement = CustomElement> {
 
@@ -10,7 +27,9 @@ export interface CustomElementType<T extends CustomElement = CustomElement> {
 
     propertyDeclarations: { [key: string]: PropertyDeclaration };
 
-    new (...args: any[]): T;
+    listenerDeclarations: { [key: string]: ListenerDeclaration };
+
+    new(...args: any[]): T;
 }
 
 export class CustomElement extends HTMLElement {
@@ -20,6 +39,8 @@ export class CustomElement extends HTMLElement {
     static shadow: boolean;
 
     static propertyDeclarations: { [key: string]: PropertyDeclaration } = {};
+
+    static listenerDeclarations: { [key: string]: ListenerDeclaration } = {};
 
     static get observedAttributes (): string[] {
 
@@ -31,6 +52,8 @@ export class CustomElement extends HTMLElement {
     protected _updateRequest: Promise<boolean> = new Promise(resolve => resolve(true));
 
     protected _changedProperties: Map<string, any> = new Map();
+
+    protected _listenerDeclarations: InstanceListenerDeclaration[] = [];
 
     protected _isConnected = false;
 
@@ -53,8 +76,8 @@ export class CustomElement extends HTMLElement {
     createRenderRoot (): Element | DocumentFragment {
 
         return (this.constructor as CustomElementType).shadow ?
-               this.attachShadow({ mode: 'open' }) :
-               this;
+            this.attachShadow({ mode: 'open' }) :
+            this;
     }
 
     adoptedCallback (): void {
@@ -64,12 +87,16 @@ export class CustomElement extends HTMLElement {
 
         console.log('connected... ', this.constructor.name);
 
+        this._listen();
+
         this.requestUpdate();
     }
 
     disconnectedCallback (): void {
 
         console.log('disconnected... ', this.constructor.name);
+
+        this._unlisten();
     }
 
     attributeChangedCallback (attribute: string, oldValue: any, newValue: any): void {
@@ -109,7 +136,7 @@ export class CustomElement extends HTMLElement {
 
             // properties in the changedProperties map will always have a declaration
             const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
-            const newValue            = this[propertyKey as keyof CustomElement];
+            const newValue = this[propertyKey as keyof CustomElement];
 
             // TODO: only reflect if property change was not initiated by observed attribute
             if (propertyDeclaration.reflect) this._reflect(propertyKey, oldValue, newValue);
@@ -129,14 +156,14 @@ export class CustomElement extends HTMLElement {
      */
     protected _notify (propertyKey: string, oldValue: any, newValue: any): void {
 
-        const eventName = `${kebabCase(propertyKey)}-changed`;
+        const eventName = `${ kebabCase(propertyKey) }-changed`;
 
         this.dispatchEvent(new CustomEvent(eventName, {
             composed: true,
-            detail:   {
+            detail: {
                 property: propertyKey,
                 previous: oldValue,
-                current:  newValue
+                current: newValue
             }
         }));
     }
@@ -147,20 +174,64 @@ export class CustomElement extends HTMLElement {
      * @param propertyKey
      * @param oldValue
      * @param newValue
+     *
+     * @internal
+     * @private
      */
     protected _reflect (propertyKey: string, oldValue: any, newValue: any): void {
 
-        // TODO: resolve proper toAttribute mapper, attribute name...
-        const attributeName = kebabCase(propertyKey);
+        const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
-        if (newValue === null) {
+        // resolve the attribute name
+        const attributeName = propertyDeclaration.attribute || kebabCase(propertyKey);
+        // resolve the attribute value
+        const attributeValue = propertyDeclaration.toAttribute!(newValue);
+
+        if (attributeValue === null) {
 
             this.removeAttribute(attributeName);
 
         } else {
 
-            this.setAttribute(attributeName, newValue);
+            this.setAttribute(attributeName, attributeValue);
         }
+    }
+
+    protected _listen () {
+
+        Object.entries((this.constructor as CustomElementType).listenerDeclarations).forEach(([listener, declaration]) => {
+
+            const instanceDeclaration: InstanceListenerDeclaration = {
+
+                // copy the class's static listener declaration into an instance listener declaration
+                event: declaration.event,
+                options: declaration.options,
+
+                // bind the components listener method to the component instance and store it in the instance declaration
+                listener: (this[listener as keyof this] as any as EventListener).bind(this),
+
+                // determine the event target and store it in the instance declaration
+                target: (declaration.target) ?
+                    (typeof declaration.target === 'function') ?
+                        declaration.target() :
+                        declaration.target :
+                    this
+            };
+
+            // add the bound event listener to the target
+            instanceDeclaration.target.addEventListener(instanceDeclaration.event, instanceDeclaration.listener, instanceDeclaration.options);
+
+            // save the instance listener declaration on the component instance
+            this._listenerDeclarations.push(instanceDeclaration);
+        });
+    }
+
+    protected _unlisten () {
+
+        this._listenerDeclarations.forEach((declaration) => {
+
+            declaration.target.removeEventListener(declaration.event, declaration.listener, declaration.options);
+        });
     }
 
     requestUpdate (propertyKey?: string, oldValue?: any, newValue?: any): Promise<boolean> {

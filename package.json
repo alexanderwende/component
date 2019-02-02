@@ -19,7 +19,7 @@
     "release": "release-it --no-npm.publish",
     "changelog": "auto-changelog -p --stdout",
     "beforeStage": "auto-changelog -p",
-    "demo": "rollup -c rollup.demo.config.js"
+    "demo": "rollup -c rollup.demo.config.js -w"
   },
   "author": "Alexander Wende",
   "license": "BSD-3-Clause",

@@ -70,5 +70,16 @@ describe('CustomElement', () => {
 
             addElement(testElement);
         });
+
+        it('can be dateched and reattached', () => {
+
+        });
+    });
+
+    describe('CustomElement events', () => {
+
+        it('should dispatch property change events only when properties change internally', () => {
+
+        });
     });
 });
