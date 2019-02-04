@@ -1,9 +1,10 @@
 import { html, render, TemplateResult } from 'lit-html';
-import { PropertyDeclaration, PropertyReflector } from './decorators/property';
+import { PropertyDeclaration, PropertyReflector, PropertyNotifier } from './decorators/property';
 import { kebabCase } from './utils/string-utils';
 import { ListenerDeclaration } from './decorators/listener';
 
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
+const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: string) => new Error(`Error executing property notifier ${ propertyNotifier }.`);
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
@@ -51,15 +52,19 @@ export class CustomElement extends HTMLElement {
 
     protected _renderRoot: Element | DocumentFragment;
 
-    protected _updateRequest: Promise<boolean> = new Promise(resolve => resolve(true));
+    protected _updateRequest: Promise<boolean> = Promise.resolve(true);
 
     protected _changedProperties: Map<string, any> = new Map();
+
+    protected _notifyingProperties: Map<string, any> = new Map();
 
     protected _listenerDeclarations: InstanceListenerDeclaration[] = [];
 
     protected _isConnected = false;
 
     protected _hasRequestedUpdate = false;
+
+    protected _isReflecting = false;
 
     get isConnected (): boolean {
 
@@ -130,8 +135,6 @@ export class CustomElement extends HTMLElement {
 
         console.log('update()... ', changedProperties);
 
-        // TODO: update host bindings, reflected attributes, dispatch events...
-
         this.render();
 
         changedProperties.forEach((oldValue: any, propertyKey: string) => {
@@ -145,16 +148,17 @@ export class CustomElement extends HTMLElement {
 
                 if (typeof propertyDeclaration.reflect === 'function') {
 
-                    propertyDeclaration.reflect.call(this, propertyKey, oldValue, newValue);
+                    try {
+                        propertyDeclaration.reflect.call(this, propertyKey, oldValue, newValue);
+                    } catch (error) {
+                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflect.toString());
+                    }
 
                 } else if (typeof propertyDeclaration.reflect === 'string') {
 
                     try {
-
                         (this[propertyDeclaration.reflect as keyof this] as unknown as PropertyReflector)(propertyKey, oldValue, newValue);
-
                     } catch (error) {
-
                         throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflect);
                     }
 
@@ -163,11 +167,84 @@ export class CustomElement extends HTMLElement {
                     this._reflect(propertyKey, oldValue, newValue);
                 }
             }
-
-            // TODO: only notify, if property change was not initiated by setting it from
-            //  the outside and not during constructor phase
-            if (propertyDeclaration.notify) this._notify(propertyKey, oldValue, newValue);
         });
+
+        this._notifyingProperties.forEach((oldValue, propertyKey) => {
+
+            const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
+            const newValue = this[propertyKey as keyof CustomElement];
+
+            if (propertyDeclaration.notify) {
+
+                if (typeof propertyDeclaration.notify === 'function') {
+
+                    try {
+                        propertyDeclaration.notify.call(this, propertyKey, oldValue, newValue);
+                    } catch (error) {
+                        throw PROPERTY_NOTIFIER_ERROR(propertyDeclaration.notify.toString());
+                    }
+
+                } else if (typeof propertyDeclaration.notify === 'string') {
+
+                    try {
+                        (this[propertyDeclaration.notify as keyof this] as unknown as PropertyNotifier)(propertyKey, oldValue, newValue);
+                    } catch (error) {
+                        throw PROPERTY_NOTIFIER_ERROR(propertyDeclaration.notify);
+                    }
+
+                } else {
+
+                    this._notify(propertyKey, oldValue, newValue);
+                }
+            }
+        });
+    }
+
+    /**
+     * Raise custom events for property changes which occurred in the executor
+     *
+     * @remarks
+     * Property changes should trigger custom events when they are caused by internal state changes,
+     * but not if they are caused by a consumer of the custom element API directly, e.g.:
+     *
+     * ```typescript
+     * document.querySelector('my-custom-element').customProperty = true;
+     * ```.
+     *
+     * This means, we cannot automate this process through property setters, as we can't be sure who
+     * invoked the setter - internal calls or external calls.
+     *
+     * One option is to manually raise the event, which can become tedious and forces us to use string-
+     * based event names or property names, which are difficult to refactor, e.g.:
+     *
+     * ```typescript
+     * this.customProperty = true;
+     * // if we refactor the property name, we can easily miss the notify call
+     * this.notify('customProperty');
+     * ```
+     *
+     * A more convenient way is to execute the internal changes in a wrapper which can detect the changed
+     * properties and will automatically raise the required events. This eliminates the need to manually
+     * raise events and refactoring does no longer affect the process.
+     *
+     * @param executor A function that performs the changes which should be notified
+     */
+    notifyChanges (executor: () => void) {
+
+        // back up current changed properties
+        const previousChanges = new Map(this._changedProperties);
+
+        // execute the changes
+        executor();
+
+        // add all new or updated changed properties to the notifying properties
+        for (const [propertyKey, oldValue] of this._changedProperties) {
+
+            if (!previousChanges.has(propertyKey) || previousChanges.get(propertyKey) !== oldValue) {
+
+                this._notifyingProperties.set(propertyKey, oldValue);
+            }
+        }
     }
 
     /**
@@ -189,6 +266,8 @@ export class CustomElement extends HTMLElement {
                 current: newValue
             }
         }));
+
+        console.log(`notify ${ eventName }...`);
     }
 
     /**
@@ -237,7 +316,7 @@ export class CustomElement extends HTMLElement {
                 options: declaration.options,
 
                 // bind the components listener method to the component instance and store it in the instance declaration
-                listener: (this[listener as keyof this] as any as EventListener).bind(this),
+                listener: (this[listener as keyof this] as unknown as EventListener).bind(this),
 
                 // determine the event target and store it in the instance declaration
                 target: (declaration.target) ?
@@ -310,6 +389,8 @@ export class CustomElement extends HTMLElement {
                 this.update(this._changedProperties);
 
                 this._changedProperties = new Map();
+
+                this._notifyingProperties = new Map();
 
                 // TODO: Should this be moved before the update call?
                 // During the update, other property changes might occur...

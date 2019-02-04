@@ -2,6 +2,8 @@ import { CustomElementType, CustomElement } from '../custom-element';
 
 export type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
 
+export type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
+
 /**
  * A {@link CustomElement} property declaration
  *
@@ -17,7 +19,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      */
     attribute?: string;
     observe?: boolean,
-    notify?: boolean,
+    notify?: boolean | keyof Type | PropertyNotifier<Type>,
     /**
      * Controls how the property value will be reflected to attributes
      *

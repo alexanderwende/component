@@ -25,6 +25,10 @@ export class Checkbox extends CustomElement {
         //     }
         // },
         notify: true,
+        // notify: 'notifyChecked',
+        // notify: function (propertyKey: string, oldValue: any, newValue: any) {
+        //     console.log('custom notifier...');
+        // },
         toAttribute: (value) => value ? 'true' : null,
         fromAttribute: (value) => value !== null
     })
@@ -40,7 +44,14 @@ export class Checkbox extends CustomElement {
     })
     onClick (event: MouseEvent) {
 
-        this.customChecked = !this.customChecked;
+        this.notifyChanges(() => {
+
+            this.customChecked = !this.customChecked;
+        });
+
+        // this.customChecked = !this.customChecked;
+
+        // this.notify('customChecked');
     }
 
     reflectChecked () {
@@ -55,6 +66,10 @@ export class Checkbox extends CustomElement {
             this.removeAttribute('custom-checked');
             this.removeAttribute('aria-checked');
         }
+    }
+    notifyChecked () {
+
+        console.log(`notifyChecked...`);
     }
 
     template (): TemplateResult {
