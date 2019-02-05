@@ -1,21 +1,18 @@
 import { html, TemplateResult } from 'lit-html';
-import { customElement, CustomElement, property, PropertyReflector } from '../../src';
-import { listener } from '../../src/decorators/listener';
+import { ATTRIBUTE_CONVERTERS, customElement, CustomElement, listener, property } from '../../src';
 
 @customElement({
     selector: 'check-box'
 })
 export class Checkbox extends CustomElement {
 
-    @property({
-        observe: true,
-        reflect: true
-    })
+    @property()
     customRole = 'checkbox';
 
     @property<Checkbox>({
-        reflect: 'reflectChecked',
-        // reflect: function (propertyKey: string, oldValue: any, newValue: any) {
+        converter: ATTRIBUTE_CONVERTERS.boolean,
+        reflectProperty: 'reflectChecked',
+        // reflectProperty: function (propertyKey: string, oldValue: any, newValue: any) {
         //     if (this.customChecked) {
         //         this.setAttribute('custom-checked', 'true');
         //         this.setAttribute('aria-checked', 'true');
@@ -24,13 +21,11 @@ export class Checkbox extends CustomElement {
         //         this.removeAttribute('aria-checked');
         //     }
         // },
-        notify: true,
-        // notify: 'notifyChecked',
+        // notify: true,
+        notify: 'notifyChecked',
         // notify: function (propertyKey: string, oldValue: any, newValue: any) {
         //     console.log('custom notifier...');
-        // },
-        toAttribute: (value) => value ? 'true' : null,
-        fromAttribute: (value) => value !== null
+        // }
     })
     customChecked = false;
 
@@ -58,7 +53,7 @@ export class Checkbox extends CustomElement {
 
         if (this.customChecked) {
 
-            this.setAttribute('custom-checked', 'true');
+            this.setAttribute('custom-checked', '');
             this.setAttribute('aria-checked', 'true');
 
         } else {

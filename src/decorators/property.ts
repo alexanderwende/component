@@ -1,70 +1,38 @@
-import { CustomElementType, CustomElement } from '../custom-element';
-
-export type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
-
-export type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
-
-/**
- * A {@link CustomElement} property declaration
- *
- * @property observe    True if the property change should be observed and cause an update
- * @property notify     True if the property change should trigger a custom event
- */
-export interface PropertyDeclaration<Type extends CustomElement = CustomElement> {
-    /**
-     * The name of the associated attribute
-     *
-     * @remarks
-     * Will be the camel-cased property name if not specified.
-     */
-    attribute?: string;
-    observe?: boolean,
-    notify?: boolean | keyof Type | PropertyNotifier<Type>,
-    /**
-     * Controls how the property value will be reflected to attributes
-     *
-     * TODO: Improve description
-     * @remarks
-     * If true -> will be reflected automatically
-     * If string -> will pick up method from custom element
-     * If function -> will use that function with this being bound to custom element instance
-     *
-     * ```typescript
-     * class MyElement extends CustomElement {
-     *      // use a generic to support proper instance typing in the property reflector
-     *      @property<MyElement>({
-     *          reflect: (propertyKey: string, oldValue: any, newValue: any) {
-     *              // do something here with those values
-     *          }
-     *      })
-     *      myProperty = false;
-     * }
-     * ```
-     */
-    reflect?: boolean | keyof Type | PropertyReflector<Type>,
-    hasChanged?: (oldValue: any, newValue: any) => boolean;
-    toAttribute?: (value: any) => string | null;
-    fromAttribute?: (value: string) => any;
-}
-
-/**
- * The default {@link CustomElement} property declaration
- */
-export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
-    observe: true,
-    notify: false,
-    reflect: false,
-    hasChanged: (oldValue: any, newValue: any) => oldValue !== newValue && (oldValue === oldValue || newValue === newValue),
-    toAttribute: value => value.toString(),
-    fromAttribute: value => value
-};
+import { CustomElement, CustomElementType } from '../custom-element';
+import { DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
 
 /**
  * Decorates a {@link CustomElement} property
  *
+ * @remarks
+ * Many of the {@link PropertyDeclaration} options support custom functions, which will be invoked
+ * with the custom element instance as `this`-context during execution. In order to support correct
+ * typing in these functions, the `@property` decorator supports generic types. Here is an example
+ * of how you can use this with a custom {@link PropertReflector}:
+ *
+ * ```typescript
+ * class MyElement extends CustomElement {
+ *
+ *      myHiddenProperty = true;
+ *
+ *      // use a generic to support proper instance typing in the property reflector
+ *      @property<MyElement>({
+ *          reflectProperty: (propertyKey: string, oldValue: any, newValue: any) {
+ *              // the generic type allows for correct typing of this
+ *              if (this.myHiddenProperty && newValue) {
+ *                  this.setAttribute('my-property', '');
+ *              } else {
+ *                  this.removeAttribute('my-property');
+ *              }
+ *          }
+ *      })
+ *      myProperty = false;
+ * }
+ * ```
+ *
  * @param options The property declaration
  */
-export const property = <Type extends CustomElement = CustomElement>(options: PropertyDeclaration<Type> = {}) => {
+export const property = <Type extends CustomElement = CustomElement> (options: PropertyDeclaration<Type> = {}) => {
 
     return (target: Object, propertyKey: string): void => {
 
@@ -80,7 +48,6 @@ export const property = <Type extends CustomElement = CustomElement>(options: Pr
                 return get.call(this);
             },
             set (value: any): void {
-                console.log(`setting ${propertyKey}...`, value);
                 const oldValue = this[propertyKey];
                 set.call(this, value);
                 this.requestUpdate(propertyKey, oldValue, value);
@@ -89,6 +56,7 @@ export const property = <Type extends CustomElement = CustomElement>(options: Pr
 
         const constructor = target.constructor as CustomElementType<Type>;
 
+        // TODO: Merge the attribute converter if only one mapper is specified in the options
         constructor.propertyDeclarations[propertyKey] = { ...DEFAULT_PROPERTY_DECLARATION, ...options };
     };
 };

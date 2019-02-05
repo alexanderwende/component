@@ -1,7 +1,7 @@
 import { html, render, TemplateResult } from 'lit-html';
-import { PropertyDeclaration, PropertyReflector, PropertyNotifier } from './decorators/property';
-import { kebabCase } from './utils/string-utils';
 import { ListenerDeclaration } from './decorators/listener';
+import { PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
+import { kebabCase } from './utils/string-utils';
 
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
 const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: string) => new Error(`Error executing property notifier ${ propertyNotifier }.`);
@@ -135,6 +135,7 @@ export class CustomElement extends HTMLElement {
 
         console.log('update()... ', changedProperties);
 
+        // TODO: Check if at least one changed property requests render
         this.render();
 
         changedProperties.forEach((oldValue: any, propertyKey: string) => {
@@ -144,22 +145,22 @@ export class CustomElement extends HTMLElement {
             const newValue = this[propertyKey as keyof CustomElement];
 
             // TODO: only reflect if property change was not initiated by observed attribute
-            if (propertyDeclaration.reflect) {
+            if (propertyDeclaration.reflectProperty) {
 
-                if (typeof propertyDeclaration.reflect === 'function') {
+                if (typeof propertyDeclaration.reflectProperty === 'function') {
 
                     try {
-                        propertyDeclaration.reflect.call(this, propertyKey, oldValue, newValue);
+                        propertyDeclaration.reflectProperty.call(this, propertyKey, oldValue, newValue);
                     } catch (error) {
-                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflect.toString());
+                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty.toString());
                     }
 
-                } else if (typeof propertyDeclaration.reflect === 'string') {
+                } else if (typeof propertyDeclaration.reflectProperty === 'string') {
 
                     try {
-                        (this[propertyDeclaration.reflect as keyof this] as unknown as PropertyReflector)(propertyKey, oldValue, newValue);
+                        (this[propertyDeclaration.reflectProperty as keyof this] as unknown as PropertyReflector)(propertyKey, oldValue, newValue);
                     } catch (error) {
-                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflect);
+                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty);
                     }
 
                 } else {
@@ -285,11 +286,15 @@ export class CustomElement extends HTMLElement {
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
         // resolve the attribute name
-        const attributeName = propertyDeclaration.attribute || kebabCase(propertyKey);
+        const attributeName = (typeof propertyDeclaration.attribute === 'string') ? propertyDeclaration.attribute : kebabCase(propertyKey);
         // resolve the attribute value
-        const attributeValue = propertyDeclaration.toAttribute!(newValue);
+        const attributeValue = propertyDeclaration.converter!.toAttribute!(newValue);
 
-        if (attributeValue === null) {
+        if (attributeValue === undefined) {
+
+            return;
+        }
+        else if (attributeValue === null) {
 
             this.removeAttribute(attributeName);
 
@@ -356,14 +361,15 @@ export class CustomElement extends HTMLElement {
 
         if (propertyKey && propertyKey in constructor.propertyDeclarations) {
 
-            const propertyDeclaration = constructor.propertyDeclarations[propertyKey];
+            const { observe } = constructor.propertyDeclarations[propertyKey];
 
             // check if property is observed
-            console.log(`requestUpdate()... ${ propertyKey } observe: ${ propertyDeclaration.observe }`);
-            if (!propertyDeclaration.observe) return this._updateRequest;
+            if (!observe) return this._updateRequest;
+            console.log(`requestUpdate()... ${ propertyKey } observe: ${ !!observe }`);
 
             // check if property has changed
-            if (propertyDeclaration.hasChanged && !propertyDeclaration.hasChanged(oldValue, newValue)) return this._updateRequest;
+            if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
+            console.log(`requestUpdate()... ${ propertyKey } changed`);
 
             // store changed property for batch processing
             this._changedProperties.set(propertyKey, oldValue);

@@ -1,6 +1,6 @@
 import { TemplateResult } from 'lit-html';
-import { PropertyDeclaration } from './decorators/property';
 import { ListenerDeclaration } from './decorators/listener';
+import { PropertyDeclaration } from "./decorators/property-declaration";
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
  */
