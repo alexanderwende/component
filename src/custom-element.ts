@@ -1,7 +1,7 @@
 import { html, render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
 import { PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
-import { kebabCase } from './utils/string-utils';
+import { kebabCase, camelCase } from './utils/string-utils';
 
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
 const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: string) => new Error(`Error executing property notifier ${ propertyNotifier }.`);
@@ -22,32 +22,31 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
     target: EventTarget;
 }
 
-export interface CustomElementType<T extends CustomElement = CustomElement> {
-
-    selector: string;
-
-    shadow: boolean;
-
-    propertyDeclarations: { [key: string]: PropertyDeclaration<T> };
-
-    listenerDeclarations: { [key: string]: ListenerDeclaration };
-
-    new(...args: any[]): T;
-}
-
 export class CustomElement extends HTMLElement {
+
+    private static _observedAttributes: string[] = [];
 
     static selector: string;
 
     static shadow: boolean;
 
-    static propertyDeclarations: { [key: string]: PropertyDeclaration } = {};
+    /**
+     * A map of attribute names and their respective property keys
+     */
+    static attributes: { [key: string]: string } = {};
 
-    static listenerDeclarations: { [key: string]: ListenerDeclaration } = {};
+    // static propertyDeclarations: { [key: PropertyKey]: PropertyDeclaration } = {};
+    static propertyDeclarations: Map<PropertyKey, PropertyDeclaration> = new Map();
+
+    // static listenerDeclarations: { [key: string]: ListenerDeclaration } = {};
+    static listenerDeclarations: Map<PropertyKey, ListenerDeclaration> = new Map();
 
     static get observedAttributes (): string[] {
 
-        return [];
+        // return [];
+
+        // TODO: fix this, in case people want to specify their own observed attributes
+        return Object.keys(this.attributes);
     }
 
     protected _renderRoot: Element | DocumentFragment;
@@ -82,7 +81,7 @@ export class CustomElement extends HTMLElement {
 
     createRenderRoot (): Element | DocumentFragment {
 
-        return (this.constructor as CustomElementType).shadow ?
+        return (this.constructor as typeof CustomElement).shadow ?
             this.attachShadow({ mode: 'open' }) :
             this;
     }
@@ -107,6 +106,8 @@ export class CustomElement extends HTMLElement {
     }
 
     attributeChangedCallback (attribute: string, oldValue: any, newValue: any): void {
+
+        if (oldValue !== newValue) this._reflectAttribute(attribute, oldValue, newValue);
     }
 
     propertyChangedCallback (property: string, oldValue: any, newValue: any): void {
@@ -165,7 +166,7 @@ export class CustomElement extends HTMLElement {
 
                 } else {
 
-                    this._reflect(propertyKey, oldValue, newValue);
+                    this._reflectProperty(propertyKey, oldValue, newValue);
                 }
             }
         });
@@ -281,7 +282,7 @@ export class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflect (propertyKey: string, oldValue: any, newValue: any): void {
+    protected _reflectProperty (propertyKey: string, oldValue: any, newValue: any) {
 
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
@@ -304,6 +305,22 @@ export class CustomElement extends HTMLElement {
         }
     }
 
+    protected _reflectAttribute (attributeName: string, olldValue: string, newValue: string) {
+
+        // TODO: fix attributeName to propertyKey mapping
+        const propertyKey = camelCase(attributeName);
+
+        const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
+
+        const propertyValue = propertyDeclaration.converter!.fromAttribute!(newValue);
+
+        this._isReflecting = true;
+
+        this[propertyKey as keyof this] = propertyValue;
+
+        this._isReflecting = false;
+    }
+
     /**
      * Bind custom element listeners.
      *
@@ -312,7 +329,7 @@ export class CustomElement extends HTMLElement {
      */
     protected _listen () {
 
-        Object.entries((this.constructor as CustomElementType).listenerDeclarations).forEach(([listener, declaration]) => {
+        (this.constructor as typeof CustomElement).listenerDeclarations.forEach((declaration, listener) => {
 
             const instanceDeclaration: InstanceListenerDeclaration = {
 
@@ -357,22 +374,32 @@ export class CustomElement extends HTMLElement {
 
         console.log('requestUpdate()... ', this.constructor.name);
 
-        const constructor = this.constructor as typeof CustomElement;
+        if (this._isReflecting) {
 
-        if (propertyKey && propertyKey in constructor.propertyDeclarations) {
+            console.log(`requestUpdate()... reflecting`);
 
-            const { observe } = constructor.propertyDeclarations[propertyKey];
+            return this._updateRequest;
+        }
 
-            // check if property is observed
-            if (!observe) return this._updateRequest;
-            console.log(`requestUpdate()... ${ propertyKey } observe: ${ !!observe }`);
+        if (propertyKey) {
 
-            // check if property has changed
-            if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
-            console.log(`requestUpdate()... ${ propertyKey } changed`);
+            const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
 
-            // store changed property for batch processing
-            this._changedProperties.set(propertyKey, oldValue);
+            if (propertyDeclaration) {
+
+                const { observe } = propertyDeclaration;
+
+                // check if property is observed
+                if (!observe) return this._updateRequest;
+                console.log(`requestUpdate()... ${ propertyKey } observe: ${ !!observe }`);
+
+                // check if property has changed
+                if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
+                console.log(`requestUpdate()... ${ propertyKey } changed`);
+
+                // store changed property for batch processing
+                this._changedProperties.set(propertyKey, oldValue);
+            }
         }
 
         if (!this._hasRequestedUpdate) {
@@ -430,6 +457,6 @@ export class CustomElement extends HTMLElement {
 
     private _getPropertyDeclaration (propertyKey: string): PropertyDeclaration | undefined {
 
-        return (this.constructor as typeof CustomElement).propertyDeclarations[propertyKey];
+        return (this.constructor as typeof CustomElement).propertyDeclarations.get(propertyKey);
     }
 }

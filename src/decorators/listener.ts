@@ -1,4 +1,4 @@
-import { CustomElementType } from '../custom-element';
+import { CustomElement } from '../custom-element';
 
 /**
  * A {@link CustomElement} event listener declaration
@@ -38,8 +38,8 @@ export function listener (options: ListenerDeclaration) {
 
     return function (target: Object, propertyKey: string, descriptor: PropertyDescriptor) {
 
-        const constructor = target.constructor as CustomElementType;
+        const constructor = target.constructor as typeof CustomElement;
 
-        constructor.listenerDeclarations[propertyKey] = { ...options };
+        constructor.listenerDeclarations.set(propertyKey, { ...options });
     }
 }

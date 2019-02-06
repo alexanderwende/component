@@ -1,4 +1,5 @@
-import { CustomElement, CustomElementType } from '../custom-element';
+import { CustomElement } from '../custom-element';
+import { kebabCase } from '../utils/string-utils';
 import { DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
 
 /**
@@ -54,10 +55,17 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
             }
         });
 
-        const constructor = target.constructor as CustomElementType<Type>;
+        const constructor = target.constructor as typeof CustomElement;
 
         // TODO: Merge the attribute converter if only one mapper is specified in the options
-        constructor.propertyDeclarations[propertyKey] = { ...DEFAULT_PROPERTY_DECLARATION, ...options };
+        constructor.propertyDeclarations.set(propertyKey, { ...DEFAULT_PROPERTY_DECLARATION, ...options } as PropertyDeclaration);
+
+        // TODO: set attribute name in the declaration
+        const attributeName = typeof options.attribute === 'string' ? options.attribute : kebabCase(propertyKey);
+
+        constructor.attributes[attributeName] = propertyKey;
+
+        console.log(constructor.observedAttributes);
     };
 };
 

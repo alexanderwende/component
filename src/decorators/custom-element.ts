@@ -1,4 +1,4 @@
-import { CustomElementType } from '../custom-element';
+import { CustomElement } from '../custom-element';
 
 export interface CustomElementDeclaration extends Object {
     selector?: string;
@@ -16,7 +16,7 @@ export const customElement = (options: CustomElementDeclaration = {}) => {
 
     options = { ...DEFAULT_CUSTOM_ELEMENT_DECLARATION, ...options };
 
-    return (target: CustomElementType) => {
+    return (target: typeof CustomElement) => {
 
         target.selector = (options.selector) ? options.selector : target.selector;
         target.shadow = options.shadow!;
