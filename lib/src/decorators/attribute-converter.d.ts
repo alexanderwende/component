@@ -10,8 +10,8 @@ export declare type PropertyMapper = (value: any) => string | null | undefined;
  * An object that holds an {@link AttributeMapper} and a {@link PropertyMapper}
  */
 export interface AttributeConverter {
-    toAttribute?: PropertyMapper;
-    fromAttribute?: AttributeMapper;
+    toAttribute: PropertyMapper;
+    fromAttribute: AttributeMapper;
 }
 /**
  * @internal

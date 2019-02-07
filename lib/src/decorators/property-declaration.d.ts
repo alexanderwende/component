@@ -31,7 +31,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `true`
      */
-    attribute?: boolean | string;
+    attribute: boolean | string;
     /**
      * Customize the conversion of values between property and associated attribute
      *
@@ -41,7 +41,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `ATTRIBUTE_CONVERTERS.default`
      */
-    converter?: AttributeConverter;
+    converter: AttributeConverter;
     /**
      * Should the associated attribute's value be automatically reflected to the property?
      *
@@ -54,7 +54,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `true`
      */
-    reflectAttribute?: boolean | keyof Type | AttributeReflector<Type>;
+    reflectAttribute: boolean | keyof Type | AttributeReflector<Type>;
     /**
      * Should the property value be automatically reflected to the associated attribute?
      *
@@ -67,7 +67,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `true`
      */
-    reflectProperty?: boolean | keyof Type | PropertyReflector<Type>;
+    reflectProperty: boolean | keyof Type | PropertyReflector<Type>;
     /**
      * Should a property value change raise a custom event?
      *
@@ -80,7 +80,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `true`
      */
-    notify?: boolean | keyof Type | PropertyNotifier<Type>;
+    notify: boolean | keyof Type | PropertyNotifier<Type>;
     /**
      * Configure how changes of this property should be monitored
      *
@@ -97,7 +97,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * Default value: `true` (uses {@link DEFAULT_PROPERTY_CHANGE_DETECTOR} internally)
      */
-    observe?: boolean | keyof Type | PropertyChangeDetector;
+    observe: boolean | keyof Type | PropertyChangeDetector;
 }
 export declare const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector;
 /**

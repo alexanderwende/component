@@ -40,6 +40,28 @@ export function listener (options: ListenerDeclaration) {
 
         const constructor = target.constructor as typeof CustomElement;
 
-        constructor.listenerDeclarations.set(propertyKey, { ...options });
+        prepareConstructor(constructor);
+
+        constructor.listeners.set(propertyKey, { ...options });
     }
+}
+
+/**
+ * Prepares the custom element constructor by initializing static properties for the listener decorator,
+ * so we don't modify a base class's static properties.
+ *
+ * @remarks
+ * When the listener decorator stores listener declarations in the constructor, we have to make sure the
+ * static listeners field is initialized on the current constructor. Otherwise we add listener declarations
+ * to the base class's static field. We also make sure to initialize the listener maps with the values of
+ * the base class's map to properly inherit all listener declarations.
+ *
+ * @param constructor The custom element constructor to prepare
+ *
+ * @internal
+ * @private
+ */
+function prepareConstructor (constructor: typeof CustomElement) {
+
+    if (!constructor.hasOwnProperty('listeners')) constructor.listeners = new Map(constructor.listeners);
 }

@@ -1,6 +1,15 @@
 import { CustomElement } from '../custom-element';
 import { PropertyDeclaration } from './property-declaration';
 /**
+ * A type extension to add additional properties to a {@link CustomElement} constructor during decoration
+ *
+ * @internal
+ * @private
+ */
+export declare type DecoratedCustomElementType = typeof CustomElement & {
+    overridden: Set<string>;
+};
+/**
  * Decorates a {@link CustomElement} property
  *
  * @remarks
@@ -29,7 +38,7 @@ import { PropertyDeclaration } from './property-declaration';
  * }
  * ```
  *
- * @param options The property declaration
+ * @param options A property declaration
  */
-export declare const property: <Type extends CustomElement = CustomElement>(options?: PropertyDeclaration<Type>) => (target: Object, propertyKey: string) => void;
+export declare const property: <Type extends CustomElement = CustomElement>(options?: Partial<PropertyDeclaration<Type>>) => (target: Object, propertyKey: string) => void;
 //# sourceMappingURL=property.d.ts.map

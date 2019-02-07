@@ -14,26 +14,55 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
      */
     target: EventTarget;
 }
-export interface CustomElementType<T extends CustomElement = CustomElement> {
-    selector: string;
-    shadow: boolean;
-    propertyDeclarations: {
-        [key: string]: PropertyDeclaration<T>;
-    };
-    listenerDeclarations: {
-        [key: string]: ListenerDeclaration;
-    };
-    new (...args: any[]): T;
-}
 export declare class CustomElement extends HTMLElement {
     static selector: string;
     static shadow: boolean;
-    static propertyDeclarations: {
-        [key: string]: PropertyDeclaration;
-    };
-    static listenerDeclarations: {
-        [key: string]: ListenerDeclaration;
-    };
+    /**
+     * A map of attribute names and their respective property keys
+     *
+     * @internal
+     * @private
+     */
+    static attributes: Map<string, PropertyKey>;
+    /**
+     * A map of property keys and their respective property declarations
+     *
+     * @internal
+     * @private
+     */
+    static properties: Map<PropertyKey, PropertyDeclaration>;
+    /**
+     * A map of property keys and their respective listener declarations
+     *
+     * @internal
+     * @private
+     */
+    static listeners: Map<PropertyKey, ListenerDeclaration>;
+    /**
+     * Override to specify attributes which should be observed, but don't have an associated property
+     *
+     * @remark
+     * For properties which are decorated with the {@link property} decorator, an observed attribute
+     * is automatically created and does not need to be specified here. Fot attributes that don't
+     * have an associated property, return the attribute names in this getter. Changes to these
+     * attributes can be handled in the {@link attributeChangedCallback} method.
+     *
+     * When extending custom elements, make sure you return the super class's observedAttributes
+     * if you override this getter (except if you don't want to inherit observed attributes):
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends MyBaseElement {
+     *
+     *      static get observedAttributes (): string[] {
+     *
+     *          return [...super.observedAttributes, 'my-additional-attribute'];
+     *      }
+     * }
+     * ```
+     */
     static readonly observedAttributes: string[];
     protected _renderRoot: Element | DocumentFragment;
     protected _updateRequest: Promise<boolean>;
@@ -49,6 +78,33 @@ export declare class CustomElement extends HTMLElement {
     adoptedCallback(): void;
     connectedCallback(): void;
     disconnectedCallback(): void;
+    /**
+     * React to attribute changes
+     *
+     * @remarks
+     * This method can be overridden to customize the handling of attribute changes. When overriding
+     * this method, a super-call should be included, to ensure attribute changes for decorated properties
+     * are processed correctly.
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
+     *
+     *          super.attributeChangedCallback(attribute, oldValue, newValue);
+     *
+     *          // do custom handling...
+     *      }
+     * }
+     * ```
+     *
+     * @param attribute The name of the changed attribute
+     * @param oldValue  The old value of the attribute
+     * @param newValue  The new value of the attribute
+     */
     attributeChangedCallback(attribute: string, oldValue: any, newValue: any): void;
     propertyChangedCallback(property: string, oldValue: any, newValue: any): void;
     template(): TemplateResult;
@@ -82,6 +138,14 @@ export declare class CustomElement extends HTMLElement {
      * properties and will automatically raise the required events. This eliminates the need to manually
      * raise events and refactoring does no longer affect the process.
      *
+     * ```typescript
+     * this.notifyChanges(() => {
+     *
+     *      this.customProperty = true;
+     *      // we can add more property modifications to notify in here
+     * });
+     * ```
+     *
      * @param executor A function that performs the changes which should be notified
      */
     notifyChanges(executor: () => void): void;
@@ -103,7 +167,8 @@ export declare class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflect(propertyKey: string, oldValue: any, newValue: any): void;
+    protected _reflectProperty(propertyKey: string, oldValue: any, newValue: any): void;
+    protected _reflectAttribute(attributeName: string, olldValue: string, newValue: string): void;
     /**
      * Bind custom element listeners.
      *

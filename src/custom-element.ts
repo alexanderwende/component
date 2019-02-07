@@ -1,7 +1,7 @@
 import { html, render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
 import { PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
-import { kebabCase, camelCase } from './utils/string-utils';
+import { kebabCase } from './utils/string-utils';
 
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
 const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: string) => new Error(`Error executing property notifier ${ propertyNotifier }.`);
@@ -24,29 +24,62 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
 
 export class CustomElement extends HTMLElement {
 
-    private static _observedAttributes: string[] = [];
-
     static selector: string;
 
     static shadow: boolean;
 
     /**
      * A map of attribute names and their respective property keys
+     *
+     * @internal
+     * @private
      */
-    static attributes: { [key: string]: string } = {};
+    static attributes: Map<string, PropertyKey> = new Map();
 
-    // static propertyDeclarations: { [key: PropertyKey]: PropertyDeclaration } = {};
-    static propertyDeclarations: Map<PropertyKey, PropertyDeclaration> = new Map();
+    /**
+     * A map of property keys and their respective property declarations
+     *
+     * @internal
+     * @private
+     */
+    static properties: Map<PropertyKey, PropertyDeclaration> = new Map();
 
-    // static listenerDeclarations: { [key: string]: ListenerDeclaration } = {};
-    static listenerDeclarations: Map<PropertyKey, ListenerDeclaration> = new Map();
+    /**
+     * A map of property keys and their respective listener declarations
+     *
+     * @internal
+     * @private
+     */
+    static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
+    /**
+     * Override to specify attributes which should be observed, but don't have an associated property
+     *
+     * @remark
+     * For properties which are decorated with the {@link property} decorator, an observed attribute
+     * is automatically created and does not need to be specified here. Fot attributes that don't
+     * have an associated property, return the attribute names in this getter. Changes to these
+     * attributes can be handled in the {@link attributeChangedCallback} method.
+     *
+     * When extending custom elements, make sure you return the super class's observedAttributes
+     * if you override this getter (except if you don't want to inherit observed attributes):
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends MyBaseElement {
+     *
+     *      static get observedAttributes (): string[] {
+     *
+     *          return [...super.observedAttributes, 'my-additional-attribute'];
+     *      }
+     * }
+     * ```
+     */
     static get observedAttributes (): string[] {
 
-        // return [];
-
-        // TODO: fix this, in case people want to specify their own observed attributes
-        return Object.keys(this.attributes);
+        return [];
     }
 
     protected _renderRoot: Element | DocumentFragment;
@@ -105,6 +138,33 @@ export class CustomElement extends HTMLElement {
         this._unlisten();
     }
 
+    /**
+     * React to attribute changes
+     *
+     * @remarks
+     * This method can be overridden to customize the handling of attribute changes. When overriding
+     * this method, a super-call should be included, to ensure attribute changes for decorated properties
+     * are processed correctly.
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
+     *
+     *          super.attributeChangedCallback(attribute, oldValue, newValue);
+     *
+     *          // do custom handling...
+     *      }
+     * }
+     * ```
+     *
+     * @param attribute The name of the changed attribute
+     * @param oldValue  The old value of the attribute
+     * @param newValue  The new value of the attribute
+     */
     attributeChangedCallback (attribute: string, oldValue: any, newValue: any): void {
 
         if (oldValue !== newValue) this._reflectAttribute(attribute, oldValue, newValue);
@@ -229,6 +289,14 @@ export class CustomElement extends HTMLElement {
      * properties and will automatically raise the required events. This eliminates the need to manually
      * raise events and refactoring does no longer affect the process.
      *
+     * ```typescript
+     * this.notifyChanges(() => {
+     *
+     *      this.customProperty = true;
+     *      // we can add more property modifications to notify in here
+     * });
+     * ```
+     *
      * @param executor A function that performs the changes which should be notified
      */
     notifyChanges (executor: () => void) {
@@ -307,13 +375,29 @@ export class CustomElement extends HTMLElement {
 
     protected _reflectAttribute (attributeName: string, olldValue: string, newValue: string) {
 
-        // TODO: fix attributeName to propertyKey mapping
-        const propertyKey = camelCase(attributeName);
+        // TODO: handle custom _reflectAttribute function
+
+        // TODO: when a custom element is extended and a property is overridden with a different
+        // attribute name in its property declaration, the base class's old attribute name will
+        // still be in the list of observed attributes. in that case we won't find a matching
+        // propertyKey for the old attribute name and we should ignore it.
+
+        const constructor = this.constructor as typeof CustomElement;
+
+        if (!constructor.attributes.has(attributeName)) {
+
+            console.log(`observed attribute "${ attributeName }" not found... ignoring...`);
+
+            return;
+        }
+
+        const propertyKey = constructor.attributes.get(attributeName)!;
 
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
         const propertyValue = propertyDeclaration.converter!.fromAttribute!(newValue);
 
+        // TODO: this is wrong, as it prevents custom element update
         this._isReflecting = true;
 
         this[propertyKey as keyof this] = propertyValue;
@@ -329,7 +413,7 @@ export class CustomElement extends HTMLElement {
      */
     protected _listen () {
 
-        (this.constructor as typeof CustomElement).listenerDeclarations.forEach((declaration, listener) => {
+        (this.constructor as typeof CustomElement).listeners.forEach((declaration, listener) => {
 
             const instanceDeclaration: InstanceListenerDeclaration = {
 
@@ -455,8 +539,8 @@ export class CustomElement extends HTMLElement {
         resolve!(!this._hasRequestedUpdate);
     }
 
-    private _getPropertyDeclaration (propertyKey: string): PropertyDeclaration | undefined {
+    private _getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
 
-        return (this.constructor as typeof CustomElement).propertyDeclarations.get(propertyKey);
+        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
     }
 }

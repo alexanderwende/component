@@ -1,5 +1,6 @@
 import { CustomElement } from '../custom-element';
 import { customElement } from './custom-element';
+import { property } from './property';
 
 describe('@customElement decorator', () => {
 
@@ -108,5 +109,40 @@ describe('@customElement decorator', () => {
             class TestElement extends CustomElement { }
 
         }).toThrow();
+    });
+
+    it('stores observed attributes correctly', () => {
+
+        @customElement({
+            selector: 'test-element-observed-attributes'
+        })
+        class TestElement extends CustomElement {
+
+            static get observedAttributes (): string[] {
+
+                return ['test-attribute-one', 'test-attribute-two', 'test-property-one'];
+            }
+
+            @property()
+            testPropertyOne = false;
+
+            @property()
+            testPropertyTwo = 'foo';
+        }
+
+        expect(TestElement.observedAttributes).toEqual(['test-attribute-one', 'test-attribute-two', 'test-property-one', 'test-property-two']);
+
+        @customElement({
+            selector: 'child-test-element-observed-attributes'
+        })
+        class ChildTestElement extends TestElement {
+
+            @property({
+                attribute: 'test-property-two-extended'
+            })
+            testPropertyTwo = 'bar';
+        }
+
+        expect(ChildTestElement.observedAttributes).toEqual(['test-attribute-one', 'test-attribute-two', 'test-property-one', 'test-property-two-extended']);
     });
 });
