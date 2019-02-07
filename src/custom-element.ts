@@ -433,7 +433,7 @@ export class CustomElement extends HTMLElement {
             };
 
             // add the bound event listener to the target
-            instanceDeclaration.target.addEventListener(instanceDeclaration.event, instanceDeclaration.listener, instanceDeclaration.options);
+            instanceDeclaration.target.addEventListener(instanceDeclaration.event as string, instanceDeclaration.listener, instanceDeclaration.options);
 
             // save the instance listener declaration on the component instance
             this._listenerDeclarations.push(instanceDeclaration);
@@ -450,7 +450,7 @@ export class CustomElement extends HTMLElement {
 
         this._listenerDeclarations.forEach((declaration) => {
 
-            declaration.target.removeEventListener(declaration.event, declaration.listener, declaration.options);
+            declaration.target.removeEventListener(declaration.event as string, declaration.listener, declaration.options);
         });
     }
 

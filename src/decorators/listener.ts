@@ -7,8 +7,11 @@ export interface ListenerDeclaration {
 
     /**
      * The event to listen to
+     *
+     * @remarks
+     * Setting event to `null` allows to unbind an inherited event listener.
      */
-    event: string;
+    event: string | null;
 
     /**
      * An options object that specifies characteristics about the event listener
@@ -42,7 +45,14 @@ export function listener (options: ListenerDeclaration) {
 
         prepareConstructor(constructor);
 
-        constructor.listeners.set(propertyKey, { ...options });
+        if (options.event === null) {
+
+            constructor.listeners.delete(propertyKey);
+
+        } else {
+
+            constructor.listeners.set(propertyKey, { ...options });
+        }
     }
 }
 

@@ -4,8 +4,11 @@
 export interface ListenerDeclaration {
     /**
      * The event to listen to
+     *
+     * @remarks
+     * Setting event to `null` allows to unbind an inherited event listener.
      */
-    event: string;
+    event: string | null;
     /**
      * An options object that specifies characteristics about the event listener
      */
