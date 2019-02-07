@@ -9,17 +9,57 @@ export type AttributeReflector<Type extends CustomElement = CustomElement> = (th
 /**
  * A function that will reflect a property value to an attribute
  */
-export type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
+export type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 
 /**
  * A function that will dispatch a custom event for a property change
  */
-export type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
+export type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 
 /**
  * A function that will return `true` if the `oldValue` and the `newValue` of a property are different, `false` otherwise
  */
 export type PropertyChangeDetector = (oldValue: any, newValue: any) => boolean;
+
+/**
+ * A type guard for {@link AttributeReflector}
+ *
+ * @param reflector A reflector to test
+ */
+export function isAttributeReflector (reflector: any): reflector is AttributeReflector {
+
+    return typeof reflector === 'function';
+}
+
+/**
+ * A type guard for {@link PropertyReflector}
+ *
+ * @param reflector A reflector to test
+ */
+export function isPropertyReflector (reflector: any): reflector is PropertyReflector {
+
+    return typeof reflector === 'function';
+}
+
+/**
+ * A type guard for {@link PropertyNotifier}
+ *
+ * @param notifier A notifier to test
+ */
+export function isPropertyNotifier (notifier: any): notifier is PropertyNotifier {
+
+    return typeof notifier === 'function';
+}
+
+/**
+ * A type guard for {@link PropertyKey}
+ *
+ * @param key A property key to test
+ */
+export function isPropertyKey (key: any): key is PropertyKey {
+
+    return typeof key === 'string' || typeof key === 'number' || typeof key === 'symbol';
+}
 
 /**
  * A {@link CustomElement} property declaration

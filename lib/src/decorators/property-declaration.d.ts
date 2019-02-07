@@ -7,15 +7,39 @@ export declare type AttributeReflector<Type extends CustomElement = CustomElemen
 /**
  * A function that will reflect a property value to an attribute
  */
-export declare type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
+export declare type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 /**
  * A function that will dispatch a custom event for a property change
  */
-export declare type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: string, oldValue: any, newValue: any) => void;
+export declare type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 /**
  * A function that will return `true` if the `oldValue` and the `newValue` of a property are different, `false` otherwise
  */
 export declare type PropertyChangeDetector = (oldValue: any, newValue: any) => boolean;
+/**
+ * A type guard for {@link AttributeReflector}
+ *
+ * @param reflector A reflector to test
+ */
+export declare function isAttributeReflector(reflector: any): reflector is AttributeReflector;
+/**
+ * A type guard for {@link PropertyReflector}
+ *
+ * @param reflector A reflector to test
+ */
+export declare function isPropertyReflector(reflector: any): reflector is PropertyReflector;
+/**
+ * A type guard for {@link PropertyNotifier}
+ *
+ * @param notifier A notifier to test
+ */
+export declare function isPropertyNotifier(notifier: any): notifier is PropertyNotifier;
+/**
+ * A type guard for {@link PropertyKey}
+ *
+ * @param key A property key to test
+ */
+export declare function isPropertyKey(key: any): key is PropertyKey;
 /**
  * A {@link CustomElement} property declaration
  */

@@ -44,7 +44,7 @@ export type DecoratedCustomElementType = typeof CustomElement & { overridden: Se
  */
 export const property = <Type extends CustomElement = CustomElement> (options: Partial<PropertyDeclaration<Type>> = {}) => {
 
-    return (target: Object, propertyKey: string): void => {
+    return (target: Object, propertyKey: PropertyKey): void => {
 
         const descriptor = getPropertyDescriptor(target, propertyKey);
         const hiddenKey = (typeof propertyKey === 'string') ? `_${ propertyKey }` : Symbol();
@@ -60,6 +60,7 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
             set (value: any): void {
                 const oldValue = this[propertyKey];
                 set.call(this, value);
+                // TODO: maybe invoke propertyChangedCallback instead?
                 this.requestUpdate(propertyKey, oldValue, value);
             }
         });
@@ -71,7 +72,14 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
         // generate the default attribute name
         if (declaration.attribute === true) {
 
-            declaration.attribute = kebabCase(propertyKey);
+            // TODO: test this
+            declaration.attribute = (typeof propertyKey === 'string') ?
+                kebabCase(propertyKey) :
+                (typeof propertyKey === 'number') ?
+                    kebabCase(`attr-${propertyKey}`) :
+                    // TODO: this could create multiple identical attribute names, if symbols don't have unique description
+                    // TODO: we should also filter invalid attribute characters
+                    kebabCase(`attr-${String(propertyKey).replace('(', '-').replace(')', '')}`);
         }
 
         // set the default property change detector

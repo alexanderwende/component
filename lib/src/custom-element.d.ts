@@ -112,6 +112,21 @@ export declare class CustomElement extends HTMLElement {
     renderCallback(): void;
     update(changedProperties: Map<string, any>): void;
     /**
+     * Reflect a property value to its associated attribute
+     *
+     * @remarks
+     * This method checks, if any custom {@link PropertyReflector} has been defined for the
+     * property and invokes the appropriate reflector. If not, it will use the default
+     * reflector {@link _reflectProperty}.
+     *
+     * It catches any error in custom {@link PropertyReflector}s and throws a more helpful one.
+     *
+     * @param propertyKey   The propert key of the property to reflect
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     */
+    reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    /**
      * Raise custom events for property changes which occurred in the executor
      *
      * @remarks
@@ -158,16 +173,20 @@ export declare class CustomElement extends HTMLElement {
      */
     protected _notify(propertyKey: string, oldValue: any, newValue: any): void;
     /**
-     * Reflect a property to an attribute on the custom element.
+     * The default property reflector
      *
-     * @param propertyKey
-     * @param oldValue
-     * @param newValue
+     * @remarks
+     * If no {@link PropertyReflector} is defined in the {@link PropertyDeclaration} this
+     * method is used to reflect the property value to its associated attribute.
+     *
+     * @param propertyKey   The propert key of the property to reflect
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
      *
      * @internal
      * @private
      */
-    protected _reflectProperty(propertyKey: string, oldValue: any, newValue: any): void;
+    protected _reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     protected _reflectAttribute(attributeName: string, olldValue: string, newValue: string): void;
     /**
      * Bind custom element listeners.

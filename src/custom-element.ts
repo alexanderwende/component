@@ -1,10 +1,10 @@
 import { html, render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
-import { PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
+import { PropertyDeclaration, PropertyNotifier, PropertyReflector, isPropertyReflector, isPropertyKey } from "./decorators/property-declaration";
 import { kebabCase } from './utils/string-utils';
 
-const PROPERTY_REFLECTOR_ERROR = (propertyReflector: string) => new Error(`Error executing property reflector ${ propertyReflector }.`);
-const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: string) => new Error(`Error executing property notifier ${ propertyNotifier }.`);
+const PROPERTY_REFLECTOR_ERROR = (propertyReflector: PropertyKey | Function) => new Error(`Error executing property reflector ${ String(propertyReflector) }.`);
+const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: PropertyKey | Function) => new Error(`Error executing property notifier ${ String(propertyNotifier) }.`);
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
@@ -201,34 +201,7 @@ export class CustomElement extends HTMLElement {
 
         changedProperties.forEach((oldValue: any, propertyKey: string) => {
 
-            // properties in the changedProperties map will always have a declaration
-            const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
-            const newValue = this[propertyKey as keyof CustomElement];
-
-            // TODO: only reflect if property change was not initiated by observed attribute
-            if (propertyDeclaration.reflectProperty) {
-
-                if (typeof propertyDeclaration.reflectProperty === 'function') {
-
-                    try {
-                        propertyDeclaration.reflectProperty.call(this, propertyKey, oldValue, newValue);
-                    } catch (error) {
-                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty.toString());
-                    }
-
-                } else if (typeof propertyDeclaration.reflectProperty === 'string') {
-
-                    try {
-                        (this[propertyDeclaration.reflectProperty as keyof this] as unknown as PropertyReflector)(propertyKey, oldValue, newValue);
-                    } catch (error) {
-                        throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty);
-                    }
-
-                } else {
-
-                    this._reflectProperty(propertyKey, oldValue, newValue);
-                }
-            }
+            this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
 
         this._notifyingProperties.forEach((oldValue, propertyKey) => {
@@ -260,6 +233,53 @@ export class CustomElement extends HTMLElement {
                 }
             }
         });
+    }
+
+    /**
+     * Reflect a property value to its associated attribute
+     *
+     * @remarks
+     * This method checks, if any custom {@link PropertyReflector} has been defined for the
+     * property and invokes the appropriate reflector. If not, it will use the default
+     * reflector {@link _reflectProperty}.
+     *
+     * It catches any error in custom {@link PropertyReflector}s and throws a more helpful one.
+     *
+     * @param propertyKey   The propert key of the property to reflect
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     */
+    reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
+
+        const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+
+        // TODO: only reflect if property change was not initiated by observed attribute
+
+        if (propertyDeclaration && propertyDeclaration.reflectProperty) {
+
+            if (isPropertyReflector(propertyDeclaration.reflectProperty)) {
+
+                try {
+                    propertyDeclaration.reflectProperty.call(this, propertyKey, oldValue, newValue);
+
+                } catch (error) {
+                    throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty);
+                }
+
+            } else if (isPropertyKey(propertyDeclaration.reflectProperty)) {
+
+                try {
+                    (this[propertyDeclaration.reflectProperty] as PropertyReflector)(propertyKey, oldValue, newValue);
+
+                } catch (error) {
+                    throw PROPERTY_REFLECTOR_ERROR(propertyDeclaration.reflectProperty);
+                }
+
+            } else {
+
+                this._reflectProperty(propertyKey, oldValue, newValue);
+            }
+        }
     }
 
     /**
@@ -341,28 +361,36 @@ export class CustomElement extends HTMLElement {
     }
 
     /**
-     * Reflect a property to an attribute on the custom element.
+     * The default property reflector
      *
-     * @param propertyKey
-     * @param oldValue
-     * @param newValue
+     * @remarks
+     * If no {@link PropertyReflector} is defined in the {@link PropertyDeclaration} this
+     * method is used to reflect the property value to its associated attribute.
+     *
+     * @param propertyKey   The propert key of the property to reflect
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
      *
      * @internal
      * @private
      */
-    protected _reflectProperty (propertyKey: string, oldValue: any, newValue: any) {
+    protected _reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
+        // this function is only called for properties which have a declaration
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
-        // resolve the attribute name
-        const attributeName = (typeof propertyDeclaration.attribute === 'string') ? propertyDeclaration.attribute : kebabCase(propertyKey);
+        // the attribute name stored in the declaration is always a string (set by the property decorator)
+        // TODO: update types for stored property declarations?
+        const attributeName = propertyDeclaration.attribute as string;
         // resolve the attribute value
-        const attributeValue = propertyDeclaration.converter!.toAttribute!(newValue);
+        const attributeValue = propertyDeclaration.converter.toAttribute(newValue);
 
+        // undefined means don't change
         if (attributeValue === undefined) {
 
             return;
         }
+        // null means remove the attribute
         else if (attributeValue === null) {
 
             this.removeAttribute(attributeName);
