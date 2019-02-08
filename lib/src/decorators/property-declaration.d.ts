@@ -41,6 +41,36 @@ export declare function isPropertyNotifier(notifier: any): notifier is PropertyN
  */
 export declare function isPropertyKey(key: any): key is PropertyKey;
 /**
+ * A helper function to create an attribute name from a property key
+ *
+ * @remarks
+ * Numeric property indexes or symbols can contain invalid characters for attribute names. This method
+ * sanitizes those characters and replaces sequences of invalid characters with a dash.
+ * Attribute names are not allowed to start with numbers either and are prefixed with 'attr-'.
+ *
+ * N.B.: When using custom symbols as property keys, use unique descriptions for the symbols to avoid
+ * clashing attribute names.
+ *
+ * ```typescript
+ * const a = Symbol();
+ * const b = Symbol();
+ *
+ * a !== b; // true
+ *
+ * createAttributeName(a) !== createAttributeName(b); // false --> 'attr-symbol' === 'attr-symbol'
+ *
+ * const c = Symbol('c');
+ * const d = Symbol('d');
+ *
+ * c !== d; // true
+ *
+ * createAttributeName(c) !== createAttributeName(d); // true --> 'attr-symbol-c' === 'attr-symbol-d'
+ * ```
+ *
+ * @param propertyKey A property key to convert to an attribute name
+ */
+export declare function createAttributeName(propertyKey: PropertyKey): string;
+/**
  * A {@link CustomElement} property declaration
  */
 export interface PropertyDeclaration<Type extends CustomElement = CustomElement> {
@@ -73,8 +103,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: The attribute value will not be reflected to the property automatically
      * * `true`: Any attribute change will be reflected automatically to the property using the default attribute reflector
-     * * `string`: A method on the custom element with that name will be invoked to handle the attribute reflection
-     * * `function`: The provided function will be invoked with its `this` context bound to the custom element instance
+     * * `PropertyKey`: A method on the custom element with that property key will be invoked to handle the attribute reflection
+     * * `Function`: The provided function will be invoked with its `this` context bound to the custom element instance
      *
      * Default value: `true`
      */
@@ -86,8 +116,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: The property value will not be reflected to the associated attribute automatically
      * * `true`: Any property change will be reflected automatically to the associated attribute using the default property reflector
-     * * `string`: A method on the custom element with that name will be invoked to handle the property reflection
-     * * `function`: The provided function will be invoked with its `this` context bound to the custom element instance
+     * * `PropertyKey`: A method on the custom element with that property key will be invoked to handle the property reflection
+     * * `Function`: The provided function will be invoked with its `this` context bound to the custom element instance
      *
      * Default value: `true`
      */
@@ -99,8 +129,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: Don't create a custom event for this property
      * * `true`: Create custom events for this property automatically
-     * * `string`: Use the method with this name on the custom element to create custom events
-     * * `function`: Use the the provided function to create custom events (`this` context will be the custom element instance)
+     * * `PropertyKey`: Use the method with this property key on the custom element to create custom events
+     * * `Function`: Use the the provided function to create custom events (`this` context will be the custom element instance)
      *
      * Default value: `true`
      */
@@ -116,8 +146,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: Don't observe changes of this property (this will bypass render, reflection and notification)
      * * `true`: Observe changes of this property using the {@link DEFAULT_PROPERTY_CHANGE_DETECTOR}
-     * * `string`: Use a method with this name on the custom element to check if property value has changed
-     * * `function`: Use the provided method to check if property value has changed (`this` context will be custom element instance)
+     * * `PropertyKey`: Use a method with this property key on the custom element to check if property value has changed
+     * * `Function`: Use the provided method to check if property value has changed (`this` context will be custom element instance)
      *
      * Default value: `true` (uses {@link DEFAULT_PROPERTY_CHANGE_DETECTOR} internally)
      */

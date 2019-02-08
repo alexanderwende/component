@@ -66,8 +66,9 @@ export declare class CustomElement extends HTMLElement {
     static readonly observedAttributes: string[];
     protected _renderRoot: Element | DocumentFragment;
     protected _updateRequest: Promise<boolean>;
-    protected _changedProperties: Map<string, any>;
-    protected _notifyingProperties: Map<string, any>;
+    protected _changedProperties: Map<PropertyKey, any>;
+    protected _reflectingProperties: Map<PropertyKey, any>;
+    protected _notifyingProperties: Map<PropertyKey, any>;
     protected _listenerDeclarations: InstanceListenerDeclaration[];
     protected _isConnected: boolean;
     protected _hasRequestedUpdate: boolean;
@@ -110,7 +111,22 @@ export declare class CustomElement extends HTMLElement {
     template(): TemplateResult;
     render(): void;
     renderCallback(): void;
-    update(changedProperties: Map<string, any>): void;
+    update(changedProperties: Map<PropertyKey, any>): void;
+    /**
+     * Reflect an attribute value to its associated property
+     *
+     * @remarks
+     * This method checks, if any custom {@link AttributeReflector} has been defined for the
+     * associated property and invokes the appropriate reflector. If not, it will use the default
+     * reflector {@link _reflectAttribute}.
+     *
+     * It catches any error in custom {@link AttributeReflector}s and throws a more helpful one.
+     *
+     * @param attributeName The propert key of the property to reflect
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     */
+    reflectAttribute(attributeName: string, oldValue: string, newValue: string): void;
     /**
      * Reflect a property value to its associated attribute
      *
@@ -165,13 +181,20 @@ export declare class CustomElement extends HTMLElement {
      */
     notifyChanges(executor: () => void): void;
     /**
-     * Dispatch a property-changed event.
+     * The default attribute reflector
      *
-     * @param propertyKey
-     * @param oldValue
-     * @param newValue
+     * @remarks
+     * If no {@link AttributeReflector} is defined in the {@link PropertyDeclaration} this
+     * method is used to reflect the attribute value to its associated property.
+     *
+     * @param attributeName The name of the attribute to reflect
+     * @param oldValue      The old attribute value
+     * @param newValue      The new attribute value
+     *
+     * @internal
+     * @private
      */
-    protected _notify(propertyKey: string, oldValue: any, newValue: any): void;
+    protected _reflectAttribute(attributeName: string, oldValue: string, newValue: string): void;
     /**
      * The default property reflector
      *
@@ -187,7 +210,6 @@ export declare class CustomElement extends HTMLElement {
      * @private
      */
     protected _reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
-    protected _reflectAttribute(attributeName: string, olldValue: string, newValue: string): void;
     /**
      * Bind custom element listeners.
      *
@@ -202,7 +224,15 @@ export declare class CustomElement extends HTMLElement {
      * @private
      */
     protected _unlisten(): void;
-    requestUpdate(propertyKey?: string, oldValue?: any, newValue?: any): Promise<boolean>;
+    /**
+     * Dispatch a property-changed event.
+     *
+     * @param propertyKey
+     * @param oldValue
+     * @param newValue
+     */
+    protected _notify(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    requestUpdate(propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean>;
     protected _performUpdate(): Promise<void>;
     private _enqueueUpdate;
     private _getPropertyDeclaration;
