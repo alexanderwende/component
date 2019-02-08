@@ -36,7 +36,7 @@ describe('@property decorator', () => {
                 'test-property-one',
                 'attr-1',
                 'attr-1-4',
-                'attr-symbol-foo-bar----baz-',
+                'attr-symbol-foo-bar-baz',
                 'attr-symbol-symbol-iterator'
             ]);
         });

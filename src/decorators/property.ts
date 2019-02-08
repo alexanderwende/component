@@ -1,7 +1,6 @@
 import { CustomElement } from '../custom-element';
-import { kebabCase } from '../utils/string-utils';
 import { getPropertyDescriptor } from './get-property-descriptor';
-import { DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
+import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
 
 /**
  * A type extension to add additional properties to a {@link CustomElement} constructor during decoration
@@ -72,17 +71,7 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
         // generate the default attribute name
         if (declaration.attribute === true) {
 
-            declaration.attribute = (typeof propertyKey === 'string') ?
-                kebabCase(propertyKey) :
-                (typeof propertyKey === 'number') ?
-                    kebabCase(`attr-${ propertyKey }`.replace(/\./g, '-')) :
-                    // TODO: this could create multiple identical attribute names, if symbols don't have unique description
-                    kebabCase(`attr-${ String(propertyKey) }`
-                        .replace(/Symbol\(/, 'symbol-')
-                        .replace(/\)$/, '')
-                        // replace invalid attribute characters
-                        .replace(/\s+|>|<|=|\.|\//g, '-')
-                    );
+            declaration.attribute = createAttributeName(propertyKey);
         }
 
         // set the default property change detector

@@ -77,8 +77,7 @@ export class Checkbox extends CustomElement {
                     height: 1rem;
                     border: 1px solid #999;
                 }
-                :host([checked=true]),
-                :host([aria-checked=true]) {
+                :host([custom-checked]) {
                     background-color: #ccc;
                 }
             </style>`;

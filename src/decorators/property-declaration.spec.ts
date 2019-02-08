@@ -3,7 +3,8 @@ import {
     isAttributeReflector,
     isPropertyKey,
     isPropertyNotifier,
-    isPropertyReflector
+    isPropertyReflector,
+    createAttributeName
 } from './property-declaration';
 
 describe('PropertyDeclaration', () => {
@@ -81,6 +82,25 @@ describe('PropertyDeclaration', () => {
             expect(isPropertyKey(1)).toBe(true);
             expect(isPropertyKey(() => { })).toBe(false);
             expect(isPropertyKey({})).toBe(false);
+        });
+    });
+
+    describe('createAttributeName', () => {
+
+        it('should create valid attribute names', () => {
+
+            expect(createAttributeName('myTestProperty')).toBe('my-test-property');
+            expect(createAttributeName('TestProperty')).toBe('test-property');
+
+            expect(createAttributeName(1)).toBe('attr-1');
+            expect(createAttributeName(1.4)).toBe('attr-1-4');
+            expect(createAttributeName(1e+21)).toBe('attr-1e-21');
+
+            expect(createAttributeName(Symbol())).toBe('attr-symbol');
+            expect(createAttributeName(Symbol('myTestSymbol'))).toBe('attr-symbol-my-test-symbol');
+            expect(createAttributeName(Symbol('foo   bar <=> baz/.(+)'))).toBe('attr-symbol-foo-bar-baz');
+            expect(createAttributeName(Symbol.iterator)).toBe('attr-symbol-symbol-iterator');
+            expect(createAttributeName(Symbol.hasInstance)).toBe('attr-symbol-symbol-has-instance');
         });
     });
 });
