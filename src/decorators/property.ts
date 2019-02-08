@@ -72,14 +72,17 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
         // generate the default attribute name
         if (declaration.attribute === true) {
 
-            // TODO: test this
             declaration.attribute = (typeof propertyKey === 'string') ?
                 kebabCase(propertyKey) :
                 (typeof propertyKey === 'number') ?
-                    kebabCase(`attr-${propertyKey}`) :
+                    kebabCase(`attr-${ propertyKey }`.replace(/\./g, '-')) :
                     // TODO: this could create multiple identical attribute names, if symbols don't have unique description
-                    // TODO: we should also filter invalid attribute characters
-                    kebabCase(`attr-${String(propertyKey).replace('(', '-').replace(')', '')}`);
+                    kebabCase(`attr-${ String(propertyKey) }`
+                        .replace(/Symbol\(/, 'symbol-')
+                        .replace(/\)$/, '')
+                        // replace invalid attribute characters
+                        .replace(/\s+|>|<|=|\.|\//g, '-')
+                    );
         }
 
         // set the default property change detector

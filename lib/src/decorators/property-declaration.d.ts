@@ -123,6 +123,12 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      */
     observe: boolean | keyof Type | PropertyChangeDetector;
 }
+/**
+ * The default property change detector
+ *
+ * @param oldValue  The old property value
+ * @param newValue  The new property value
+ */
 export declare const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector;
 /**
  * The default {@link CustomElement} property declaration

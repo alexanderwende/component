@@ -6,6 +6,41 @@ describe('@property decorator', () => {
 
     describe('@property decorator: attribute', () => {
 
+        it('should generate correct attribute names', () => {
+
+            // a symbol with invalid attribute characters in its description
+            const symbol = Symbol('foo   bar >= baz/');
+
+            @customElement({
+                selector: 'test-element-generate-attributes'
+            })
+            class TestElement extends CustomElement {
+
+                @property()
+                testPropertyOne = 'foo';
+
+                @property()
+                [1] = 'bar';
+
+                @property()
+                [1.4] = 'baz';
+
+                @property()
+                [symbol] = false;
+
+                @property()
+                [Symbol.iterator] = true;
+            }
+
+            expect([...TestElement.attributes.keys()]).toEqual([
+                'test-property-one',
+                'attr-1',
+                'attr-1-4',
+                'attr-symbol-foo-bar----baz-',
+                'attr-symbol-symbol-iterator'
+            ]);
+        });
+
         it('should set observed attributes for decorated properties', () => {
 
             @customElement({

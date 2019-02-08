@@ -405,11 +405,6 @@ export class CustomElement extends HTMLElement {
 
         // TODO: handle custom _reflectAttribute function
 
-        // TODO: when a custom element is extended and a property is overridden with a different
-        // attribute name in its property declaration, the base class's old attribute name will
-        // still be in the list of observed attributes. in that case we won't find a matching
-        // propertyKey for the old attribute name and we should ignore it.
-
         const constructor = this.constructor as typeof CustomElement;
 
         if (!constructor.attributes.has(attributeName)) {

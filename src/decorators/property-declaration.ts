@@ -150,7 +150,12 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
     observe: boolean | keyof Type | PropertyChangeDetector;
 }
 
-// TODO: Write tests for this
+/**
+ * The default property change detector
+ *
+ * @param oldValue  The old property value
+ * @param newValue  The new property value
+ */
 export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValue: any, newValue: any) => {
     // in case `oldValue` and `newValue` are `NaN`, `(NaN !== NaN)` returns `true`,
     // but `(NaN === NaN || NaN === NaN)` returns `false`
