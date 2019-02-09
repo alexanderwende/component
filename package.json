@@ -33,8 +33,8 @@
     "karma-jasmine": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
     "karma-remap-coverage": "^0.1.5",
-    "karma-rollup-preprocessor": "^7.0.0-rc.2",
-    "release-it": "^10.0.4",
+    "karma-rollup-preprocessor": "^7.0.0",
+    "release-it": "^10.1.0",
     "rimraf": "^2.6.3",
     "rollup": "^1.1.2",
     "rollup-plugin-commonjs": "^9.2.0",
@@ -43,14 +43,14 @@
     "rollup-plugin-local-resolve": "^1.0.7",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-serve": "^1.0.1",
-    "rollup-plugin-terser": "^4.0.3",
+    "rollup-plugin-terser": "^4.0.4",
     "rollup-plugin-typescript2": "^0.19.2",
     "tslint": "^5.12.1",
     "tslint-clean-code": "^0.2.9",
-    "typescript": "^3.2.4"
+    "typescript": "^3.3.3"
   },
   "dependencies": {
-    "lit-html": "^1.0.0-rc.2"
+    "lit-html": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"
