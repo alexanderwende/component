@@ -1,7 +1,6 @@
 import { html, render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
-import { AttributeReflector, isAttributeReflector, isPropertyKey, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector, isPropertyNotifier } from "./decorators/property-declaration";
-import { kebabCase } from './utils/string-utils';
+import { AttributeReflector, createEventName, isAttributeReflector, isPropertyKey, isPropertyNotifier, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
 
 const ATTRIBUTE_REFLECTOR_ERROR = (attributeReflector: PropertyKey | Function) => new Error(`Error executing attribute reflector ${ String(attributeReflector) }.`);
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: PropertyKey | Function) => new Error(`Error executing property reflector ${ String(propertyReflector) }.`);
@@ -355,6 +354,20 @@ export class CustomElement extends HTMLElement {
         }
     }
 
+    /**
+     * Raise an event for a property change
+     *
+     * @remarks
+     * This method checks, if any custom {@link PropertyNotifier} has been defined for the
+     * property and invokes the appropriate notifier. If not, it will use the default
+     * notifier {@link _notifyProperty}.
+     *
+     * It catches any error in custom {@link PropertyReflector}s and throws a more helpful one.
+     *
+     * @param propertyKey   The propert key of the property to raise an event for
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     */
     protected notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
@@ -383,7 +396,7 @@ export class CustomElement extends HTMLElement {
 
             } else {
 
-                this._notify(propertyKey, oldValue, newValue);
+                this._notifyProperty(propertyKey, oldValue, newValue);
             }
         }
     }
@@ -489,8 +502,7 @@ export class CustomElement extends HTMLElement {
         // this function is only called for properties which have a declaration
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
-        // the attribute name stored in the declaration is always a string (set by the property decorator)
-        // TODO: update types for stored property declarations?
+        // TODO: test what happens if attribute is set to false but reflectAttribute is true!
         const attributeName = propertyDeclaration.attribute as string;
         // resolve the attribute value
         const attributeValue = propertyDeclaration.converter.toAttribute(newValue);
@@ -509,6 +521,29 @@ export class CustomElement extends HTMLElement {
 
             this.setAttribute(attributeName, attributeValue);
         }
+    }
+
+    /**
+     * Dispatch a property-changed event.
+     *
+     * @param propertyKey
+     * @param oldValue
+     * @param newValue
+     */
+    protected _notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
+
+        const eventName = createEventName(propertyKey, '', 'changed');
+
+        this.dispatchEvent(new CustomEvent(eventName, {
+            composed: true,
+            detail: {
+                property: propertyKey,
+                previous: oldValue,
+                current: newValue
+            }
+        }));
+
+        console.log(`notify ${ eventName }...`);
     }
 
     /**
@@ -558,30 +593,6 @@ export class CustomElement extends HTMLElement {
 
             declaration.target.removeEventListener(declaration.event as string, declaration.listener, declaration.options);
         });
-    }
-
-    /**
-     * Dispatch a property-changed event.
-     *
-     * @param propertyKey
-     * @param oldValue
-     * @param newValue
-     */
-    protected _notify (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
-
-        // TODO: create proper event name and test
-        const eventName = `${ kebabCase(String(propertyKey)) }-changed`;
-
-        this.dispatchEvent(new CustomEvent(eventName, {
-            composed: true,
-            detail: {
-                property: propertyKey,
-                previous: oldValue,
-                current: newValue
-            }
-        }));
-
-        console.log(`notify ${ eventName }...`);
     }
 
     /**

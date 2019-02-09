@@ -4,7 +4,8 @@ import {
     isPropertyKey,
     isPropertyNotifier,
     isPropertyReflector,
-    createAttributeName
+    createAttributeName,
+    createEventName
 } from './property-declaration';
 
 describe('PropertyDeclaration', () => {
@@ -101,6 +102,25 @@ describe('PropertyDeclaration', () => {
             expect(createAttributeName(Symbol('foo   bar <=> baz/.(+)'))).toBe('attr-symbol-foo-bar-baz');
             expect(createAttributeName(Symbol.iterator)).toBe('attr-symbol-symbol-iterator');
             expect(createAttributeName(Symbol.hasInstance)).toBe('attr-symbol-symbol-has-instance');
+        });
+    });
+
+    describe('createEventName', () => {
+
+        it('should create valid event names', () => {
+
+            expect(createEventName('myTestProperty', '', 'changed')).toBe('my-test-property-changed');
+            expect(createEventName('render', 'on')).toBe('on-render');
+
+            expect(createEventName(1)).toBe('1');
+            expect(createEventName(1.4, 'on')).toBe('on-1-4');
+            expect(createEventName(1e+21, 'after', 'isDone')).toBe('after-1e-21-is-done');
+
+            expect(createEventName(Symbol())).toBe('symbol');
+            expect(createEventName(Symbol('myTestSymbol'), 'before')).toBe('before-symbol-my-test-symbol');
+            expect(createEventName(Symbol('foo   bar <=> baz/.(+)'), '', 'foobar')).toBe('symbol-foo-bar-baz-foobar');
+            expect(createEventName(Symbol.iterator, '', 'called')).toBe('symbol-symbol-iterator-called');
+            expect(createEventName(Symbol.hasInstance, 'onBefore', 'called')).toBe('on-before-symbol-symbol-has-instance-called');
         });
     });
 });

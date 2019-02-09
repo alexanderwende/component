@@ -63,6 +63,17 @@ export function isPropertyKey (key: any): key is PropertyKey {
 }
 
 /**
+ * Encodes a string for use as html attribute removing invalid attribute characters
+ *
+ * @param value A string to encode for use as html attribute
+ * @returns     An encoded string usable as html attribute
+ */
+export function encodeAttribute (value: string): string {
+
+    return kebabCase(value.replace(/\W+/g, '-').replace(/\-$/, ''));
+}
+
+/**
  * A helper function to create an attribute name from a property key
  *
  * @remarks
@@ -89,7 +100,8 @@ export function isPropertyKey (key: any): key is PropertyKey {
  * createAttributeName(c) !== createAttributeName(d); // true --> 'attr-symbol-c' === 'attr-symbol-d'
  * ```
  *
- * @param propertyKey A property key to convert to an attribute name
+ * @param propertyKey   A property key to convert to an attribute name
+ * @returns             The generated attribute name
  */
 export function createAttributeName (propertyKey: PropertyKey): string {
 
@@ -97,23 +109,41 @@ export function createAttributeName (propertyKey: PropertyKey): string {
 
         return kebabCase(propertyKey);
 
-    } else if (typeof propertyKey === 'number') {
+    } else {
 
-        // for numeric property indexes, we prefix the attribute and
-        // replace any decimal points and plus signs with dashes
-        return `attr-${ propertyKey }`.replace(/\.|\+/g, '-');
+        // TODO: this could create multiple identical attribute names, if symbols don't have unique description
+        return `attr-${encodeAttribute(String(propertyKey))}`;
+    }
+}
+
+/**
+ * A helper function to create an event name from a property key
+ *
+ * @remarks
+ * Event names don't have the same restrictions as attribute names when it comes to invalid
+ * characters. However, for consistencies sake, we apply the same rules for event names as
+ * for attribute names.
+ *
+ * @param propertyKey   A property key to convert to an attribute name
+ * @param prefix        An optional prefix, e.g.: 'on'
+ * @param suffix        An optional suffix, e.g.: 'changed'
+ * @returns             The generated event name
+ */
+export function createEventName (propertyKey: PropertyKey, prefix?: string, suffix?: string): string {
+
+    let propertyString = '';
+
+    if (typeof propertyKey === 'string') {
+
+        propertyString = kebabCase(propertyKey);
 
     } else {
 
-        // TODO this could create multiple identical attribute names, if symbols don't have unique description
-
-        return kebabCase(`attr-${ String(propertyKey) }`
-            // replace invalid attribute characters
-            .replace(/(\s|>|<|=|\+|\.|\(|\)|\/)+/g, '-')
-            // remove the trailing dashes
-            .replace(/\-$/, '')
-        );
+        // TODO: this could create multiple identical event names, if symbols don't have unique description
+        propertyString = encodeAttribute(String(propertyKey));
     }
+
+    return `${ prefix ? `${ kebabCase(prefix) }-` : '' }${ propertyString }${ suffix ? `-${ kebabCase(suffix) }` : '' }`;
 }
 
 /**
@@ -210,6 +240,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
  *
  * @param oldValue  The old property value
  * @param newValue  The new property value
+ * @returns         A boolean indicating if the property value changed
  */
 export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValue: any, newValue: any) => {
     // in case `oldValue` and `newValue` are `NaN`, `(NaN !== NaN)` returns `true`,
