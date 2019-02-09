@@ -8,6 +8,7 @@ const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: PropertyKey | Function) => ne
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
+ * for a custom element instance.
  */
 interface InstanceListenerDeclaration extends ListenerDeclaration {
 
@@ -22,10 +23,26 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
     target: EventTarget;
 }
 
-export class CustomElement extends HTMLElement {
+/**
+ * The custom element base class
+ */
+export abstract class CustomElement extends HTMLElement {
 
+    /**
+     * The custom element's selector
+     *
+     * @remarks
+     * Will be overridden by the {@link customElement} decorator's selector option, if provided.
+     * Otherwise the decorator will use this property to define the custom element.
+     */
     static selector: string;
 
+    /**
+     * Use Shadow DOM
+     *
+     * @remarks
+     * Will be set by the {@link customElement} decorator's shadow option (defaults to `true`).
+     */
     static shadow: boolean;
 
     /**
@@ -61,7 +78,7 @@ export class CustomElement extends HTMLElement {
      * have an associated property, return the attribute names in this getter. Changes to these
      * attributes can be handled in the {@link attributeChangedCallback} method.
      *
-     * When extending custom elements, make sure you return the super class's observedAttributes
+     * When extending custom elements, make sure to return the super class's observedAttributes
      * if you override this getter (except if you don't want to inherit observed attributes):
      *
      * ```typescript
@@ -100,6 +117,9 @@ export class CustomElement extends HTMLElement {
 
     protected _isReflecting = false;
 
+    /**
+     * Returns `true` if the custom element's {@link connectedCallback} was executed.
+     */
     get isConnected (): boolean {
 
         return this._isConnected;
@@ -111,46 +131,60 @@ export class CustomElement extends HTMLElement {
 
         this._renderRoot = this.createRenderRoot();
 
-        console.log('constructed... ', this.constructor.name);
+        this._notifyLifecycle('constructed');
     }
 
-    protected createRenderRoot (): Element | DocumentFragment {
+    /**
+     * Invoked each time the custom element is moved to a new document
+     *
+     * @remarks
+     * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     */
+    adoptedCallback () {
 
-        return (this.constructor as typeof CustomElement).shadow ?
-            this.attachShadow({ mode: 'open' }) :
-            this;
+        this._notifyLifecycle('adopted');
     }
 
-    adoptedCallback (): void {
-    }
-
-    connectedCallback (): void {
-
-        console.log('connected... ', this.constructor.name);
+    /**
+     * Invoked each time the custom element is appended into a document-connected element
+     *
+     * @remarks
+     * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     */
+    connectedCallback () {
 
         this._listen();
 
         this.requestUpdate();
 
-        // TODO: dispatch a lifecycle event
-    }
-
-    disconnectedCallback (): void {
-
-        console.log('disconnected... ', this.constructor.name);
-
-        this._unlisten();
-
-        // TODO: dispatch a lifecycle event
+        this._notifyLifecycle('connected');
     }
 
     /**
-     * React to attribute changes
+     * Invoked each time the custom element is disconnected from the document's DOM
      *
      * @remarks
+     * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     */
+    disconnectedCallback () {
+
+        this._unlisten();
+
+        this._notifyLifecycle('disconnected');
+    }
+
+    /**
+     * Invoked each time one of the custom element's attributes is added, removed, or changed
+     *
+     * @remarks
+     * Which attributes to notice change for is specified in {@link observedAttributes}.
+     * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     *
+     * For decorated properties with an associated attribute, this is handled automatically.
+     *
      * This method can be overridden to customize the handling of attribute changes. When overriding
      * this method, a super-call should be included, to ensure attribute changes for decorated properties
-     * are processed correctly.
+     * are processed correctly and lifecycle-events are dispatched.
      *
      * ```typescript
      * @customElement({
@@ -171,47 +205,210 @@ export class CustomElement extends HTMLElement {
      * @param oldValue  The old value of the attribute
      * @param newValue  The new value of the attribute
      */
-    attributeChangedCallback (attribute: string, oldValue: any, newValue: any): void {
+    attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
 
-        if (this._isReflecting) {
-
-            console.log(`attributeChangedCallback... "${ attribute }" reflecting from property`);
-
-            return;
-        }
-
-        console.log(`attributeChangedCallback... "${ attribute }": ${ oldValue } -> ${ newValue }`);
+        if (this._isReflecting) return;
 
         if (oldValue !== newValue) this.reflectAttribute(attribute, oldValue, newValue);
+
+        this._notifyLifecycle('attributeChanged');
     }
 
-    propertyChangedCallback (property: string, oldValue: any, newValue: any): void {
+    /**
+     * Invoked each time the custom element renders
+     */
+    renderCallback () {
+
+        this._notifyLifecycle('render');
     }
 
-    template (): TemplateResult {
+    /**
+     * Invoked each time the custom element updates
+     *
+     * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
+     */
+    updateCallback (changedProperties?: Map<PropertyKey, any>) {
 
-        return html``;
+        this._notifyLifecycle('update');
     }
 
-    render (): void {
+    /**
+     * Creates the custom element's render root
+     *
+     * @remarks
+     * The render root is where the {@link render} method will attach its DOM output.
+     * When using the custom element with shadow mode, it will be a shadow root,
+     * otherwise it will be the custom element itself.
+     *
+     * TODO: Can slots be used without shadow DOM?
+     */
+    protected createRenderRoot (): Element | DocumentFragment {
 
-        console.log('render()... ', this.constructor.name);
+        return (this.constructor as typeof CustomElement).shadow ?
+            this.attachShadow({ mode: 'open' }) :
+            this;
+    }
 
-        render(this.template(), this._renderRoot);
+    /**
+     * Returns the template of the custom element
+     *
+     * @remarks
+     * Override this method to provide a template for your custom element. The method must
+     * return a {@link lit-html#TemplateResult} which is created using lit-html's
+     * {@link lit-html#html | `html`} or {@link lit-html#svg | `svg`} template methods.
+     *
+     * Return nothing if your component does not need to render a template.
+     *
+     * ```typescript
+     * import { html } from 'lit-html';
+     *
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *       myProperty = 'Hello';
+     *
+     *      template () {
+     *
+     *          html`<h1>${this.myProperty} World!</h1>`;
+     *      }
+     * }
+     * ```
+     */
+    protected template (): TemplateResult | void { }
+
+    /**
+     * Renders the custom element's template to its {@link _renderRoot}
+     *
+     * @remarks
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}.
+     */
+    protected render () {
+
+        const template = this.template();
+
+        if (template) render(template, this._renderRoot);
 
         this.renderCallback();
     }
 
-    renderCallback (): void {
+    /**
+     * Watch property changes occurring in the executor and raise custom events
+     *
+     * @remarks
+     * Property changes should trigger custom events when they are caused by internal state changes,
+     * but not if they are caused by a consumer of the custom element API directly, e.g.:
+     *
+     * ```typescript
+     * document.querySelector('my-custom-element').customProperty = true;
+     * ```.
+     *
+     * This means, we cannot automate this process through property setters, as we can't be sure who
+     * invoked the setter - internal calls or external calls.
+     *
+     * One option is to manually raise the event, which can become tedious and forces us to use string-
+     * based event names or property names, which are difficult to refactor, e.g.:
+     *
+     * ```typescript
+     * this.customProperty = true;
+     * // if we refactor the property name, we can easily miss the notify call
+     * this.notify('customProperty');
+     * ```
+     *
+     * A more convenient way is to execute the internal changes in a wrapper which can detect the changed
+     * properties and will automatically raise the required events. This eliminates the need to manually
+     * raise events and refactoring does no longer affect the process.
+     *
+     * ```typescript
+     * this.watch(() => {
+     *
+     *      this.customProperty = true;
+     *      // we can add more property modifications to notify in here
+     * });
+     * ```
+     *
+     * @param executor A function that performs the changes which should be notified
+     */
+    watch (executor: () => void) {
 
-        console.log('rendered... ', this.constructor.name);
+        // back up current changed properties
+        const previousChanges = new Map(this._changedProperties);
 
-        // TODO: dispatch a lifecycle event
+        // execute the changes
+        executor();
+
+        // add all new or updated changed properties to the notifying properties
+        for (const [propertyKey, oldValue] of this._changedProperties) {
+
+            if (!previousChanges.has(propertyKey) || previousChanges.get(propertyKey) !== oldValue) {
+
+                this._notifyingProperties.set(propertyKey, oldValue);
+            }
+        }
     }
 
-    protected update (changedProperties?: Map<PropertyKey, any>): void {
+    /**
+     * Request an update of the custom element
+     *
+     * @remarks
+     * This method is called automatically when the value of a decorated property or its associated
+     * attribute changes. If you need the custom element to update based on a state change that is
+     * not covered by a decorated property, call this method without any arguments.
+     *
+     * @param propertyKey   The name of the changed property that requests the update
+     * @param oldValue      The old property value
+     * @param newValue      the new property value
+     * @returns             A Promise which is resolved when the update is completed
+     */
+    requestUpdate (propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean> {
 
-        console.log('update()... ', changedProperties);
+        // console.log('requestUpdate()... ', this.constructor.name);
+
+        if (propertyKey) {
+
+            const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+
+            if (propertyDeclaration) {
+
+                const { observe } = propertyDeclaration;
+
+                // check if property is observed
+                if (!observe) return this._updateRequest;
+                // console.log(`requestUpdate()... ${ String(propertyKey) } observe: ${ !!observe }`);
+
+                // check if property has changed
+                if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
+                // console.log(`requestUpdate()... ${ String(propertyKey) } changed`);
+
+                // store changed property for batch processing
+                this._changedProperties.set(propertyKey, oldValue);
+
+                // if we are in reflecting state, an attribute is reflecting to this property and we
+                // can skip reflecting the property back to the attribute
+                // property changes need to be tracked however and {@link render} must be called after
+                // the attribute change is reflected to this property
+                if (!this._isReflecting) this._reflectingProperties.set(propertyKey, oldValue);
+            }
+        }
+
+        if (!this._hasRequestedUpdate) {
+
+            // enqueue update request if none was enqueued already
+            this._enqueueUpdate();
+        }
+
+        return this._updateRequest;
+    }
+
+    /**
+     * Updates the custom element after an update was requested with {@link requestUpdate}
+     *
+     * @remarks
+     * This method renders the template, reflects changed properties to attributes and
+     * dispatches change events for properties which are marked for notification.
+     */
+    protected update () {
 
         this.render();
 
@@ -226,6 +423,8 @@ export class CustomElement extends HTMLElement {
 
             this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
+
+        this.updateCallback(this._changedProperties);
     }
 
     /**
@@ -262,8 +461,6 @@ export class CustomElement extends HTMLElement {
         // don't reflect if {@link propertyDeclaration.reflectAttribute} is false
         if (propertyDeclaration.reflectAttribute) {
 
-            console.log(`reflecting attribute ${ attributeName } to property...`);
-
             this._isReflecting = true;
 
             if (isAttributeReflector(propertyDeclaration.reflectAttribute)) {
@@ -292,8 +489,6 @@ export class CustomElement extends HTMLElement {
             }
 
             this._isReflecting = false;
-
-            console.log(`reflecting attribute ${ attributeName } to property done...`);
         }
     }
 
@@ -317,8 +512,6 @@ export class CustomElement extends HTMLElement {
 
         // don't reflect if {@link propertyDeclaration.reflectProperty} is false
         if (propertyDeclaration && propertyDeclaration.reflectProperty) {
-
-            console.log(`reflecting property ${ String(propertyKey) } to attribute...`);
 
             // attributeChangedCallback is called synchronously, we can catch the state there
             this._isReflecting = true;
@@ -347,8 +540,6 @@ export class CustomElement extends HTMLElement {
 
                 this._reflectProperty(propertyKey, oldValue, newValue);
             }
-
-            console.log(`reflecting property ${ String(propertyKey) } to attribute done...`);
 
             this._isReflecting = false;
         }
@@ -397,61 +588,6 @@ export class CustomElement extends HTMLElement {
             } else {
 
                 this._notifyProperty(propertyKey, oldValue, newValue);
-            }
-        }
-    }
-
-    /**
-     * Raise custom events for property changes which occurred in the executor
-     *
-     * @remarks
-     * Property changes should trigger custom events when they are caused by internal state changes,
-     * but not if they are caused by a consumer of the custom element API directly, e.g.:
-     *
-     * ```typescript
-     * document.querySelector('my-custom-element').customProperty = true;
-     * ```.
-     *
-     * This means, we cannot automate this process through property setters, as we can't be sure who
-     * invoked the setter - internal calls or external calls.
-     *
-     * One option is to manually raise the event, which can become tedious and forces us to use string-
-     * based event names or property names, which are difficult to refactor, e.g.:
-     *
-     * ```typescript
-     * this.customProperty = true;
-     * // if we refactor the property name, we can easily miss the notify call
-     * this.notify('customProperty');
-     * ```
-     *
-     * A more convenient way is to execute the internal changes in a wrapper which can detect the changed
-     * properties and will automatically raise the required events. This eliminates the need to manually
-     * raise events and refactoring does no longer affect the process.
-     *
-     * ```typescript
-     * this.notifyChanges(() => {
-     *
-     *      this.customProperty = true;
-     *      // we can add more property modifications to notify in here
-     * });
-     * ```
-     *
-     * @param executor A function that performs the changes which should be notified
-     */
-    notifyChanges (executor: () => void) {
-
-        // back up current changed properties
-        const previousChanges = new Map(this._changedProperties);
-
-        // execute the changes
-        executor();
-
-        // add all new or updated changed properties to the notifying properties
-        for (const [propertyKey, oldValue] of this._changedProperties) {
-
-            if (!previousChanges.has(propertyKey) || previousChanges.get(propertyKey) !== oldValue) {
-
-                this._notifyingProperties.set(propertyKey, oldValue);
             }
         }
     }
@@ -524,7 +660,7 @@ export class CustomElement extends HTMLElement {
     }
 
     /**
-     * Dispatch a property-changed event.
+     * Dispatch a property-changed event
      *
      * @param propertyKey
      * @param oldValue
@@ -542,8 +678,20 @@ export class CustomElement extends HTMLElement {
                 current: newValue
             }
         }));
+    }
 
-        console.log(`notify ${ eventName }...`);
+    /**
+     * Dispatch a lifecycle event
+     *
+     * @param lifecycle The lifecycle for which to raise the event
+     */
+    protected _notifyLifecycle (lifecycle: string) {
+
+        const eventName = createEventName(lifecycle, 'on');
+
+        this.dispatchEvent(new CustomEvent(eventName, {
+            composed: true
+        }));
     }
 
     /**
@@ -596,59 +744,6 @@ export class CustomElement extends HTMLElement {
     }
 
     /**
-     * Request an update of the custom element
-     *
-     * @remarks
-     * This method is called automatically when the value of a decorated property or its associated
-     * attribute changes. If you need the custom element to update based on a state change that is
-     * not covered by a decorated property, call this method without any arguments.
-     *
-     * @param propertyKey   The name of the changed property that requested the update
-     * @param oldValue      The old property value
-     * @param newValue      the new property value
-     * @returns             A Promise which is resolved when the update is completed
-     */
-    requestUpdate (propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean> {
-
-        // console.log('requestUpdate()... ', this.constructor.name);
-
-        if (propertyKey) {
-
-            const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
-
-            if (propertyDeclaration) {
-
-                const { observe } = propertyDeclaration;
-
-                // check if property is observed
-                if (!observe) return this._updateRequest;
-                // console.log(`requestUpdate()... ${ String(propertyKey) } observe: ${ !!observe }`);
-
-                // check if property has changed
-                if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
-                // console.log(`requestUpdate()... ${ String(propertyKey) } changed`);
-
-                // store changed property for batch processing
-                this._changedProperties.set(propertyKey, oldValue);
-
-                // if we are in reflecting state, an attribute is reflecting to this property and we
-                // can skip reflecting the property back to the attribute
-                // property changes need to be tracked however and {@link render} must be called after
-                // the attribute change is reflected to this property
-                if (!this._isReflecting) this._reflectingProperties.set(propertyKey, oldValue);
-            }
-        }
-
-        if (!this._hasRequestedUpdate) {
-
-            // enqueue update request if none was enqueued already
-            this._enqueueUpdate();
-        }
-
-        return this._updateRequest;
-    }
-
-    /**
      * Schedule the update of the custom element
      *
      * @remarks
@@ -662,7 +757,7 @@ export class CustomElement extends HTMLElement {
             // schedule the update via requestAnimationFrame to avoid multiple redraws per frame
             requestAnimationFrame(() => {
 
-                this.update(this._changedProperties);
+                this.update();
 
                 this._changedProperties = new Map();
 

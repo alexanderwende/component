@@ -39,7 +39,7 @@ export class Checkbox extends CustomElement {
     })
     onClick (event: MouseEvent) {
 
-        this.notifyChanges(() => {
+        this.watch(() => {
 
             this.customChecked = !this.customChecked;
         });

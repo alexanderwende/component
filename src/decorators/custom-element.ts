@@ -21,7 +21,7 @@ export interface CustomElementDeclaration {
      * Use Shadow DOM to render the custom elements template?
      *
      * @remarks
-     * Shadow Dom can be disabled by setting this option to `false`, in which case the custom
+     * Shadow DOM can be disabled by setting this option to `false`, in which case the custom
      * element's template will be rendered as child nodes of the custom element. This can be
      * useful if an isolated DOM and scoped CSS is not desired.
      *
