@@ -142,6 +142,20 @@ export declare class CustomElement extends HTMLElement {
      * @param newValue      The new property value
      */
     protected reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    /**
+     * Raise an event for a property change
+     *
+     * @remarks
+     * This method checks, if any custom {@link PropertyNotifier} has been defined for the
+     * property and invokes the appropriate notifier. If not, it will use the default
+     * notifier {@link _notifyProperty}.
+     *
+     * It catches any error in custom {@link PropertyReflector}s and throws a more helpful one.
+     *
+     * @param propertyKey   The propert key of the property to raise an event for
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     */
     protected notifyProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     /**
      * Raise custom events for property changes which occurred in the executor
@@ -212,6 +226,14 @@ export declare class CustomElement extends HTMLElement {
      */
     protected _reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     /**
+     * Dispatch a property-changed event.
+     *
+     * @param propertyKey
+     * @param oldValue
+     * @param newValue
+     */
+    protected _notifyProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    /**
      * Bind custom element listeners.
      *
      * @internal
@@ -225,14 +247,6 @@ export declare class CustomElement extends HTMLElement {
      * @private
      */
     protected _unlisten(): void;
-    /**
-     * Dispatch a property-changed event.
-     *
-     * @param propertyKey
-     * @param oldValue
-     * @param newValue
-     */
-    protected _notify(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     /**
      * Request an update of the custom element
      *

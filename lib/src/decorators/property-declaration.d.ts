@@ -41,6 +41,13 @@ export declare function isPropertyNotifier(notifier: any): notifier is PropertyN
  */
 export declare function isPropertyKey(key: any): key is PropertyKey;
 /**
+ * Encodes a string for use as html attribute removing invalid attribute characters
+ *
+ * @param value A string to encode for use as html attribute
+ * @returns     An encoded string usable as html attribute
+ */
+export declare function encodeAttribute(value: string): string;
+/**
  * A helper function to create an attribute name from a property key
  *
  * @remarks
@@ -67,9 +74,24 @@ export declare function isPropertyKey(key: any): key is PropertyKey;
  * createAttributeName(c) !== createAttributeName(d); // true --> 'attr-symbol-c' === 'attr-symbol-d'
  * ```
  *
- * @param propertyKey A property key to convert to an attribute name
+ * @param propertyKey   A property key to convert to an attribute name
+ * @returns             The generated attribute name
  */
 export declare function createAttributeName(propertyKey: PropertyKey): string;
+/**
+ * A helper function to create an event name from a property key
+ *
+ * @remarks
+ * Event names don't have the same restrictions as attribute names when it comes to invalid
+ * characters. However, for consistencies sake, we apply the same rules for event names as
+ * for attribute names.
+ *
+ * @param propertyKey   A property key to convert to an attribute name
+ * @param prefix        An optional prefix, e.g.: 'on'
+ * @param suffix        An optional suffix, e.g.: 'changed'
+ * @returns             The generated event name
+ */
+export declare function createEventName(propertyKey: PropertyKey, prefix?: string, suffix?: string): string;
 /**
  * A {@link CustomElement} property declaration
  */
@@ -158,6 +180,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
  *
  * @param oldValue  The old property value
  * @param newValue  The new property value
+ * @returns         A boolean indicating if the property value changed
  */
 export declare const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector;
 /**
