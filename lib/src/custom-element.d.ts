@@ -75,7 +75,7 @@ export declare class CustomElement extends HTMLElement {
     protected _isReflecting: boolean;
     readonly isConnected: boolean;
     constructor();
-    createRenderRoot(): Element | DocumentFragment;
+    protected createRenderRoot(): Element | DocumentFragment;
     adoptedCallback(): void;
     connectedCallback(): void;
     disconnectedCallback(): void;
@@ -111,7 +111,7 @@ export declare class CustomElement extends HTMLElement {
     template(): TemplateResult;
     render(): void;
     renderCallback(): void;
-    update(changedProperties: Map<PropertyKey, any>): void;
+    protected update(changedProperties?: Map<PropertyKey, any>): void;
     /**
      * Reflect an attribute value to its associated property
      *
@@ -126,7 +126,7 @@ export declare class CustomElement extends HTMLElement {
      * @param oldValue      The old property value
      * @param newValue      The new property value
      */
-    reflectAttribute(attributeName: string, oldValue: string, newValue: string): void;
+    protected reflectAttribute(attributeName: string, oldValue: string, newValue: string): void;
     /**
      * Reflect a property value to its associated attribute
      *
@@ -141,7 +141,8 @@ export declare class CustomElement extends HTMLElement {
      * @param oldValue      The old property value
      * @param newValue      The new property value
      */
-    reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    protected reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    protected notifyProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     /**
      * Raise custom events for property changes which occurred in the executor
      *
@@ -202,7 +203,7 @@ export declare class CustomElement extends HTMLElement {
      * If no {@link PropertyReflector} is defined in the {@link PropertyDeclaration} this
      * method is used to reflect the property value to its associated attribute.
      *
-     * @param propertyKey   The propert key of the property to reflect
+     * @param propertyKey   The property key of the property to reflect
      * @param oldValue      The old property value
      * @param newValue      The new property value
      *
@@ -232,9 +233,40 @@ export declare class CustomElement extends HTMLElement {
      * @param newValue
      */
     protected _notify(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    /**
+     * Request an update of the custom element
+     *
+     * @remarks
+     * This method is called automatically when the value of a decorated property or its associated
+     * attribute changes. If you need the custom element to update based on a state change that is
+     * not covered by a decorated property, call this method without any arguments.
+     *
+     * @param propertyKey   The name of the changed property that requested the update
+     * @param oldValue      The old property value
+     * @param newValue      the new property value
+     * @returns             A Promise which is resolved when the update is completed
+     */
     requestUpdate(propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean>;
-    protected _performUpdate(): Promise<void>;
+    /**
+     * Schedule the update of the custom element
+     *
+     * @remarks
+     * Schedules the update of the custom element just before the next frame
+     * and cleans up the custom elements state afterwards.
+     */
+    protected _scheduleUpdate(): Promise<void>;
+    /**
+     * Enqueue a request for an asynchronous update
+     */
     private _enqueueUpdate;
+    /**
+     * Gets the {@link PropertyDeclaration} for a decorated property
+     *
+     * @param propertyKey The property key for which to retrieve the declaration
+     *
+     * @internal
+     * @private
+     */
     private _getPropertyDeclaration;
 }
 export {};

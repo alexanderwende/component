@@ -71,7 +71,7 @@ describe('CustomElement', () => {
             addElement(testElement);
         });
 
-        it('can be dateched and reattached', () => {
+        it('can be detached and reattached', () => {
 
         });
     });
