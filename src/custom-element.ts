@@ -1,10 +1,11 @@
-import { html, render, TemplateResult } from 'lit-html';
+import { render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
-import { AttributeReflector, createEventName, isAttributeReflector, isPropertyKey, isPropertyNotifier, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
+import { AttributeReflector, createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
 
 const ATTRIBUTE_REFLECTOR_ERROR = (attributeReflector: PropertyKey | Function) => new Error(`Error executing attribute reflector ${ String(attributeReflector) }.`);
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: PropertyKey | Function) => new Error(`Error executing property reflector ${ String(propertyReflector) }.`);
 const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: PropertyKey | Function) => new Error(`Error executing property notifier ${ String(propertyNotifier) }.`);
+const CHANGE_DETECTOR_ERROR = (changeDetector: PropertyKey | Function) => new Error(`Error executing property change detector ${ String(changeDetector) }.`);
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
@@ -113,6 +114,8 @@ export abstract class CustomElement extends HTMLElement {
 
     protected _isConnected = false;
 
+    protected _hasUpdated = false;
+
     protected _hasRequestedUpdate = false;
 
     protected _isReflecting = false;
@@ -130,8 +133,6 @@ export abstract class CustomElement extends HTMLElement {
         super();
 
         this._renderRoot = this.createRenderRoot();
-
-        this._notifyLifecycle('constructed');
     }
 
     /**
@@ -153,6 +154,8 @@ export abstract class CustomElement extends HTMLElement {
      */
     connectedCallback () {
 
+        this._isConnected = true;
+
         this._listen();
 
         this.requestUpdate();
@@ -167,6 +170,8 @@ export abstract class CustomElement extends HTMLElement {
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
      */
     disconnectedCallback () {
+
+        this._isConnected = false;
 
         this._unlisten();
 
@@ -184,7 +189,7 @@ export abstract class CustomElement extends HTMLElement {
      *
      * This method can be overridden to customize the handling of attribute changes. When overriding
      * this method, a super-call should be included, to ensure attribute changes for decorated properties
-     * are processed correctly and lifecycle-events are dispatched.
+     * are processed correctly.
      *
      * ```typescript
      * @customElement({
@@ -205,31 +210,22 @@ export abstract class CustomElement extends HTMLElement {
      * @param oldValue  The old value of the attribute
      * @param newValue  The new value of the attribute
      */
-    attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
+    attributeChangedCallback (attribute: string, oldValue: string | null, newValue: string | null) {
 
         if (this._isReflecting) return;
 
         if (oldValue !== newValue) this.reflectAttribute(attribute, oldValue, newValue);
-
-        this._notifyLifecycle('attributeChanged');
-    }
-
-    /**
-     * Invoked each time the custom element renders
-     */
-    renderCallback () {
-
-        this._notifyLifecycle('render');
     }
 
     /**
      * Invoked each time the custom element updates
      *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
+     * @param firstUpdate       A boolean indicating if this was the first update
      */
-    updateCallback (changedProperties?: Map<PropertyKey, any>) {
+    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
 
-        this._notifyLifecycle('update');
+        this._notifyLifecycle('update', { firstUpdate });
     }
 
     /**
@@ -289,8 +285,6 @@ export abstract class CustomElement extends HTMLElement {
         const template = this.template();
 
         if (template) render(template, this._renderRoot);
-
-        this.renderCallback();
     }
 
     /**
@@ -330,7 +324,7 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @param executor A function that performs the changes which should be notified
      */
-    watch (executor: () => void) {
+    protected watch (executor: () => void) {
 
         // back up current changed properties
         const previousChanges = new Map(this._changedProperties);
@@ -341,7 +335,7 @@ export abstract class CustomElement extends HTMLElement {
         // add all new or updated changed properties to the notifying properties
         for (const [propertyKey, oldValue] of this._changedProperties) {
 
-            if (!previousChanges.has(propertyKey) || previousChanges.get(propertyKey) !== oldValue) {
+            if (!previousChanges.has(propertyKey) || this.hasChanged(propertyKey, previousChanges.get(propertyKey), oldValue)) {
 
                 this._notifyingProperties.set(propertyKey, oldValue);
             }
@@ -361,35 +355,21 @@ export abstract class CustomElement extends HTMLElement {
      * @param newValue      the new property value
      * @returns             A Promise which is resolved when the update is completed
      */
-    requestUpdate (propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean> {
-
-        // console.log('requestUpdate()... ', this.constructor.name);
+    protected requestUpdate (propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean> {
 
         if (propertyKey) {
 
-            const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+            if (!this.hasChanged(propertyKey, oldValue, newValue)) return this._updateRequest;
 
-            if (propertyDeclaration) {
+            // store changed property for batch processing
+            this._changedProperties.set(propertyKey, oldValue);
 
-                const { observe } = propertyDeclaration;
-
-                // check if property is observed
-                if (!observe) return this._updateRequest;
-                // console.log(`requestUpdate()... ${ String(propertyKey) } observe: ${ !!observe }`);
-
-                // check if property has changed
-                if (typeof observe === 'function' && !observe(oldValue, newValue)) return this._updateRequest;
-                // console.log(`requestUpdate()... ${ String(propertyKey) } changed`);
-
-                // store changed property for batch processing
-                this._changedProperties.set(propertyKey, oldValue);
-
-                // if we are in reflecting state, an attribute is reflecting to this property and we
-                // can skip reflecting the property back to the attribute
-                // property changes need to be tracked however and {@link render} must be called after
-                // the attribute change is reflected to this property
-                if (!this._isReflecting) this._reflectingProperties.set(propertyKey, oldValue);
-            }
+            // if we are in reflecting state, an attribute is reflecting to this property and we
+            // can skip reflecting the property back to the attribute
+            // property changes need to be tracked however and {@link render} must be called after
+            // the attribute change is reflected to this property
+            // TODO: Maybe don't put it here if not marked as reflected
+            if (!this._isReflecting) this._reflectingProperties.set(propertyKey, oldValue);
         }
 
         if (!this._hasRequestedUpdate) {
@@ -424,7 +404,41 @@ export abstract class CustomElement extends HTMLElement {
             this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
 
-        this.updateCallback(this._changedProperties);
+        this.updateCallback(this._changedProperties, this._hasUpdated);
+
+        this._hasUpdated = true;
+    }
+
+    /**
+     * Check if a property changed
+     *
+     * @remarks
+     * This method resolves the {@link PropertyChangeDetector} for the property and returns its result.
+     * If none is defined (the property declaration's observe option is `false`) it returns false.
+     * It catches any error in custom {@link PropertyChangeDetector}s and throws a more helpful one.
+     *
+     * @param propertyKey   The key of the property to check
+     * @param oldValue      The old property value
+     * @param newValue      The new property value
+     * @returns             `true` if the property changed, `false` otherwise
+     */
+    protected hasChanged (propertyKey: PropertyKey, oldValue: any, newValue: any): boolean {
+
+        const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+
+        // observe is either `false` or a {@link PropertyChangeDetector}
+        if (propertyDeclaration && isPropertyChangeDetector(propertyDeclaration.observe)) {
+
+            try {
+                return propertyDeclaration.observe.call(null, oldValue, newValue);
+
+            } catch (error) {
+
+                throw CHANGE_DETECTOR_ERROR(propertyDeclaration.observe);
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -441,7 +455,7 @@ export abstract class CustomElement extends HTMLElement {
      * @param oldValue      The old property value
      * @param newValue      The new property value
      */
-    protected reflectAttribute (attributeName: string, oldValue: string, newValue: string) {
+    protected reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
 
         const constructor = this.constructor as typeof CustomElement;
 
@@ -606,7 +620,7 @@ export abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflectAttribute (attributeName: string, oldValue: string, newValue: string) {
+    protected _reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
 
         const constructor = this.constructor as typeof CustomElement;
 
@@ -638,7 +652,7 @@ export abstract class CustomElement extends HTMLElement {
         // this function is only called for properties which have a declaration
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
-        // TODO: test what happens if attribute is set to false but reflectAttribute is true!
+        // TODO: test what happens if attribute is set to false but reflectProperty is true!
         const attributeName = propertyDeclaration.attribute as string;
         // resolve the attribute value
         const attributeValue = propertyDeclaration.converter.toAttribute(newValue);
@@ -684,14 +698,18 @@ export abstract class CustomElement extends HTMLElement {
      * Dispatch a lifecycle event
      *
      * @param lifecycle The lifecycle for which to raise the event
+     * @param detail    Optional event details
      */
-    protected _notifyLifecycle (lifecycle: string) {
+    protected _notifyLifecycle (lifecycle: string, detail?: object) {
 
         const eventName = createEventName(lifecycle, 'on');
 
-        this.dispatchEvent(new CustomEvent(eventName, {
-            composed: true
-        }));
+        const eventInit = {
+            composed: true,
+            ...(detail ? { detail: detail } : {})
+        };
+
+        this.dispatchEvent(new CustomEvent(eventName, eventInit));
     }
 
     /**

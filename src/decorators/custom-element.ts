@@ -82,7 +82,10 @@ export const customElement = (options: Partial<CustomElementDeclaration> = {}) =
                 // we take the inherited observed attributes...
                 constructor.observedAttributes
                     // ...remove overridden generated attributes...
-                    .reduce((attributes, attribute) => attributes.concat(constructor.overridden.has(attribute) ? [] : attribute), [] as string[])
+                    .reduce((attributes, attribute) => attributes.concat(
+                        constructor.overridden && constructor.overridden.has(attribute) ? [] : attribute),
+                        [] as string[]
+                    )
                     // ...and recombine the list with the newly generated attributes (the Set prevents duplicates)
                     .concat([...target.attributes.keys()])
             )

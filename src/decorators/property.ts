@@ -8,7 +8,7 @@ import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration 
  * @internal
  * @private
  */
-export type DecoratedCustomElementType = typeof CustomElement & { overridden: Set<string> };
+export type DecoratedCustomElementType = typeof CustomElement & { overridden?: Set<string> };
 
 /**
  * Decorates a {@link CustomElement} property
@@ -17,7 +17,7 @@ export type DecoratedCustomElementType = typeof CustomElement & { overridden: Se
  * Many of the {@link PropertyDeclaration} options support custom functions, which will be invoked
  * with the custom element instance as `this`-context during execution. In order to support correct
  * typing in these functions, the `@property` decorator supports generic types. Here is an example
- * of how you can use this with a custom {@link PropertReflector}:
+ * of how you can use this with a custom {@link PropertyReflector}:
  *
  * ```typescript
  * class MyElement extends CustomElement {
@@ -59,7 +59,6 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
             set (value: any): void {
                 const oldValue = this[propertyKey];
                 set.call(this, value);
-                // TODO: maybe invoke propertyChangedCallback instead?
                 this.requestUpdate(propertyKey, oldValue, value);
             }
         });
@@ -92,7 +91,7 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
             constructor.attributes.delete(attribute as string);
 
             // mark attribute as overridden for {@link customElement} decorator
-            constructor.overridden.add(attribute as string);
+            constructor.overridden!.add(attribute as string);
         }
 
         if (declaration.attribute) {

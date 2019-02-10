@@ -7,7 +7,7 @@ import { PropertyDeclaration } from './property-declaration';
  * @private
  */
 export declare type DecoratedCustomElementType = typeof CustomElement & {
-    overridden: Set<string>;
+    overridden?: Set<string>;
 };
 /**
  * Decorates a {@link CustomElement} property
@@ -16,7 +16,7 @@ export declare type DecoratedCustomElementType = typeof CustomElement & {
  * Many of the {@link PropertyDeclaration} options support custom functions, which will be invoked
  * with the custom element instance as `this`-context during execution. In order to support correct
  * typing in these functions, the `@property` decorator supports generic types. Here is an example
- * of how you can use this with a custom {@link PropertReflector}:
+ * of how you can use this with a custom {@link PropertyReflector}:
  *
  * ```typescript
  * class MyElement extends CustomElement {

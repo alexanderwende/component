@@ -7,22 +7,22 @@ describe('@customElement decorator', () => {
     it('decorates a custom element class', (done) => {
 
         @customElement({
-            selector: 'test-element'
+            selector: 'test-element-decorator'
         })
         class TestElement extends CustomElement { }
 
         // assert the correct selector
-        expect(TestElement.selector).toBe('test-element');
+        expect(TestElement.selector).toBe('test-element-decorator');
 
         // assert shadow mode to be true by default
         expect(TestElement.shadow).toBe(true, 'shadow mode should be true by default');
 
         // assert custom element is defined by default
-        expect(window.customElements.get('test-element')).toBe(TestElement, 'decorated cusom element is not registered');
+        expect(window.customElements.get('test-element-decorator')).toBe(TestElement, 'decorated custom element is not registered');
 
         // assert whenDefined promise resolves
         window.customElements
-            .whenDefined('test-element')
+            .whenDefined('test-element-decorator')
             .then(() => {
                 done();
             }).catch(() => done.fail('decorated custom element not registered'));

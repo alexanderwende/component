@@ -3,7 +3,7 @@ import { AttributeConverter } from './attribute-converter';
 /**
  * A function that will reflect an attribute value to a property
  */
-export declare type AttributeReflector<Type extends CustomElement = CustomElement> = (this: Type, attributeName: string, oldValue: string, newValue: string) => void;
+export declare type AttributeReflector<Type extends CustomElement = CustomElement> = (this: Type, attributeName: string, oldValue: string | null, newValue: string | null) => void;
 /**
  * A function that will reflect a property value to an attribute
  */
@@ -34,6 +34,12 @@ export declare function isPropertyReflector(reflector: any): reflector is Proper
  * @param notifier A notifier to test
  */
 export declare function isPropertyNotifier(notifier: any): notifier is PropertyNotifier;
+/**
+ * A type guard for {@link PropertyChangeDetector}
+ *
+ * @param detector A detector to test
+ */
+export declare function isPropertyChangeDetector(detector: any): detector is PropertyChangeDetector;
 /**
  * A type guard for {@link PropertyKey}
  *
@@ -168,12 +174,11 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: Don't observe changes of this property (this will bypass render, reflection and notification)
      * * `true`: Observe changes of this property using the {@link DEFAULT_PROPERTY_CHANGE_DETECTOR}
-     * * `PropertyKey`: Use a method with this property key on the custom element to check if property value has changed
-     * * `Function`: Use the provided method to check if property value has changed (`this` context will be custom element instance)
+     * * `Function`: Use the provided method to check if property value has changed
      *
      * Default value: `true` (uses {@link DEFAULT_PROPERTY_CHANGE_DETECTOR} internally)
      */
-    observe: boolean | keyof Type | PropertyChangeDetector;
+    observe: boolean | PropertyChangeDetector;
 }
 /**
  * The default property change detector

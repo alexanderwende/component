@@ -1,12 +1,4 @@
-import {
-    DEFAULT_PROPERTY_CHANGE_DETECTOR,
-    isAttributeReflector,
-    isPropertyKey,
-    isPropertyNotifier,
-    isPropertyReflector,
-    createAttributeName,
-    createEventName
-} from './property-declaration';
+import { createAttributeName, createEventName, DEFAULT_PROPERTY_CHANGE_DETECTOR, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from './property-declaration';
 
 describe('PropertyDeclaration', () => {
 
@@ -71,6 +63,16 @@ describe('PropertyDeclaration', () => {
             expect(isPropertyNotifier(() => { })).toBe(true);
             expect(isPropertyNotifier('foo')).toBe(false);
             expect(isPropertyNotifier({})).toBe(false);
+        });
+    });
+
+    describe('isPropertyChangeDetector', () => {
+
+        it('should detect property change detectors', () => {
+
+            expect(isPropertyChangeDetector(() => { })).toBe(true);
+            expect(isPropertyChangeDetector('foo')).toBe(false);
+            expect(isPropertyChangeDetector({})).toBe(false);
         });
     });
 

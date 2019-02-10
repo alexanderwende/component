@@ -1,5 +1,6 @@
 import { CustomElement } from './custom-element';
 import { customElement } from './decorators/custom-element';
+import { property, ATTRIBUTE_CONVERTERS, listener } from './decorators';
 
 function addElement (element: CustomElement) {
 
@@ -11,26 +12,60 @@ function removeElement (element: CustomElement) {
     document.body.removeChild(element);
 }
 
+@customElement({
+    selector: 'test-element'
+})
+class TestElement extends CustomElement {
+
+    @property({
+        converter: ATTRIBUTE_CONVERTERS.boolean
+    })
+    myProperty = false;
+
+    @listener({
+        event: 'click'
+    })
+    handleClick (event: MouseEvent) {
+
+        this.watch(() => {
+
+            this.myProperty = !this.myProperty;
+        })
+    }
+}
+
 describe('CustomElement', () => {
 
     describe('CustomElement lifecycle', () => {
 
-        // TODO: add attribute change, property change and adopted callbacks
+        // TODO: add adopted callback test
         it('should call lifecycle hooks in correct order', (done) => {
 
-            const expectedOrder = ['CONSTRUCTED', 'CONNECTED', 'RENDERED', 'DISCONNECTED'];
+            const expectedOrder = ['CONSTRUCTED', 'CONNECTED', 'ATTRIBUTE', 'UPDATE', 'DISCONNECTED'];
             const recordedOrder: string[] = [];
 
             @customElement({
                 selector: 'test-element-lifecycle'
             })
-            class TestElement extends CustomElement {
+            class TestElementLifecycle extends CustomElement {
+
+                static get observedAttributes (): string[] {
+
+                    return ['test-attribute'];
+                }
 
                 constructor () {
 
                     super();
 
                     recordedOrder.push('CONSTRUCTED');
+                }
+
+                adoptedCallback () {
+
+                    super.adoptedCallback();
+
+                    recordedOrder.push('ADOPTED');
                 }
 
                 connectedCallback () {
@@ -40,15 +75,6 @@ describe('CustomElement', () => {
                     recordedOrder.push('CONNECTED');
                 }
 
-                renderCallback () {
-
-                    super.renderCallback();
-
-                    recordedOrder.push('RENDERED');
-
-                    removeElement(this);
-                }
-
                 disconnectedCallback () {
 
                     super.disconnectedCallback();
@@ -56,6 +82,26 @@ describe('CustomElement', () => {
                     recordedOrder.push('DISCONNECTED');
 
                     assertOrder();
+                }
+
+                attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
+
+                    super.attributeChangedCallback(attribute, oldValue, newValue);
+
+                    expect(attribute).toBe('test-attribute');
+                    expect(oldValue).toBe(null);
+                    expect(newValue).toBe('foo');
+
+                    recordedOrder.push('ATTRIBUTE');
+                }
+
+                updateCallback (changedProperties: Map<PropertyKey, any>, firtsUpdate: boolean) {
+
+                    super.updateCallback(changedProperties, firtsUpdate);
+
+                    recordedOrder.push('UPDATE');
+
+                    removeElement(this);
                 }
             }
 
@@ -69,6 +115,11 @@ describe('CustomElement', () => {
             const testElement = document.createElement('test-element-lifecycle') as CustomElement;
 
             addElement(testElement);
+
+            // adding the element and setting the attribute are synchronous, so the setting the attribute
+            // should happen before the update gets scheduled and we should see this lifecycle happen before
+            // render and update
+            testElement.setAttribute('test-attribute', 'foo');
         });
 
         it('can be detached and reattached', () => {
@@ -78,8 +129,73 @@ describe('CustomElement', () => {
 
     describe('CustomElement events', () => {
 
-        it('should dispatch property change events only when properties change internally', () => {
+        let expectedOrder: string[] = [];
+        let recordedOrder: string[] = [];
+        let testElement: TestElement;
 
+        function assertOrder () {
+
+            expect(recordedOrder).toEqual(expectedOrder);
+        }
+
+        beforeEach(() => {
+
+            expectedOrder = [];
+            recordedOrder = [];
+            testElement = document.createElement('test-element') as TestElement;
+        });
+
+        it('should dispatch lifecycle events', (done) => {
+
+            expectedOrder = ['CONNECTED', 'PROPERTY', 'UPDATE', 'DISCONNECTED'];
+
+            testElement.addEventListener('on-connected', () => {
+                recordedOrder.push('CONNECTED');
+            });
+
+            testElement.addEventListener('on-update', () => {
+                recordedOrder.push('UPDATE');
+                removeElement(testElement);
+            });
+
+            testElement.addEventListener('on-disconnected', () => {
+                recordedOrder.push('DISCONNECTED');
+                assertOrder();
+                done();
+            });
+
+            testElement.addEventListener('my-property-changed', () => {
+                recordedOrder.push('PROPERTY');
+            });
+
+            addElement(testElement);
+
+            testElement.dispatchEvent(new MouseEvent('click'));
+        });
+
+        it('should dispatch property change events only when properties change internally', (done) => {
+
+            expectedOrder = ['UPDATE', 'DISCONNECTED'];
+
+            testElement.addEventListener('on-update', () => {
+                recordedOrder.push('UPDATE');
+                removeElement(testElement);
+            });
+
+            testElement.addEventListener('my-property-changed', () => {
+                recordedOrder.push('PROPERTY');
+            });
+
+            testElement.addEventListener('on-disconnected', () => {
+                recordedOrder.push('DISCONNECTED');
+                assertOrder();
+                done();
+            });
+
+            addElement(testElement);
+
+            // should trigger an update, but no property
+            testElement.myProperty = true;
         });
     });
 });
