@@ -1,5 +1,5 @@
 import { html, TemplateResult } from 'lit-html';
-import { ATTRIBUTE_CONVERTERS, customElement, CustomElement, listener, property } from '../../src';
+import { AttributeConverterBoolean, customElement, CustomElement, listener, property } from '../../src';
 
 @customElement({
     selector: 'check-box'
@@ -10,7 +10,7 @@ export class Checkbox extends CustomElement {
     customRole = 'checkbox';
 
     @property<Checkbox>({
-        converter: ATTRIBUTE_CONVERTERS.boolean,
+        converter: AttributeConverterBoolean,
         reflectProperty: 'reflectChecked',
         // reflectProperty: function (propertyKey: string, oldValue: any, newValue: any) {
         //     if (this.customChecked) {

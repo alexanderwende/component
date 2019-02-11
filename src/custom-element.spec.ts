@@ -1,6 +1,6 @@
 import { CustomElement } from './custom-element';
+import { AttributeConverterBoolean, listener, property } from './decorators';
 import { customElement } from './decorators/custom-element';
-import { property, ATTRIBUTE_CONVERTERS, listener } from './decorators';
 
 function addElement (element: CustomElement) {
 
@@ -18,7 +18,7 @@ function removeElement (element: CustomElement) {
 class TestElement extends CustomElement {
 
     @property({
-        converter: ATTRIBUTE_CONVERTERS.boolean
+        converter: AttributeConverterBoolean
     })
     myProperty = false;
 

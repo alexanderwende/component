@@ -1,50 +1,47 @@
 /**
  * A function that will map an attribute value to a property value
  */
-export declare type AttributeMapper = (value: string | null) => any;
+export declare type AttributeMapper<T = any> = (value: string | null) => T | null;
 /**
  * A function that will map a property value to an attribute value
  */
-export declare type PropertyMapper = (value: any) => string | null | undefined;
+export declare type PropertyMapper<T = any> = (value: T | null) => string | null | undefined;
 /**
  * An object that holds an {@link AttributeMapper} and a {@link PropertyMapper}
- */
-export interface AttributeConverter {
-    toAttribute: PropertyMapper;
-    fromAttribute: AttributeMapper;
-}
-/**
- * @internal
- * @private
- */
-declare type AttributeConverterTypes = 'default' | 'boolean' | 'string' | 'number' | 'object' | 'array' | 'date';
-/**
- * @internal
- * @private
- */
-declare type AttributeConverterMap = {
-    [P in AttributeConverterTypes]: AttributeConverter;
-};
-/**
- * A map of reusable {@link AttributeConverter}s
  *
- * @remark
+ * @remarks
  * For the most common types, a converter exists which can be referenced in the {@link PropertyDeclaration}.
  *
  * ```typescript
- * import { CustomElement, property, ATTRIBUTE_CONVERTERS } from 'custom-element';
+ * import { CustomElement, property, AttributeConverterBoolean } from 'custom-element';
  *
  * export class MyElement extends CustomElement {
  *
  *      @property({
- *          converter: ATTRIBUTE_CONVERTERS.boolean
+ *          converter: AttributeConverterBoolean
  *      })
  *      myProperty = true;
  * }
  * ```
- *
- * TODO: Write tests for this
  */
-export declare const ATTRIBUTE_CONVERTERS: AttributeConverterMap;
-export {};
+export interface AttributeConverter<T = any> {
+    toAttribute: PropertyMapper<T>;
+    fromAttribute: AttributeMapper<T>;
+}
+/**
+ * The default attribute converter
+ *
+ * @remarks
+ * This converter is used as the default converter for decorated properties unless a different one
+ * is specified. The converter tries to infer the property type when converting to attributes and
+ * uses `JSON.parse()` when converting strings from attributes. If `JSON.parse()` throws an error,
+ * the converter will use the attribute value as a string.
+ */
+export declare const AttributeConverterDefault: AttributeConverter;
+export declare const AttributeConverterBoolean: AttributeConverter<boolean>;
+export declare const AttributeConverterString: AttributeConverter<string>;
+export declare const AttributeConverterNumber: AttributeConverter<number>;
+export declare const AttributeConverterObject: AttributeConverter<object>;
+export declare const AttributeConverterArray: AttributeConverter<any[]>;
+export declare const AttributeConverterDate: AttributeConverter<Date>;
 //# sourceMappingURL=attribute-converter.d.ts.map

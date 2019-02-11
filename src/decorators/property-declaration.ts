@@ -1,6 +1,6 @@
 import { CustomElement } from '../custom-element';
 import { kebabCase } from '../utils/string-utils';
-import { AttributeConverter, ATTRIBUTE_CONVERTERS } from './attribute-converter';
+import { AttributeConverter, AttributeConverterDefault } from './attribute-converter';
 
 /**
  * A function that will reflect an attribute value to a property
@@ -262,7 +262,7 @@ export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValu
  */
 export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
     attribute: true,
-    converter: ATTRIBUTE_CONVERTERS.default,
+    converter: AttributeConverterDefault,
     reflectAttribute: true,
     reflectProperty: true,
     notify: true,
