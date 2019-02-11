@@ -1,9 +1,4 @@
-import * as lit from 'lit-html';
 export * from './custom-element';
-export * from './decorators/attribute-converter';
-export * from './decorators/custom-element';
-export * from './decorators/listener';
-export * from './decorators/property';
-export * from './decorators/property-declaration';
-export { lit };
+export * from './decorators';
+export { html, svg, TemplateResult, SVGTemplateResult } from 'lit-html';
 //# sourceMappingURL=index.d.ts.map

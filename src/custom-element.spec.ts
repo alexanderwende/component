@@ -1,6 +1,5 @@
 import { CustomElement } from './custom-element';
-import { AttributeConverterBoolean, listener, property } from './decorators';
-import { customElement } from './decorators/custom-element';
+import { AttributeConverterBoolean, customElement, listener, property } from './decorators';
 
 function addElement (element: CustomElement) {
 

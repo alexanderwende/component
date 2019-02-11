@@ -1,5 +1,4 @@
-import { html, TemplateResult } from 'lit-html';
-import { AttributeConverterBoolean, customElement, CustomElement, listener, property } from '../../src';
+import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property, TemplateResult } from '../../src';
 
 @customElement({
     selector: 'check-box'
