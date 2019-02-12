@@ -1,6 +1,6 @@
 import { CustomElement } from '../custom-element';
-import { kebabCase } from '../utils/string-utils';
 import { AttributeConverter, AttributeConverterDefault } from './attribute-converter';
+import { kebabCase } from './utils/string-utils';
 
 /**
  * A function that will reflect an attribute value to a property

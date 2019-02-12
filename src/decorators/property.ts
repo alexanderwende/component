@@ -1,6 +1,6 @@
 import { CustomElement } from '../custom-element';
-import { getPropertyDescriptor } from './get-property-descriptor';
 import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
+import { getPropertyDescriptor } from './utils/get-property-descriptor';
 
 /**
  * A type extension to add additional properties to a {@link CustomElement} constructor during decoration
@@ -45,6 +45,13 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
 
     return (target: Object, propertyKey: PropertyKey): void => {
 
+        // TODO: We might not have to do this
+        // class fields in typescript get initialized in the constructor and the field(/property) itself does not
+        // get stored on the class's prototype. only getters and setters are stored on the prototype.
+        // as such, when we decorate a property on a class, the property definition itself on the sub-class is
+        // most likely intended to oerride the base class's setter/getter and we should not execute the base
+        // class's setter/getter in the sub-class anymore. we should only be interested in setters/getters on the
+        // sub-class and wrap them
         const descriptor = getPropertyDescriptor(target, propertyKey);
         const hiddenKey = (typeof propertyKey === 'string') ? `_${ propertyKey }` : Symbol();
         const get = descriptor && descriptor.get || function (this: any) { return this[hiddenKey]; };
