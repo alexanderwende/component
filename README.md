@@ -1,56 +1,26 @@
 # custom-element
-A custom-element implementation using lit-html.
+A fast and lightweight Web Component implementation using lit-html.
 
 ## Why?
-* Browsers are capable, no need for large abstractions
-* Web Components are a standard, can be used in any framework or without
-* API's are somewhat low-level, CustomElement reduces boilerplate, implements best practices
-* Use with injector and module for framework-like experience
+* Most modern browsers (looking at you, Edge) support the APIs required for Web Components and heavy frameworks are no longer needed to build reusable Web Components. Support for Edge can be polyfilled, check out https://github.com/webcomponents/webcomponentsjs.
+* Web Components are a standard and will work with any framework or just on their own.
+* Web Component API's are somewhat low-level; custom-element reduces boilerplate, implements best practices and provides access to declarative templates using lit-html.
+* custom-element is influenced by [LitElement](https://lit-element.polymer-project.org/), but makes a few different decissions to reduce the cost of instantiation and improve ergonomics. 
+
+[//]: # (Use with injector and module for framework-like experience)
 
 ## Features
 * Performant and lightweight
-* Customizable
-* Property decorator, automated reflection of attributes, semi-automated property change events
-* Listener decorator, automated binding and unbinding of listeners, configurable listener targets
-* Lifecycle hooks
+* Customizable (opt out of shadowDOM if you need to, customize property reflection, ...)
+* Property decorator: Automated reflection of attributes, semi-automated property change events
+* Listener decorator: Automated binding and unbinding of listeners, configurable listener targets (bind to window or document events)
+* Lifecycle hooks (via callbacks and CustomEvents)
 * Full inheritance support for properties, listeners and attributes
 * Powerful template system (lit-html) with html and svg support
-* Written in TypeScript, Generics for property declarations
+* Written in TypeScript: Fully typed with Generics for property declarations
 
-## Guide
+## Quickstart
+### Installation
 
-### Introduction
-* Installation
-* Creating a CustomElement
-* Using a CustomElement
-  * In Typescipt projects
-  * In an HTML page
-
-### CustomElement
-* Overview
-* customElement decorator
-* CustomElement declaration
-
-### Templates
-* Defining a template
-* lit-html documentation link
-
-### Attributes and Properties
-* Overview
-* Property decorator
-* Property declaration
-* Property reflectors, notifiers and change detectors
-* Attribute converters
-
-### Events
-* Overview
-* Listener decorator
-* Listener declaration
-* Property change events
-* The watch method
-* Lifecycle events
-
-### Lifecycle
-* CustomElement lifecycle explained
-* Lifecycle callbacks
-* Lifecycle events
+## Documentation
+The documentation is currently work in progress. However, the source code is fully documented and has examples where applicable.
