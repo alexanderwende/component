@@ -91,17 +91,12 @@ export const customElement = (options: Partial<CustomElementDeclaration> = {}) =
             )
         ];
 
-        // TODO: delete the overridden Set from the constructor
+        // delete the overridden Set from the constructor
+        delete constructor.overridden;
 
         /**
          * Finally we override the {@link CustomElement.observedAttributes} getter with a new one, which returns
          * the unique set of user defined and decorator generated observed attributes.
-         *
-         * N.B.: When extending an existing custom element, and oerriding a property with a different associated
-         * attribute name, the base class's original attribute name remains in the {@link CustomElement.observedAttributes}
-         * array. Changing the old attribute on the extended class will try to reflect the attribute, but won't
-         * find the attribute in the extended class's {@link CustomElement.attributes} Map and will therefore be
-         * ignored.
          */
         Reflect.defineProperty(constructor, 'observedAttributes', {
             configurable: true,

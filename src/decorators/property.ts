@@ -45,18 +45,29 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
 
     return (target: Object, propertyKey: PropertyKey): void => {
 
-        // TODO: We might not have to do this
-        // class fields in typescript get initialized in the constructor and the field(/property) itself does not
-        // get stored on the class's prototype. only getters and setters are stored on the prototype.
-        // as such, when we decorate a property on a class, the property definition itself on the sub-class is
-        // most likely intended to oerride the base class's setter/getter and we should not execute the base
-        // class's setter/getter in the sub-class anymore. we should only be interested in setters/getters on the
-        // sub-class and wrap them
+        /**
+         * When defining classes in TypeScript, class fields actually don't exist on the class's prototype, but
+         * rather, they are instantiated in the constructor and exist only on the instance. Accessor properties
+         * are an exception however and exist on the prototype. Furthermore, accessors are inherited and will
+         * be invoked when setting (or getting) a property on an instance of a child class, even if that class
+         * defines the property field on its own. Only if the child class defines new accessors will the parent
+         * class's accessors not be inherited.
+         * To keep this behavior intact, we need to ensure, that when we create accessors for properties, which
+         * are not declared as accessors, we invoke the parent class's accessor as expected.
+         * The {@link getPropertyDescriptor} function allows us to look for accessors on the prototype chain of
+         * the class we are decorating. If it finds an accessor on the current class, we don't need to worry as
+         * this accessor would anturally override any parent class's accessor.
+         */
         const descriptor = getPropertyDescriptor(target, propertyKey);
         const hiddenKey = (typeof propertyKey === 'string') ? `_${ propertyKey }` : Symbol();
+
+        // if we found an accessor descriptor (from either this class or a parent) we use it, otherwise we create
+        // default accessors to store the actual property value in a hidden field and retrieve it from there
         const get = descriptor && descriptor.get || function (this: any) { return this[hiddenKey]; };
         const set = descriptor && descriptor.set || function (this: any, value: any) { this[hiddenKey] = value; };
 
+        // we define a new accessor descriptor which will wrap the previously retrieved or created accessors
+        // and request an update of the CustomElement whenever the property is set
         Object.defineProperty(target, propertyKey, {
             configurable: true,
             enumerable: true,
