@@ -1,72 +1,58 @@
 import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property, TemplateResult } from '../../src';
 
 @customElement({
-    selector: 'check-box'
+    selector: 'ui-checkbox'
 })
 export class Checkbox extends CustomElement {
 
-    @property()
-    customRole = 'checkbox';
+    // this is a HTMLElement property, we don't need a property decorator to reflect it
+    role = 'checkbox';
+
+    // this is a HTMLElement property, we don't need a property decorator to reflect it
+    tabIndex = 0;
 
     @property<Checkbox>({
+        // the converter will be used to reflect from the checked attribute to the property, but not
+        // the other way around, as we define a custom {@link PropertyReflector}
         converter: AttributeConverterBoolean,
-        reflectProperty: 'reflectChecked',
-        // reflectProperty: function (propertyKey: string, oldValue: any, newValue: any) {
-        //     if (this.customChecked) {
-        //         this.setAttribute('custom-checked', 'true');
-        //         this.setAttribute('aria-checked', 'true');
-        //     } else {
-        //         this.removeAttribute('custom-checked');
-        //         this.removeAttribute('aria-checked');
-        //     }
-        // },
-        // notify: true,
-        notify: 'notifyChecked',
-        // notify: function (propertyKey: string, oldValue: any, newValue: any) {
-        //     console.log('custom notifier...');
-        // }
+        // we can use a {@link PropertyReflector} to reflect to multiple attributes in different ways
+        reflectProperty: function (propertyKey: PropertyKey, oldValue: any, newValue: any) {
+            if (this.checked) {
+                this.setAttribute('checked', '');
+                this.setAttribute('aria-checked', 'true');
+            } else {
+                this.removeAttribute('checked');
+                this.removeAttribute('aria-checked');
+            }
+        }
     })
-    customChecked = false;
-
-    constructor () {
-
-        super();
-    }
+    checked = false;
 
     @listener({
         event: 'click'
     })
-    onClick (event: MouseEvent) {
+    toggle () {
 
         this.watch(() => {
 
-            this.customChecked = !this.customChecked;
+            this.checked = !this.checked;
         });
-
-        // this.customChecked = !this.customChecked;
-
-        // this.notify('customChecked');
     }
 
-    reflectChecked () {
+    @listener({
+        event: 'keydown'
+    })
+    protected handeKeyDown (event: KeyboardEvent) {
 
-        if (this.customChecked) {
+        const key = event.key;
 
-            this.setAttribute('custom-checked', '');
-            this.setAttribute('aria-checked', 'true');
+        if (key === 'Enter' || key === ' ') {
 
-        } else {
-
-            this.removeAttribute('custom-checked');
-            this.removeAttribute('aria-checked');
+            this.toggle();
         }
     }
-    notifyChecked () {
 
-        console.log(`notifyChecked...`);
-    }
-
-    template (): TemplateResult {
+    protected template (): TemplateResult {
 
         return html`
             <style>
@@ -74,10 +60,10 @@ export class Checkbox extends CustomElement {
                     display: inline-block;
                     width: 1rem;
                     height: 1rem;
-                    border: 1px solid #999;
+                    border: 1px solid rgba(0,0,0,.1);
                 }
-                :host([custom-checked]) {
-                    background-color: #ccc;
+                :host([checked]) {
+                    background-color: rgba(0,0,0,.1);
                 }
             </style>`;
     }

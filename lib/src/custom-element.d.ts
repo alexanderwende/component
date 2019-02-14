@@ -88,9 +88,9 @@ export declare abstract class CustomElement extends HTMLElement {
     protected _notifyingProperties: Map<PropertyKey, any>;
     protected _listenerDeclarations: InstanceListenerDeclaration[];
     protected _isConnected: boolean;
+    protected _isReflecting: boolean;
     protected _hasUpdated: boolean;
     protected _hasRequestedUpdate: boolean;
-    protected _isReflecting: boolean;
     /**
      * Returns `true` if the custom element's {@link connectedCallback} was executed.
      */
@@ -152,6 +152,12 @@ export declare abstract class CustomElement extends HTMLElement {
     attributeChangedCallback(attribute: string, oldValue: string | null, newValue: string | null): void;
     /**
      * Invoked each time the custom element updates
+     *
+     * @remarks
+     * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
+     * rendering, property reflection and property change events inside a {@link requestAnimationFrame}. It is safe to
+     * use this callback to set additional attributes or styles on the rendered component that can't be achieved through
+     * template bindings or reflection.
      *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
      * @param firstUpdate       A boolean indicating if this was the first update

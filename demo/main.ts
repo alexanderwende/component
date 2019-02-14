@@ -1,8 +1,10 @@
 import './src/checkbox';
+import './src/card';
+import './src/accordion/accordion';
 
 function bootstrap () {
 
-    const checkbox = document.querySelector('check-box');
+    const checkbox = document.querySelector('ui-checkbox');
 
     if (checkbox) {
 

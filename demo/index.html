@@ -1,60 +1,61 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Custom Element Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Custom Element Demo">
 
-    <!--
+<head>
+  <meta charset="utf-8">
+  <title>Custom Element Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Custom Element Demo">
+
+  <!--
       The `<base>` tag below is present to support two advanced deployment options:
       1) Differential serving. 2) Serving from a non-root path.
       Instead of manually editing the `<base>` tag yourself, you should generally either:
       a) Add a `basePath` property to the build configuration in your `polymer.json`.
       b) Use the `--base-path` command-line option for `polymer build`.
     -->
-    <base href="/">
+  <base href="/">
 
-    <link rel="icon" href="images/favicon.ico">
+  <link rel="icon" href="images/favicon.ico">
 
-    <!-- See https://goo.gl/OOhYW5 -->
-    <link rel="manifest" href="manifest.json">
+  <!-- See https://goo.gl/OOhYW5 -->
+  <link rel="manifest" href="manifest.json">
 
-    <!-- See https://goo.gl/qRE0vM -->
-    <meta name="theme-color" content="#3f51b5">
+  <!-- See https://goo.gl/qRE0vM -->
+  <meta name="theme-color" content="#3f51b5">
 
-    <!-- Add to homescreen for Chrome on Android. Fallback for manifest.json -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Custom Element Demo">
+  <!-- Add to homescreen for Chrome on Android. Fallback for manifest.json -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Custom Element Demo">
 
-    <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Custom Element Demo">
+  <!-- Add to homescreen for Safari on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Custom Element Demo">
 
-    <!-- Homescreen icons -->
-    <link rel="apple-touch-icon" href="images/manifest/icon-48x48.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="images/manifest/icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="96x96" href="images/manifest/icon-96x96.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="images/manifest/icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="images/manifest/icon-192x192.png">
+  <!-- Homescreen icons -->
+  <link rel="apple-touch-icon" href="images/manifest/icon-48x48.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="images/manifest/icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="96x96" href="images/manifest/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="images/manifest/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="images/manifest/icon-192x192.png">
 
-    <!-- Tile icon for Windows 8 (144x144 + tile color) -->
-    <meta name="msapplication-TileImage" content="images/manifest/icon-144x144.png">
-    <meta name="msapplication-TileColor" content="#3f51b5">
-    <meta name="msapplication-tap-highlight" content="no">
+  <!-- Tile icon for Windows 8 (144x144 + tile color) -->
+  <meta name="msapplication-TileImage" content="images/manifest/icon-144x144.png">
+  <meta name="msapplication-TileColor" content="#3f51b5">
+  <meta name="msapplication-tap-highlight" content="no">
 
-    <!-- Default twitter cards -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:site" content="@username">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="my-app">
-    <meta property="og:image" content="images/manifest/icon-144x144.png" />
+  <!-- Default twitter cards -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@username">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="my-app">
+  <meta property="og:image" content="images/manifest/icon-144x144.png" />
 
-    <!-- Performance tip: hint to the browser to start the handshake for the fonts site -->
-    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
-    <script>
-      // Load and register pre-caching Service Worker
+  <!-- Performance tip: hint to the browser to start the handshake for the fonts site -->
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+  <script>
+    // Load and register pre-caching Service Worker
     //   if ('serviceWorker' in navigator) {
     //     window.addEventListener('load', function() {
     //       navigator.serviceWorker.register('service-worker.js', {
@@ -62,39 +63,133 @@
     //       });
     //     });
     //   }
-      // Redux assumes `process.env.NODE_ENV` exists in the ES module build.
-      // https://github.com/reactjs/redux/issues/2907
-      window.process = { env: { NODE_ENV: 'production' } };
-    </script>
+    // Redux assumes `process.env.NODE_ENV` exists in the ES module build.
+    // https://github.com/reactjs/redux/issues/2907
+    window.process = { env: { NODE_ENV: 'production' } };
+  </script>
 
-    <!-- Add any global styles for body, document, etc. -->
-    <style>
-      @font-face {
-        font-family: 'Pacifico';
-        font-style: normal;
-        font-weight: 400;
-        src: local('Pacifico Regular'), local('Pacifico-Regular'), url(https://fonts.gstatic.com/s/pacifico/v12/Q_Z9mv4hySLTMoMjnk_rCXYhjbSpvc47ee6xR_80Hnw.woff2) format('woff2');
-        /* The browser draws the text immediately in the fallback font if the font
+  <!-- Add any global styles for body, document, etc. -->
+  <style>
+    @font-face {
+      font-family: 'Pacifico';
+      font-style: normal;
+      font-weight: 400;
+      src: local('Pacifico Regular'), local('Pacifico-Regular'), url(https://fonts.gstatic.com/s/pacifico/v12/Q_Z9mv4hySLTMoMjnk_rCXYhjbSpvc47ee6xR_80Hnw.woff2) format('woff2');
+      /* The browser draws the text immediately in the fallback font if the font
            isn't loaded, then swaps it with the webfont when it eventually loads
            See: https://developers.google.com/web/updates/2016/02/font-display
         */
-        font-display: swap;
-      }
-      body {
-        margin: 0;
-        /* This is a font-stack that tries to use the system-default sans-serifs first */
-        font-family: Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
-        line-height: 1.5;
-        min-height: 100vh;
-        -webkit-font-smoothing: antialiased;
-      }
-    </style>
-  </head>
-  <body>
-    <check-box></check-box>
-    <noscript>
-      Please enable JavaScript to view this website.
-    </noscript>
-    <script src="main.bundle.js"></script>
-  </body>
+      font-display: swap;
+    }
+
+    body {
+      margin: 0;
+      /* This is a font-stack that tries to use the system-default sans-serifs first */
+      font-family: Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: grid;
+      padding: 1rem;
+      box-sizing: border-box;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: min-content auto;
+      grid-template-areas:
+        "header header header"
+        "left center right";
+      grid-gap: 1rem;
+    }
+
+    body > h1 {
+      grid-area: header;
+    }
+
+    ui-checkbox {
+      grid-area: left;
+      justify-self: center;
+      align-self: start;
+      border-radius: 3px;
+    }
+
+    ui-card {
+      grid-area: center;
+      justify-self: center;
+      align-self: start;
+      padding: 1rem;
+      border-radius: 3px;
+      box-shadow: 0px .25rem .5rem rgba(0,0,0,.1);
+      background-clip: padding-box;
+    }
+
+    ui-accordion {
+      grid-area: right;
+      justify-self: center;
+      align-self: start;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 3px;
+      box-shadow: 0px .25rem .5rem rgba(0,0,0,.1);
+      background-clip: padding-box;
+    }
+
+    ui-accordion-panel:not(:first-child) {
+      border-top: 1px solid rgba(0,0,0,.1);
+    }
+
+    ui-accordion-panel h2 {
+      margin: 1rem;
+    }
+
+    ui-accordion-panel p {
+      margin: 1rem;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>Examples</h1>
+
+
+  <ui-checkbox></ui-checkbox>
+
+  <ui-card>
+    <h2 slot="ui-card-header">Card Title</h2>
+    <p slot="ui-card-body">Card body text...</p>
+    <p slot="ui-card-footer">Card footer</p>
+  </ui-card>
+
+  <ui-accordion>
+    <ui-accordion-panel expanded>
+      <h2 slot="ui-accordion-panel-header">Panel One</h2>
+      <div slot="ui-accordion-panel-body">
+        <p>Lorem ipsum dolor sit amet, no prima qualisque euripidis est. Qualisque quaerendum at est. Laudem constituam
+          ea usu, virtute ponderum posidonium no eos. Dolores consetetur ex has. Nostro recusabo an est, wisi summo
+          necessitatibus cum ne.</p>
+        <p>At usu epicurei assentior, putent dissentiet repudiandae ea quo. Pro ne debitis placerat signiferumque, in
+          sonet volumus interpretaris cum. Dolorum appetere ne quo. Dicta qualisque eos ea, eam at nulla tamquam.</p>
+      </div>
+    </ui-accordion-panel>
+    <ui-accordion-panel>
+      <h2 slot="ui-accordion-panel-header">Panel Two</h2>
+      <div slot="ui-accordion-panel-body">
+        <p>In clita tollit minimum quo, an accusata volutpat euripidis vim. Ferri quidam deleniti quo ea, duo animal
+          accusamus eu, cibo erroribus et mea. Ex eam wisi admodum praesent, has cu oblique ceteros eleifend. Ex mel
+          platonem assentior persequeris, vix cibo libris ut. Ad timeam accumsan est, et autem omnes civibus mel. Mel eu
+          ubique equidem molestiae, choro docendi moderatius ei nam.</p>
+        <p>Qui suas solet ceteros cu, pertinax vulputate deterruisset eos ne. Ne ius vide nullam, alienum ancillae
+          reformidans cum ad. Ea meliore sapientem interpretaris eam. Commune delicata repudiandae in eos, placerat
+          incorrupte definitiones nec ex. Cu elitr tantas instructior sit, eu eum alia graece neglegentur.</p>
+      </div>
+    </ui-accordion-panel>
+  </ui-accordion>
+
+  <noscript>
+    Please enable JavaScript to view this website.
+  </noscript>
+  <script src="main.bundle.js"></script>
+</body>
+
 </html>

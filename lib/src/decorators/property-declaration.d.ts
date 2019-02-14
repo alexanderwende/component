@@ -89,7 +89,7 @@ export declare function createAttributeName(propertyKey: PropertyKey): string;
  *
  * @remarks
  * Event names don't have the same restrictions as attribute names when it comes to invalid
- * characters. However, for consistencies sake, we apply the same rules for event names as
+ * characters. However, for consistency's sake, we apply the same rules for event names as
  * for attribute names.
  *
  * @param propertyKey   A property key to convert to an attribute name
@@ -121,7 +121,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Converters are only used when {@link reflectProperty} and/or {@link reflectAttribute} are set to true.
      * If custom reflectors are used, they have to take care or converting the property/attribute values.
      *
-     * Default value: `ATTRIBUTE_CONVERTERS.default`
+     * Default value: {@link AttributeConverterDefault}
      */
     converter: AttributeConverter;
     /**

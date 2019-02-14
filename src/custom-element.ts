@@ -114,11 +114,11 @@ export abstract class CustomElement extends HTMLElement {
 
     protected _isConnected = false;
 
+    protected _isReflecting = false;
+
     protected _hasUpdated = false;
 
     protected _hasRequestedUpdate = false;
-
-    protected _isReflecting = false;
 
     /**
      * Returns `true` if the custom element's {@link connectedCallback} was executed.
@@ -220,6 +220,12 @@ export abstract class CustomElement extends HTMLElement {
     /**
      * Invoked each time the custom element updates
      *
+     * @remarks
+     * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
+     * rendering, property reflection and property change events inside a {@link requestAnimationFrame}. It is safe to
+     * use this callback to set additional attributes or styles on the rendered component that can't be achieved through
+     * template bindings or reflection.
+     *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
      * @param firstUpdate       A boolean indicating if this was the first update
      */
@@ -284,7 +290,7 @@ export abstract class CustomElement extends HTMLElement {
 
         const template = this.template();
 
-        if (template) render(template, this._renderRoot);
+        if (template) render(template, this._renderRoot, { eventContext: this });
     }
 
     /**
@@ -368,7 +374,6 @@ export abstract class CustomElement extends HTMLElement {
             // can skip reflecting the property back to the attribute
             // property changes need to be tracked however and {@link render} must be called after
             // the attribute change is reflected to this property
-            // TODO: Maybe don't put it here if not marked as reflected
             if (!this._isReflecting) this._reflectingProperties.set(propertyKey, oldValue);
         }
 
@@ -404,7 +409,7 @@ export abstract class CustomElement extends HTMLElement {
             this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
 
-        this.updateCallback(this._changedProperties, this._hasUpdated);
+        this.updateCallback(this._changedProperties, !this._hasUpdated);
 
         this._hasUpdated = true;
     }
@@ -652,8 +657,13 @@ export abstract class CustomElement extends HTMLElement {
         // this function is only called for properties which have a declaration
         const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
 
-        // TODO: test what happens if attribute is set to false but reflectProperty is true!
+        // if the default reflector is used, we need to check if an attribute for this property exists
+        // if not, we won't reflect
+        if (!propertyDeclaration.attribute) return;
+
+        // if attribute is truthy, it's a string
         const attributeName = propertyDeclaration.attribute as string;
+
         // resolve the attribute value
         const attributeValue = propertyDeclaration.converter.toAttribute(newValue);
 
