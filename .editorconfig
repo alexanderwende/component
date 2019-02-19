@@ -6,11 +6,11 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8
 
-[*.{js, ts, html, css, sass, less}]
+[*.{js, ts}]
 indent_style = space
 indent_size = 4
 
-[*.json]
+[*.{html, css, sass, less, json}]
 indent_style = space
 indent_size = 2
 

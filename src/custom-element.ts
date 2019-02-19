@@ -112,22 +112,15 @@ export abstract class CustomElement extends HTMLElement {
 
     protected _listenerDeclarations: InstanceListenerDeclaration[] = [];
 
-    protected _isConnected = false;
-
-    protected _isReflecting = false;
-
     protected _hasUpdated = false;
 
     protected _hasRequestedUpdate = false;
 
+    protected _isReflecting = false;
+
     /**
-     * Returns `true` if the custom element's {@link connectedCallback} was executed.
+     * The custom element constructor
      */
-    get isConnected (): boolean {
-
-        return this._isConnected;
-    }
-
     constructor () {
 
         super();
@@ -154,11 +147,9 @@ export abstract class CustomElement extends HTMLElement {
      */
     connectedCallback () {
 
-        this._isConnected = true;
+        this.requestUpdate();
 
         this._listen();
-
-        this.requestUpdate();
 
         this._notifyLifecycle('connected');
     }
@@ -170,8 +161,6 @@ export abstract class CustomElement extends HTMLElement {
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
      */
     disconnectedCallback () {
-
-        this._isConnected = false;
 
         this._unlisten();
 
@@ -284,7 +273,8 @@ export abstract class CustomElement extends HTMLElement {
      * Renders the custom element's template to its {@link _renderRoot}
      *
      * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}.
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}
+     * to the custom element's render root.
      */
     protected render () {
 
@@ -365,6 +355,8 @@ export abstract class CustomElement extends HTMLElement {
 
         if (propertyKey) {
 
+            // if the {@link PropertyDeclaration}'s observe option is `false`, {@link hasChanged}
+            // will return `false` and no update will be requested
             if (!this.hasChanged(propertyKey, oldValue, newValue)) return this._updateRequest;
 
             // store changed property for batch processing
@@ -408,10 +400,16 @@ export abstract class CustomElement extends HTMLElement {
 
             this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
+    }
 
-        this.updateCallback(this._changedProperties, !this._hasUpdated);
+    /**
+     * Gets the {@link PropertyDeclaration} for a decorated property
+     *
+     * @param propertyKey The property key for which to retrieve the declaration
+     */
+    protected getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
 
-        this._hasUpdated = true;
+        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
     }
 
     /**
@@ -429,7 +427,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected hasChanged (propertyKey: PropertyKey, oldValue: any, newValue: any): boolean {
 
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey);
 
         // observe is either `false` or a {@link PropertyChangeDetector}
         if (propertyDeclaration && isPropertyChangeDetector(propertyDeclaration.observe)) {
@@ -475,7 +473,7 @@ export abstract class CustomElement extends HTMLElement {
             return;
         }
 
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
 
         // don't reflect if {@link propertyDeclaration.reflectAttribute} is false
         if (propertyDeclaration.reflectAttribute) {
@@ -527,7 +525,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey);
 
         // don't reflect if {@link propertyDeclaration.reflectProperty} is false
         if (propertyDeclaration && propertyDeclaration.reflectProperty) {
@@ -580,7 +578,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey);
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey);
 
         if (propertyDeclaration && propertyDeclaration.notify) {
 
@@ -631,7 +629,7 @@ export abstract class CustomElement extends HTMLElement {
 
         const propertyKey = constructor.attributes.get(attributeName)!;
 
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
 
         const propertyValue = propertyDeclaration.converter.fromAttribute(newValue);
 
@@ -655,7 +653,7 @@ export abstract class CustomElement extends HTMLElement {
     protected _reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
         // this function is only called for properties which have a declaration
-        const propertyDeclaration = this._getPropertyDeclaration(propertyKey)!;
+        const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
 
         // if the default reflector is used, we need to check if an attribute for this property exists
         // if not, we won't reflect
@@ -775,35 +773,67 @@ export abstract class CustomElement extends HTMLElement {
      * Schedule the update of the custom element
      *
      * @remarks
-     * Schedules the update of the custom element just before the next frame
-     * and cleans up the custom elements state afterwards.
+     * Schedules the first update of the custom element as soon as possible and all consecutive updates
+     * just before the next frame.
      */
-    protected _scheduleUpdate (): Promise<void> {
+    protected _scheduleUpdate (): Promise<void> | void {
 
-        return new Promise(resolve => {
+        if (!this._hasUpdated) {
+
+            this._performUpdate();
+
+        } else {
 
             // schedule the update via requestAnimationFrame to avoid multiple redraws per frame
-            requestAnimationFrame(() => {
+            return new Promise(resolve => requestAnimationFrame(() => {
 
-                this.update();
-
-                this._changedProperties = new Map();
-
-                this._reflectingProperties = new Map();
-
-                this._notifyingProperties = new Map();
-
-                // mark custom element as updated after the update to prevent infinte loops in the update process
-                // N.B.: any property changes during the update will be ignored
-                this._hasRequestedUpdate = false;
+                this._performUpdate();
 
                 resolve();
-            });
-        });
+            }));
+        }
+    }
+
+    /**
+     * Perform the custom element update
+     *
+     * @remarks
+     * Invokes {@link updateCallback} after performing the update and cleans up the custom element
+     * state.
+     *
+     * @private
+     * @internal
+     */
+    private _performUpdate () {
+
+        // we have to wait until the custom element is connected before we can do any updates
+        // the {@link connectedCallback} will call {@link requestUpdate} in any case, so we can
+        // simply bypass any actual update and clean-up until then
+        if (this.isConnected) {
+
+            this.update();
+
+            this.updateCallback(this._changedProperties, !this._hasUpdated);
+
+            this._hasUpdated = true;
+
+            this._changedProperties = new Map();
+
+            this._reflectingProperties = new Map();
+
+            this._notifyingProperties = new Map();
+        }
+
+        // mark custom element as updated *after* the update to prevent infinte loops in the update process
+        // N.B.: any property changes during the update will be ignored
+        this._hasRequestedUpdate = false;
     }
 
     /**
      * Enqueue a request for an asynchronous update
+     *
+     * @private
+     * @internal
      */
     private async _enqueueUpdate () {
 
@@ -825,23 +855,10 @@ export abstract class CustomElement extends HTMLElement {
 
         const result = this._scheduleUpdate();
 
-        // the actual update is scheduled asynchronously as well
-        await result;
+        // the actual update may be scheduled asynchronously as well
+        if (result) await result;
 
         // resolve the new {@link _updateRequest} after the result of the current update resolves
         resolve!(!this._hasRequestedUpdate);
-    }
-
-    /**
-     * Gets the {@link PropertyDeclaration} for a decorated property
-     *
-     * @param propertyKey The property key for which to retrieve the declaration
-     *
-     * @internal
-     * @private
-     */
-    private _getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
-
-        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
     }
 }

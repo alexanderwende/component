@@ -87,14 +87,12 @@ export declare abstract class CustomElement extends HTMLElement {
     protected _reflectingProperties: Map<PropertyKey, any>;
     protected _notifyingProperties: Map<PropertyKey, any>;
     protected _listenerDeclarations: InstanceListenerDeclaration[];
-    protected _isConnected: boolean;
-    protected _isReflecting: boolean;
     protected _hasUpdated: boolean;
     protected _hasRequestedUpdate: boolean;
+    protected _isReflecting: boolean;
     /**
-     * Returns `true` if the custom element's {@link connectedCallback} was executed.
+     * The custom element constructor
      */
-    readonly isConnected: boolean;
     constructor();
     /**
      * Invoked each time the custom element is moved to a new document
@@ -206,7 +204,8 @@ export declare abstract class CustomElement extends HTMLElement {
      * Renders the custom element's template to its {@link _renderRoot}
      *
      * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}.
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}
+     * to the custom element's render root.
      */
     protected render(): void;
     /**
@@ -269,6 +268,12 @@ export declare abstract class CustomElement extends HTMLElement {
      * dispatches change events for properties which are marked for notification.
      */
     protected update(): void;
+    /**
+     * Gets the {@link PropertyDeclaration} for a decorated property
+     *
+     * @param propertyKey The property key for which to retrieve the declaration
+     */
+    protected getPropertyDeclaration(propertyKey: PropertyKey): PropertyDeclaration | undefined;
     /**
      * Check if a property changed
      *
@@ -391,23 +396,28 @@ export declare abstract class CustomElement extends HTMLElement {
      * Schedule the update of the custom element
      *
      * @remarks
-     * Schedules the update of the custom element just before the next frame
-     * and cleans up the custom elements state afterwards.
+     * Schedules the first update of the custom element as soon as possible and all consecutive updates
+     * just before the next frame.
      */
-    protected _scheduleUpdate(): Promise<void>;
+    protected _scheduleUpdate(): Promise<void> | void;
+    /**
+     * Perform the custom element update
+     *
+     * @remarks
+     * Invokes {@link updateCallback} after performing the update and cleans up the custom element
+     * state.
+     *
+     * @private
+     * @internal
+     */
+    private _performUpdate;
     /**
      * Enqueue a request for an asynchronous update
+     *
+     * @private
+     * @internal
      */
     private _enqueueUpdate;
-    /**
-     * Gets the {@link PropertyDeclaration} for a decorated property
-     *
-     * @param propertyKey The property key for which to retrieve the declaration
-     *
-     * @internal
-     * @private
-     */
-    private _getPropertyDeclaration;
 }
 export {};
 //# sourceMappingURL=custom-element.d.ts.map

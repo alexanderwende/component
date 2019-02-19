@@ -33,7 +33,7 @@ describe('getPropertyDescriptor', () => {
         const anotherPropertyDescriptor = Object.getOwnPropertyDescriptor(Base.prototype, 'anotherProperty')!;
         const anotherPropertyDescriptorBar = Object.getOwnPropertyDescriptor(Bar.prototype, 'anotherProperty')!;
 
-        // getOwnPropertyDescriptor always returns a new object, but the reference to the getter can be testes
+        // getOwnPropertyDescriptor always returns a new object, but the reference to the getter can be tested
         expect(getPropertyDescriptor(Base.prototype, 'property')!.get).toBe(propertyDescriptor.get);
         expect(getPropertyDescriptor(Foo.prototype, 'property')!.get).toBe(propertyDescriptor.get);
         expect(getPropertyDescriptor(Bar.prototype, 'property')!.get).toBe(propertyDescriptor.get);
