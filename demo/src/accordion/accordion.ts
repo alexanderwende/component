@@ -1,4 +1,4 @@
-import { CustomElement, customElement, property, html } from '../../../src';
+import { CustomElement, customElement, html, property } from '../../../src';
 import './accordion-panel';
 
 @customElement({
@@ -6,16 +6,30 @@ import './accordion-panel';
 })
 export class Accordion extends CustomElement {
 
-    // role is a HTMLElement property and will automatically reflect - no need to reflect
-    readonly role = 'presentation';
+    @property({
+        reflectAttribute: false
+    })
+    role = 'presentation';
 
-    template () {
+    connectedCallback () {
+
+        super.connectedCallback();
+
+        this.role = 'presentation';
+    }
+
+    protected template () {
 
         return html`
             <style>
                 :host {
-                    display: inline-flex;
+                    display: flex;
                     flex-direction: column;
+                    background: #fff;
+                    background-clip: border-box;
+                    box-sizing: border-box;
+                    border: var(--border-width, 0.125rem) solid var(--border-color, rgba(0,0,0,.25));
+                    border-radius: var(--border-radius, 0.25rem);
                 }
             </style>
             <slot></slot>

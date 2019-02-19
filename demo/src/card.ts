@@ -1,19 +1,24 @@
-import { CustomElement, customElement, TemplateResult, html } from '../../src';
+import { CustomElement, customElement, html } from '../../src';
 
 @customElement({
     selector: 'ui-card'
 })
 export class Card extends CustomElement {
 
-    template (): TemplateResult {
+    template () {
 
         return html`
             <style>
                 :host {
-                    display: inline-flex;
+                    display: flex;
                     flex-flow: column;
+                    max-width: 40ch;
+                    padding: 1rem;
                     background: #fff;
-                    border: 1px solid rgba(0,0,0,.1);
+                    background-clip: border-box;
+                    box-sizing: border-box;
+                    border: var(--border-width, 0.125rem) solid var(--border-color, rgba(0,0,0,.25));
+                    border-radius: var(--border-radius, 0.25rem);
                 }
                 ::slotted(*) {
                     margin: 0;

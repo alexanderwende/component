@@ -1,15 +1,39 @@
-import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property, TemplateResult } from '../../src';
+import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property } from '../../src';
+import { Enter, Space } from './keys';
+
+const styleSheet = `
+:host {
+    display: inline-flex;
+    contain: content;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    border: 0.125rem solid #bfbfbf;
+    border-radius: 0.25rem;
+    box-sizing: border-box;
+}
+:host([aria-checked="true"]) {
+    background-color: green;
+    border-color: green;
+}
+:host([aria-checked="false"]) {
+    border-color: #bfbfbf;
+}
+`;
 
 @customElement({
     selector: 'ui-checkbox'
 })
 export class Checkbox extends CustomElement {
 
-    // this is a HTMLElement property, we don't need a property decorator to reflect it
-    role = 'checkbox';
+    private _addedTransition = false;
 
-    // this is a HTMLElement property, we don't need a property decorator to reflect it
-    tabIndex = 0;
+    // Chrome already reflects aria properties, but Firefox doesn't, so we need a property decorator
+    // however, we cannot initialize role with a value here, as Chrome's reflection will cause an
+    // attribute change in the constructor and that will throw an error
+    // https://github.com/w3c/aria/issues/691
+    @property()
+    role!: string;
 
     @property<Checkbox>({
         // the converter will be used to reflect from the checked attribute to the property, but not
@@ -22,7 +46,7 @@ export class Checkbox extends CustomElement {
                 this.setAttribute('aria-checked', 'true');
             } else {
                 this.removeAttribute('checked');
-                this.removeAttribute('aria-checked');
+                this.setAttribute('aria-checked', 'false');
             }
         }
     })
@@ -33,10 +57,7 @@ export class Checkbox extends CustomElement {
     })
     toggle () {
 
-        this.watch(() => {
-
-            this.checked = !this.checked;
-        });
+        this.watch(() => this.checked = !this.checked);
     }
 
     @listener({
@@ -44,27 +65,76 @@ export class Checkbox extends CustomElement {
     })
     protected handeKeyDown (event: KeyboardEvent) {
 
-        const key = event.key;
-
-        if (key === 'Enter' || key === ' ') {
+        if (event.key === Enter || event.key === Space) {
 
             this.toggle();
+
+            event.preventDefault();
         }
     }
 
-    protected template (): TemplateResult {
+    connectedCallback () {
+
+        super.connectedCallback();
+
+        // TODO: Document this use case!
+        // https://html.spec.whatwg.org/multipage/custom-elements.html#custom-element-conformance
+        // HTMLElement has a setter and getter for tabIndex, we don't need a property decorator to reflect it
+        // we are not allowed to set it in the constructor though, as it creates a reflected attribute, which
+        // causes an error
+        this.tabIndex = 0;
+
+        // we initialize role in the connectedCallback as well, to prevent Chrome from reflecting early
+        this.role = 'checkbox';
+    }
+
+    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
+
+        // TODO: Use this for modeling static styles
+        // if (firstUpdate) {
+
+        //     Promise.resolve().then(() => {
+        //         const style = document.createElement('style');
+        //         style.textContent = styleSheet;
+        //         this._renderRoot.appendChild(style);
+        //     });
+
+        // } else {
+
+        //     if (!this._addedTransition) {
+
+        //         const stylesheet: CSSStyleSheet = (this._renderRoot.querySelector('style') as HTMLStyleElement).sheet! as CSSStyleSheet;
+
+        //         stylesheet.insertRule(':host { transition: 1s ease-in; }', stylesheet.cssRules.length);
+
+        //         this._addedTransition = true;
+        //     }
+        // }
+    }
+
+    protected template () {
 
         return html`
             <style>
                 :host {
-                    display: inline-block;
+                    display: inline-flex;
+                    contain: content;
                     width: 1rem;
                     height: 1rem;
-                    border: 1px solid rgba(0,0,0,.1);
+                    cursor: pointer;
+                    border: 0.125rem solid #bfbfbf;
+                    border-radius: 0.25rem;
+                    box-sizing: border-box;
+                    transition: .1s ease-in;
                 }
-                :host([checked]) {
-                    background-color: rgba(0,0,0,.1);
+                :host([aria-checked="true"]) {
+                    background-color: green;
+                    border-color: green;
                 }
-            </style>`;
+                :host([aria-checked="false"]) {
+                    border-color: #bfbfbf;
+                }
+            </style>
+            `;
     }
 }

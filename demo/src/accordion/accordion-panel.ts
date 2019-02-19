@@ -77,6 +77,10 @@ export class AccordionPanel extends CustomElement {
                     height: 0;
                     overflow: hidden;
                 }
+                *:focus {
+                    outline: none;
+                    box-shadow: var(--focus-shadow);
+                }
             </style>
             <div class="ui-accordion-header"
                 id="${ this.id }-header"

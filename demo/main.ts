@@ -1,6 +1,4 @@
-import './src/checkbox';
-import './src/card';
-import './src/accordion/accordion';
+import './src/app';
 
 function bootstrap () {
 
