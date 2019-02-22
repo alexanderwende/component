@@ -1,6 +1,12 @@
-import { CustomElement } from '../custom-element';
+import { Changes, CustomElement } from '../custom-element';
+import { AttributeConverter } from './attribute-converter';
 import { customElement } from './custom-element';
 import { property } from './property';
+
+const ARIABooleanConverter: AttributeConverter<boolean> = {
+    fromAttribute: (value) => value === 'true',
+    toAttribute: (value) => (value == null) ? value : value.toString()
+}
 
 describe('@property decorator', () => {
 
@@ -173,6 +179,75 @@ describe('@property decorator', () => {
             expect(ExtendedTestElement.observedAttributes).toEqual(['user', 'hidden', 'extended-hidden', 'extended-selected']);
             // 'selected' should be replaced by 'extended=selected', 'checked' and 'active' should be gone
             expect([...ExtendedTestElement.attributes.keys()]).toEqual(['hidden', 'extended-selected']);
+        });
+    });
+
+    describe('@property decorator', () => {
+
+        it('should respect property accessors', (done) => {
+
+            let count = 0;
+
+            @customElement({
+                selector: 'test-element-propert-accessors'
+            })
+            class TestElement extends CustomElement {
+
+                private _selected = false;
+
+                @property({
+                    attribute: 'aria-selected',
+                    converter: ARIABooleanConverter
+                })
+                set selected (value: boolean) {
+
+                    this._selected = value;
+                    count++;
+                }
+
+                get selected (): boolean {
+
+                    return this._selected;
+                }
+
+                connectedCallback () {
+
+                    super.connectedCallback();
+
+                    expect(this.selected).toBe(false);
+                }
+
+                updateCallback (changes: Changes, firstUpdate: boolean) {
+
+                    super.updateCallback(changes, firstUpdate);
+
+                    if (firstUpdate) {
+
+                        expect(this.selected).toBe(true);
+                        expect(count).toBe(1);
+
+                        // inside of the updateCallback, property changes won't cause another update
+                        // we have to defer setting `selected` with a Promise
+                        Promise.resolve().then(() => this.selected = false);
+
+                    } else {
+
+                        expect(this.selected).toBe(false);
+                        expect(count).toBe(2);
+
+                        document.body.removeChild(this);
+
+                        done();
+                    }
+
+                }
+            }
+
+            // properties won't update if element is not connected to DOM
+            const element = document.createElement(TestElement.selector) as TestElement;
+            document.body.appendChild(element);
+
+            element.setAttribute('aria-selected', 'true');
         });
     });
 

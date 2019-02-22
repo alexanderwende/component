@@ -1,10 +1,11 @@
 import { CustomElement } from '../custom-element';
 import { DecoratedCustomElementType } from './property';
+import { TemplateResult } from 'lit-html';
 
 /**
  * A {@link CustomElement} declaration
  */
-export interface CustomElementDeclaration {
+export interface CustomElementDeclaration<Type extends CustomElement = CustomElement> {
     /**
      * The selector of the custom element
      *
@@ -41,12 +42,30 @@ export interface CustomElementDeclaration {
      * Default value: `true`
      */
     define: boolean;
+
+    // TODO: update documentation
+    /**
+     * The custom element's template
+     *
+     * @remarks
+     * A static function which returns a {@link #lit-html.TemplateResult}. The function's `element`
+     * parameter will be the current custom element instance. This function will be invoked by the
+     * custom element's render method.
+     *
+     * The method must return a {@link lit-html#TemplateResult} which is created using lit-html's
+     * {@link lit-html#html | `html`} or {@link lit-html#svg | `svg`} template methods.
+     *
+     * Default value: `undefined`
+     *
+     * @param element The custom element instance requesting the template
+     */
+    template?: (element: Type, ...helpers: any[]) => TemplateResult | void;
 }
 
 export const DEFAULT_CUSTOM_ELEMENT_DECLARATION: CustomElementDeclaration = {
     selector: '',
     shadow: true,
-    define: true
+    define: true,
 };
 
 /**
@@ -54,7 +73,7 @@ export const DEFAULT_CUSTOM_ELEMENT_DECLARATION: CustomElementDeclaration = {
  *
  * @param options A custom element declaration
  */
-export const customElement = (options: Partial<CustomElementDeclaration> = {}) => {
+export function customElement<Type extends CustomElement = CustomElement> (options: Partial<CustomElementDeclaration<Type>> = {}) {
 
     const declaration = { ...DEFAULT_CUSTOM_ELEMENT_DECLARATION, ...options };
 
@@ -64,6 +83,7 @@ export const customElement = (options: Partial<CustomElementDeclaration> = {}) =
 
         constructor.selector = declaration.selector || target.selector;
         constructor.shadow = declaration.shadow;
+        constructor.template = declaration.template;
 
         /**
          * Property decorators get called before class decorators, so at this point all decorated properties

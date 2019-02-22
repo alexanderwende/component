@@ -257,6 +257,8 @@ export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValu
     return oldValue !== newValue && (oldValue === oldValue || newValue === newValue);
 };
 
+// TODO: maybe provide flat array/object change detector? date change detector?
+
 /**
  * The default {@link CustomElement} property declaration
  */

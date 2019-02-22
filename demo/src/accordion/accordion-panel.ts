@@ -1,9 +1,56 @@
 import { CustomElement, customElement, html, property, AttributeConverterBoolean } from '../../../src';
+import { copyright, CopyrightHelper } from '../helpers/copyright';
 
 let nextAccordionPanelId = 0;
 
-@customElement({
-    selector: 'ui-accordion-panel'
+@customElement<AccordionPanel>({
+    selector: 'ui-accordion-panel',
+    template: (panel, copyright: CopyrightHelper) => html`
+    <style>
+        :host {
+            display: flex;
+            flex-direction: column;
+        }
+        :host > .ui-accordion-body {
+            height: auto;
+            overflow: auto;
+            transition: height .2s ease-out;
+        }
+        :host > .ui-accordion-body[aria-hidden=true] {
+            height: 0;
+            overflow: hidden;
+        }
+        *:focus {
+            outline: none;
+            box-shadow: var(--focus-shadow);
+        }
+        .copyright {
+            padding: 0 1rem 1rem;
+            color: var(--disabled-color, '#ccc');
+            font-size: 0.75rem;
+        }
+    </style>
+    <div class="ui-accordion-header"
+        id="${ panel.id }-header"
+        tabindex="${ panel.disabled ? -1 : 0 }"
+        role="button"
+        aria-controls="${ panel.id }-body"
+        aria-expanded="${ panel.expanded }"
+        aria-disabled=${ panel.disabled }
+        @keydown="${ (event: KeyboardEvent) => (event.key === 'Enter' || event.key === ' ') && panel.toggle() }"
+        @click=${ panel.toggle }>
+        <slot name="ui-accordion-panel-header"></slot>
+    </div>
+    <div class="ui-accordion-body"
+        id="${ panel.id }-body"
+        style="height: ${ panel.contentHeight };"
+        role="region"
+        aria-hidden="${ !panel.expanded }"
+        aria-labelledby="${ panel.id }-header">
+        <slot name="ui-accordion-panel-body"></slot>
+        <span class="copyright">${ copyright(new Date(), 'Alexander Wende') }</span>
+    </div>
+    `
 })
 export class AccordionPanel extends CustomElement {
 
@@ -60,47 +107,11 @@ export class AccordionPanel extends CustomElement {
         }
     }
 
-    protected template () {
+    /**
+     * Override the render method to inject custom helpers into the template
+     */
+    protected render () {
 
-        return html`
-            <style>
-                :host {
-                    display: flex;
-                    flex-direction: column;
-                }
-                :host > .ui-accordion-body {
-                    height: auto;
-                    overflow: auto;
-                    transition: height .2s ease-out;
-                }
-                :host > .ui-accordion-body[aria-hidden=true] {
-                    height: 0;
-                    overflow: hidden;
-                }
-                *:focus {
-                    outline: none;
-                    box-shadow: var(--focus-shadow);
-                }
-            </style>
-            <div class="ui-accordion-header"
-                id="${ this.id }-header"
-                tabindex="${ this.disabled ? -1 : 0 }"
-                role="button"
-                aria-controls="${ this.id }-body"
-                aria-expanded="${ this.expanded }"
-                aria-disabled=${ this.disabled }
-                @keydown="${ (event: KeyboardEvent) => (event.key === 'Enter' || event.key === ' ') && this.toggle() }"
-                @click=${ this.toggle }>
-                <slot name="ui-accordion-panel-header"></slot>
-            </div>
-            <div class="ui-accordion-body"
-                id="${ this.id }-body"
-                style="height: ${ this.contentHeight };"
-                role="region"
-                aria-hidden="${ !this.expanded }"
-                aria-labelledby="${ this.id }-header">
-                <slot name="ui-accordion-panel-body"></slot>
-            </div>
-        `;
+        super.render(copyright);
     }
 }

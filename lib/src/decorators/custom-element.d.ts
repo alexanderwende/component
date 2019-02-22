@@ -1,8 +1,9 @@
 import { CustomElement } from '../custom-element';
+import { TemplateResult } from 'lit-html';
 /**
  * A {@link CustomElement} declaration
  */
-export interface CustomElementDeclaration {
+export interface CustomElementDeclaration<Type extends CustomElement = CustomElement> {
     /**
      * The selector of the custom element
      *
@@ -37,6 +38,22 @@ export interface CustomElementDeclaration {
      * Default value: `true`
      */
     define: boolean;
+    /**
+     * The custom element's template
+     *
+     * @remarks
+     * A static function which returns a {@link #lit-html.TemplateResult}. The function's `element`
+     * parameter will be the current custom element instance. This function will be invoked by the
+     * custom element's render method.
+     *
+     * The method must return a {@link lit-html#TemplateResult} which is created using lit-html's
+     * {@link lit-html#html | `html`} or {@link lit-html#svg | `svg`} template methods.
+     *
+     * Default value: `undefined`
+     *
+     * @param element The custom element instance requesting the template
+     */
+    template?: (element: Type, ...helpers: any[]) => TemplateResult | void;
 }
 export declare const DEFAULT_CUSTOM_ELEMENT_DECLARATION: CustomElementDeclaration;
 /**
@@ -44,5 +61,5 @@ export declare const DEFAULT_CUSTOM_ELEMENT_DECLARATION: CustomElementDeclaratio
  *
  * @param options A custom element declaration
  */
-export declare const customElement: (options?: Partial<CustomElementDeclaration>) => (target: typeof CustomElement) => void;
+export declare function customElement<Type extends CustomElement = CustomElement>(options?: Partial<CustomElementDeclaration<Type>>): (target: typeof CustomElement) => void;
 //# sourceMappingURL=custom-element.d.ts.map

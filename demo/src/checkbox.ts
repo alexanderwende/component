@@ -22,7 +22,29 @@ const styleSheet = `
 `;
 
 @customElement({
-    selector: 'ui-checkbox'
+    selector: 'ui-checkbox',
+    template: checkbox => html`
+    <style>
+        :host {
+            display: inline-flex;
+            contain: content;
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+            border: 0.125rem solid #bfbfbf;
+            border-radius: 0.25rem;
+            box-sizing: border-box;
+            transition: .1s ease-in;
+        }
+        :host([aria-checked="true"]) {
+            background-color: green;
+            border-color: green;
+        }
+        :host([aria-checked="false"]) {
+            border-color: #bfbfbf;
+        }
+    </style>
+    `
 })
 export class Checkbox extends CustomElement {
 
@@ -90,6 +112,8 @@ export class Checkbox extends CustomElement {
 
     updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
 
+        super.updateCallback(changedProperties, firstUpdate);
+
         // TODO: Use this for modeling static styles
         // if (firstUpdate) {
 
@@ -110,31 +134,5 @@ export class Checkbox extends CustomElement {
         //         this._addedTransition = true;
         //     }
         // }
-    }
-
-    protected template () {
-
-        return html`
-            <style>
-                :host {
-                    display: inline-flex;
-                    contain: content;
-                    width: 1rem;
-                    height: 1rem;
-                    cursor: pointer;
-                    border: 0.125rem solid #bfbfbf;
-                    border-radius: 0.25rem;
-                    box-sizing: border-box;
-                    transition: .1s ease-in;
-                }
-                :host([aria-checked="true"]) {
-                    background-color: green;
-                    border-color: green;
-                }
-                :host([aria-checked="false"]) {
-                    border-color: #bfbfbf;
-                }
-            </style>
-            `;
     }
 }

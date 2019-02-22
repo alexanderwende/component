@@ -41,9 +41,13 @@ export type DecoratedCustomElementType = typeof CustomElement & { overridden?: S
  *
  * @param options A property declaration
  */
-export const property = <Type extends CustomElement = CustomElement> (options: Partial<PropertyDeclaration<Type>> = {}) => {
+export function property<Type extends CustomElement = CustomElement> (options: Partial<PropertyDeclaration<Type>> = {}) {
 
-    return (target: Object, propertyKey: PropertyKey): void => {
+    return function (
+        target: Object,
+        propertyKey: PropertyKey,
+        propertyDescriptor?: PropertyDescriptor,
+    ): any {
 
         /**
          * When defining classes in TypeScript, class fields actually don't exist on the class's prototype, but
@@ -55,31 +59,30 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
          * To keep this behavior intact, we need to ensure, that when we create accessors for properties, which
          * are not declared as accessors, we invoke the parent class's accessor as expected.
          * The {@link getPropertyDescriptor} function allows us to look for accessors on the prototype chain of
-         * the class we are decorating. If it finds an accessor on the current class, we don't need to worry as
-         * this accessor would anturally override any parent class's accessor.
+         * the class we are decorating.
          */
-        const descriptor = getPropertyDescriptor(target, propertyKey);
-        const hiddenKey = (typeof propertyKey === 'string') ? `_${ propertyKey }` : Symbol();
+        const descriptor = propertyDescriptor || getPropertyDescriptor(target, propertyKey);
+        const hiddenKey = (typeof propertyKey === 'string') ? `__${ propertyKey }` : Symbol();
 
         // if we found an accessor descriptor (from either this class or a parent) we use it, otherwise we create
         // default accessors to store the actual property value in a hidden field and retrieve it from there
-        const get = descriptor && descriptor.get || function (this: any) { return this[hiddenKey]; };
-        const set = descriptor && descriptor.set || function (this: any, value: any) { this[hiddenKey] = value; };
+        const getter = descriptor && descriptor.get || function (this: any) { return this[hiddenKey]; };
+        const setter = descriptor && descriptor.set || function (this: any, value: any) { this[hiddenKey] = value; };
 
         // we define a new accessor descriptor which will wrap the previously retrieved or created accessors
-        // and request an update of the CustomElement whenever the property is set
-        Object.defineProperty(target, propertyKey, {
+        // and request an update of the custom element whenever the property is set
+        const wrappedDescriptor: PropertyDescriptor & ThisType<any> = {
             configurable: true,
             enumerable: true,
             get (): any {
-                return get.call(this);
+                return getter.call(this);
             },
             set (value: any): void {
                 const oldValue = this[propertyKey];
-                set.call(this, value);
+                setter.call(this, value);
                 this.requestUpdate(propertyKey, oldValue, value);
             }
-        });
+        }
 
         const constructor = target.constructor as DecoratedCustomElementType;
 
@@ -120,6 +123,19 @@ export const property = <Type extends CustomElement = CustomElement> (options: P
         // store the property declaration last, so we can still access the inherited declaration
         // when processing the attributes
         constructor.properties.set(propertyKey, declaration as PropertyDeclaration);
+
+        if (!propertyDescriptor) {
+
+            // if no propertyDescriptor was defined for this decorator, this decorator is a property
+            // decorator which must return void and we can define the wrapped descriptor here
+            Object.defineProperty(target, propertyKey, wrappedDescriptor);
+
+        } else {
+
+            // if a propertyDescriptor was defined for this decorator, this decorator is an accessor
+            // decorator and we must return the wrapped property descriptor
+            return wrappedDescriptor;
+        }
     };
 };
 

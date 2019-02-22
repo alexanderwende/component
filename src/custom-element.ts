@@ -24,6 +24,9 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
     target: EventTarget;
 }
 
+// TODO: Use this for property-changes maps
+export type Changes = Map<PropertyKey, any>;
+
 /**
  * The custom element base class
  */
@@ -69,6 +72,17 @@ export abstract class CustomElement extends HTMLElement {
      * @private
      */
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
+
+    /**
+     * The custom element's template
+     *
+     * @remarks
+     * Will be set by the {@link customElement} decorator's template option (defaults to `undefined`).
+     *
+     * @param element
+     * @param helpers
+     */
+    static template?: (element: any, ...helpers: any[]) => TemplateResult | void;
 
     /**
      * Override to specify attributes which should be observed, but don't have an associated property
@@ -215,6 +229,8 @@ export abstract class CustomElement extends HTMLElement {
      * use this callback to set additional attributes or styles on the rendered component that can't be achieved through
      * template bindings or reflection.
      *
+     * N.B.: Changes made to properties or attributes inside this callback *won't* cause another update.
+     *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
      * @param firstUpdate       A boolean indicating if this was the first update
      */
@@ -240,35 +256,7 @@ export abstract class CustomElement extends HTMLElement {
             this;
     }
 
-    /**
-     * Returns the template of the custom element
-     *
-     * @remarks
-     * Override this method to provide a template for your custom element. The method must
-     * return a {@link lit-html#TemplateResult} which is created using lit-html's
-     * {@link lit-html#html | `html`} or {@link lit-html#svg | `svg`} template methods.
-     *
-     * Return nothing if your component does not need to render a template.
-     *
-     * ```typescript
-     * import { html } from 'lit-html';
-     *
-     * @customElement({
-     *      selector: 'my-element'
-     * })
-     * class MyElement extends CustomElement {
-     *
-     *       myProperty = 'Hello';
-     *
-     *      template () {
-     *
-     *          html`<h1>${this.myProperty} World!</h1>`;
-     *      }
-     * }
-     * ```
-     */
-    protected template (): TemplateResult | void { }
-
+    // TODO: add example for override with helpers
     /**
      * Renders the custom element's template to its {@link _renderRoot}
      *
@@ -276,11 +264,24 @@ export abstract class CustomElement extends HTMLElement {
      * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}
      * to the custom element's render root.
      */
-    protected render () {
+    protected render (...helpers: any[]) {
 
-        const template = this.template();
+        const constructor = this.constructor as typeof CustomElement;
+
+        const template = constructor.template && constructor.template(this, ...helpers);
 
         if (template) render(template, this._renderRoot, { eventContext: this });
+    }
+
+    /**
+     * Dispatch a custom event
+     *
+     * @param eventName An event name
+     * @param eventInit A CustomEventInit dictionary
+     */
+    protected notify (eventName: string, eventInit?: CustomEventInit) {
+
+        this.dispatchEvent(new CustomEvent(eventName, eventInit));
     }
 
     /**
@@ -693,12 +694,14 @@ export abstract class CustomElement extends HTMLElement {
         const eventName = createEventName(propertyKey, '', 'changed');
 
         this.dispatchEvent(new CustomEvent(eventName, {
+            bubbles: true,
             composed: true,
+            cancelable: true,
             detail: {
                 property: propertyKey,
                 previous: oldValue,
-                current: newValue
-            }
+                current: newValue,
+            },
         }));
     }
 

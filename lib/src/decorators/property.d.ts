@@ -40,5 +40,5 @@ export declare type DecoratedCustomElementType = typeof CustomElement & {
  *
  * @param options A property declaration
  */
-export declare const property: <Type extends CustomElement = CustomElement>(options?: Partial<PropertyDeclaration<Type>>) => (target: Object, propertyKey: string | number | symbol) => void;
+export declare function property<Type extends CustomElement = CustomElement>(options?: Partial<PropertyDeclaration<Type>>): (target: Object, propertyKey: string | number | symbol, propertyDescriptor?: PropertyDescriptor | undefined) => any;
 //# sourceMappingURL=property.d.ts.map
