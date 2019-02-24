@@ -1,26 +1,6 @@
 import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property } from '../../src';
 import { Enter, Space } from './keys';
 
-const styleSheet = `
-:host {
-    display: inline-flex;
-    contain: content;
-    width: 1rem;
-    height: 1rem;
-    cursor: pointer;
-    border: 0.125rem solid #bfbfbf;
-    border-radius: 0.25rem;
-    box-sizing: border-box;
-}
-:host([aria-checked="true"]) {
-    background-color: green;
-    border-color: green;
-}
-:host([aria-checked="false"]) {
-    border-color: #bfbfbf;
-}
-`;
-
 @customElement({
     selector: 'ui-checkbox',
     template: checkbox => html`
@@ -47,8 +27,6 @@ const styleSheet = `
     `
 })
 export class Checkbox extends CustomElement {
-
-    private _addedTransition = false;
 
     // Chrome already reflects aria properties, but Firefox doesn't, so we need a property decorator
     // however, we cannot initialize role with a value here, as Chrome's reflection will cause an
@@ -108,31 +86,5 @@ export class Checkbox extends CustomElement {
 
         // we initialize role in the connectedCallback as well, to prevent Chrome from reflecting early
         this.role = 'checkbox';
-    }
-
-    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
-
-        super.updateCallback(changedProperties, firstUpdate);
-
-        // TODO: Use this for modeling static styles
-        // if (firstUpdate) {
-
-        //     Promise.resolve().then(() => {
-        //         const style = document.createElement('style');
-        //         style.textContent = styleSheet;
-        //         this._renderRoot.appendChild(style);
-        //     });
-
-        // } else {
-
-        //     if (!this._addedTransition) {
-
-        //         const stylesheet: CSSStyleSheet = (this._renderRoot.querySelector('style') as HTMLStyleElement).sheet! as CSSStyleSheet;
-
-        //         stylesheet.insertRule(':host { transition: 1s ease-in; }', stylesheet.cssRules.length);
-
-        //         this._addedTransition = true;
-        //     }
-        // }
     }
 }

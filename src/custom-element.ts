@@ -32,6 +32,29 @@ export type Changes = Map<PropertyKey, any>;
  */
 export abstract class CustomElement extends HTMLElement {
 
+    protected static _styleSheet: CSSStyleSheet | undefined;
+
+    /**
+     * The custom element's stylesheet object
+     */
+    protected static get styleSheet (): CSSStyleSheet | undefined {
+
+        if (!this._styleSheet) {
+
+            try {
+
+                // create a style sheet and cache on the constructor
+                // this will work once constructable stylesheets arrive
+                // https://wicg.github.io/construct-stylesheets/
+                this._styleSheet = new CSSStyleSheet();
+                this._styleSheet.replaceSync(this.styles.join('\n'));
+
+            } catch (error) { }
+        }
+
+        return this._styleSheet;
+    }
+
     /**
      * The custom element's selector
      *
@@ -73,11 +96,42 @@ export abstract class CustomElement extends HTMLElement {
      */
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
+    // TODO: test style inheritance
+    // TODO: update docs
+    /**
+     * The custom element's styles
+     *
+     * @remarks
+     * Can be set through the {@link customElement} decorator's `styles` option (defaults to `undefined`).
+     * Styles set in the {@link customElement} decorator will be merged with the class's static property.
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends MyBaseElement {
+     *
+     *      static get styles (): string[] {
+     *
+     *          return [
+     *              ...super.styles,
+     *              ':host { background-color: green; }'
+     *          ];
+     *      }
+     * }
+     * ```
+     */
+    static get styles (): string[] {
+
+        return [];
+    }
+
     /**
      * The custom element's template
      *
      * @remarks
-     * Will be set by the {@link customElement} decorator's template option (defaults to `undefined`).
+     * Can be set though the {@link customElement} decorator's `template` option (defaults to `undefined`).
+     * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
      *
      * @param element
      * @param helpers
@@ -225,19 +279,14 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
-     * rendering, property reflection and property change events inside a {@link requestAnimationFrame}. It is safe to
-     * use this callback to set additional attributes or styles on the rendered component that can't be achieved through
-     * template bindings or reflection.
+     * rendering, property reflection and property change events.
      *
      * N.B.: Changes made to properties or attributes inside this callback *won't* cause another update.
      *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
      * @param firstUpdate       A boolean indicating if this was the first update
      */
-    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
-
-        this._notifyLifecycle('update', { firstUpdate });
-    }
+    updateCallback (changedProperties: Changes, firstUpdate: boolean) { }
 
     /**
      * Creates the custom element's render root
@@ -254,6 +303,29 @@ export abstract class CustomElement extends HTMLElement {
         return (this.constructor as typeof CustomElement).shadow ?
             this.attachShadow({ mode: 'open' }) :
             this;
+    }
+
+    // TODO: document this
+    protected adoptStyles () {
+
+        const constructor = this.constructor as typeof CustomElement;
+        const styleSheet = constructor.styleSheet;
+        const styles = constructor.styles;
+
+        if (styleSheet) {
+
+            // this will work once constructable stylesheets arrive
+            // https://wicg.github.io/construct-stylesheets/
+            (this._renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
+
+        } else if (styles.length) {
+
+            const style = document.createElement('style');
+
+            style.textContent = styles.join('\n');
+
+            this._renderRoot.appendChild(style);
+        }
     }
 
     // TODO: add example for override with helpers
@@ -802,7 +874,8 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * Invokes {@link updateCallback} after performing the update and cleans up the custom element
-     * state.
+     * state. During the first update the element's styles will be added. Dispatches the update
+     * lifecycle event.
      *
      * @private
      * @internal
@@ -816,7 +889,12 @@ export abstract class CustomElement extends HTMLElement {
 
             this.update();
 
+            // in the first update we adopt the element's styles
+            !this._hasUpdated && this.adoptStyles();
+
             this.updateCallback(this._changedProperties, !this._hasUpdated);
+
+            this._notifyLifecycle('update', { firstUpdate: !this._hasUpdated });
 
             this._hasUpdated = true;
 

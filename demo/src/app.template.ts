@@ -39,6 +39,20 @@ export const template = (element: App) => html`
                 <p slot="ui-card-footer">Card footer</p>
             </ui-card>
 
+            <h2>Action Card</h2>
+            <ui-action-card>
+                <h3 slot="ui-action-card-header">Card Title</h3>
+                <p slot="ui-action-card-body">Card body text...</p>
+                <button slot="ui-action-card-actions">More</button>
+            </ui-action-card>
+
+            <h2>Plain Card</h2>
+            <ui-plain-card>
+                <h3 slot="ui-plain-card-header">Card Title</h3>
+                <p slot="ui-plain-card-body">Card body text...</p>
+                <p slot="ui-plain-card-footer">Card footer</p>
+            </ui-plain-card>
+
             <h2>Tabs</h2>
             <ui-tab-list>
                 <ui-tab id="tab-1" aria-controls="tab-panel-1" aria-selected="true"><span>First Tab</span></ui-tab>

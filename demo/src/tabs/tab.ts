@@ -1,4 +1,4 @@
-import { AttributeConverterString, CustomElement, customElement, html, property, listener } from '../../../src';
+import { AttributeConverterString, Changes, CustomElement, customElement, html, listener, property } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
 
@@ -62,9 +62,7 @@ export class Tab extends CustomElement {
         this.tabIndex = -1;
     }
 
-    updateCallback (changes: Map<PropertyKey, any>, firstUpdate: boolean) {
-
-        super.updateCallback(changes, firstUpdate);
+    updateCallback (changes: Changes, firstUpdate: boolean) {
 
         if (firstUpdate) {
 

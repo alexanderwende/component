@@ -2,6 +2,7 @@ import { CustomElement } from '../custom-element';
 import { DecoratedCustomElementType } from './property';
 import { TemplateResult } from 'lit-html';
 
+// TODO: refactor CustomElementDeclaration into separate file
 /**
  * A {@link CustomElement} declaration
  */
@@ -43,6 +44,28 @@ export interface CustomElementDeclaration<Type extends CustomElement = CustomEle
      */
     define: boolean;
 
+    // TODO: test media queries
+    /**
+     * The custom element's styles
+     *
+     * @remarks
+     * An array of CSS rulesets (https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax#CSS_rulesets).
+     * Styles defined using the decorator will be merged with styles defined in the custom element's
+     * static {@link CustomElement.styles} getter.
+     *
+     * ```typescript
+     * @customElement({
+     *      styles: [
+     *          'h1, h2 { font-size: 16pt; }',
+     *          '@media screen and (min-width: 900px) { article { padding: 1rem 3rem; } }'
+     *      ]
+     * })
+     * ```
+     *
+     * Default value: `undefined`
+     */
+    styles?: string[];
+
     // TODO: update documentation
     /**
      * The custom element's template
@@ -83,7 +106,11 @@ export function customElement<Type extends CustomElement = CustomElement> (optio
 
         constructor.selector = declaration.selector || target.selector;
         constructor.shadow = declaration.shadow;
-        constructor.template = declaration.template;
+        constructor.template = declaration.template || target.template;
+
+        // use keyof signatures to catch refactoring errors
+        const observedAttributesKey: keyof typeof CustomElement = 'observedAttributes';
+        const stylesKey: keyof typeof CustomElement = 'styles';
 
         /**
          * Property decorators get called before class decorators, so at this point all decorated properties
@@ -115,14 +142,42 @@ export function customElement<Type extends CustomElement = CustomElement> (optio
         delete constructor.overridden;
 
         /**
+         * We don't want to inherit styles automatically, unless explicitly requested, so we check if the
+         * constructor declares a static styles property (which may use super.styles to explicitly inherit)
+         * and if it doesn't, we ignore the parent class's styles (by not invoking the getter).
+         * We then merge the decorator defined styles (if existing) into the styles and remove duplicates
+         * by using a Set.
+         */
+        const styles = [
+            ...new Set(
+                (constructor.hasOwnProperty(stylesKey)
+                    ? constructor.styles
+                    : []
+                    ).concat(declaration.styles || [])
+            )
+        ];
+
+        /**
          * Finally we override the {@link CustomElement.observedAttributes} getter with a new one, which returns
          * the unique set of user defined and decorator generated observed attributes.
          */
-        Reflect.defineProperty(constructor, 'observedAttributes', {
+        Reflect.defineProperty(constructor, observedAttributesKey, {
             configurable: true,
             enumerable: false,
             get (): string[] {
                 return observedAttributes;
+            }
+        });
+
+        /**
+         * We override the {@link CustomElement.styles} getter with a new one, which returns
+         * the unique set of statically defined and decorator defined styles.
+         */
+        Reflect.defineProperty(constructor, stylesKey, {
+            configurable: true,
+            enumerable: true,
+            get (): string[] {
+                return styles;
             }
         });
 

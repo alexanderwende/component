@@ -14,7 +14,16 @@
 
 ### Templates
 * Defining a template
+* Injecting helpers into a template
 * lit-html documentation link
+
+### Styles
+* Defining element styles
+  * Static styles
+  * Inline styles
+  * Importing styles from css modules
+* Inheriting element styles
+
 
 ### Attributes and Properties
 * Overview
@@ -29,6 +38,7 @@
 * Listener declaration
 * Property change events
 * The watch method
+* The notify method
 * Lifecycle events
 
 ### Lifecycle

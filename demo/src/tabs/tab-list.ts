@@ -1,4 +1,4 @@
-import { CustomElement, customElement, html, listener, property } from '../../../src';
+import { Changes, CustomElement, customElement, html, listener, property } from '../../../src';
 import { Tab } from './tab';
 
 @customElement<TabList>({
@@ -19,9 +19,7 @@ export class TabList extends CustomElement {
         this.role = 'tablist'
     }
 
-    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
-
-        super.updateCallback(changedProperties, firstUpdate);
+    updateCallback (changedProperties: Changes, firstUpdate: boolean) {
 
         if (firstUpdate) {
 

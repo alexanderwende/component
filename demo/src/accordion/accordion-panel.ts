@@ -1,4 +1,4 @@
-import { CustomElement, customElement, html, property, AttributeConverterBoolean } from '../../../src';
+import { AttributeConverterBoolean, Changes, CustomElement, customElement, html, property } from '../../../src';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
 
 let nextAccordionPanelId = 0;
@@ -88,9 +88,7 @@ export class AccordionPanel extends CustomElement {
         });
     }
 
-    updateCallback (changedProperties: Map<PropertyKey, any>, firstUpdate: boolean) {
-
-        super.updateCallback(changedProperties, firstUpdate);
+    updateCallback (changedProperties: Changes, firstUpdate: boolean) {
 
         if (firstUpdate) {
 

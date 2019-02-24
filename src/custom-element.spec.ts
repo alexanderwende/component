@@ -1,4 +1,4 @@
-import { CustomElement } from './custom-element';
+import { CustomElement, Changes } from './custom-element';
 import { AttributeConverterBoolean, customElement, listener, property } from './decorators';
 
 function addElement (element: CustomElement) {
@@ -94,9 +94,7 @@ describe('CustomElement', () => {
                     recordedOrder.push('ATTRIBUTE');
                 }
 
-                updateCallback (changedProperties: Map<PropertyKey, any>, firtsUpdate: boolean) {
-
-                    super.updateCallback(changedProperties, firtsUpdate);
+                updateCallback (changedProperties: Changes, firtsUpdate: boolean) {
 
                     recordedOrder.push('UPDATE');
 

@@ -219,8 +219,6 @@ describe('@property decorator', () => {
 
                 updateCallback (changes: Changes, firstUpdate: boolean) {
 
-                    super.updateCallback(changes, firstUpdate);
-
                     if (firstUpdate) {
 
                         expect(this.selected).toBe(true);
