@@ -1,29 +1,36 @@
 import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property } from '../../src';
+import { css } from '../../src/css';
 import { Enter, Space } from './keys';
+import './icon/icon';
 
-@customElement({
+@customElement<Checkbox>({
     selector: 'ui-checkbox',
-    template: checkbox => html`
-    <style>
-        :host {
+    styles: [css`
+    :host {
             display: inline-flex;
-            contain: content;
             width: 1rem;
             height: 1rem;
             cursor: pointer;
-            border: 0.125rem solid #bfbfbf;
-            border-radius: 0.25rem;
-            box-sizing: border-box;
+            border: var(--border-width, 0.125rem) solid var(--border-color, #bfbfbf);
+            border-radius: var(--border-radius, 0.25rem);
+            box-sizing: content-box;
             transition: .1s ease-in;
         }
         :host([aria-checked="true"]) {
-            background-color: green;
-            border-color: green;
+            border-color: var(--selected-color, #bfbfbf);
         }
-        :host([aria-checked="false"]) {
-            border-color: #bfbfbf;
+        ui-icon {
+            color: var(--border-color, #bfbfbf);
+            opacity: 0;
+            transition: .1s ease-in;
         }
-    </style>
+        :host([aria-checked="true"]) ui-icon {
+            color: var(--selected-color, #bfbfbf);
+            opacity: 1;
+        }
+    `],
+    template: checkbox => html`
+    <ui-icon .icon=${ 'check' }></ui-icon>
     `
 })
 export class Checkbox extends CustomElement {

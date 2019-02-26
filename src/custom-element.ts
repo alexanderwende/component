@@ -24,7 +24,6 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
     target: EventTarget;
 }
 
-// TODO: Use this for property-changes maps
 export type Changes = Map<PropertyKey, any>;
 
 /**
@@ -32,10 +31,23 @@ export type Changes = Map<PropertyKey, any>;
  */
 export abstract class CustomElement extends HTMLElement {
 
+    /**
+     * The custom element's cached stylesheet object
+     *
+     * @private
+     * @internal
+     */
     protected static _styleSheet: CSSStyleSheet | undefined;
 
     /**
      * The custom element's stylesheet object
+     *
+     * @remarks
+     * When constructable stylesheets are available, this getter will create a {@link CSSStyleSheet}
+     * instance and cache it for use with each instance of the custom element.
+     *
+     * @private
+     * @internal
      */
     protected static get styleSheet (): CSSStyleSheet | undefined {
 
@@ -104,6 +116,7 @@ export abstract class CustomElement extends HTMLElement {
      * @remarks
      * Can be set through the {@link customElement} decorator's `styles` option (defaults to `undefined`).
      * Styles set in the {@link customElement} decorator will be merged with the class's static property.
+     * This allows to inherit styles from a parent component and add additional styles on the child component.
      *
      * ```typescript
      * @customElement({
@@ -133,8 +146,8 @@ export abstract class CustomElement extends HTMLElement {
      * Can be set though the {@link customElement} decorator's `template` option (defaults to `undefined`).
      * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
      *
-     * @param element
-     * @param helpers
+     * @param element   The custom element instance
+     * @param helpers   Any additional properties which should exist in the template scope
      */
     static template?: (element: any, ...helpers: any[]) => TemplateResult | void;
 
@@ -292,11 +305,8 @@ export abstract class CustomElement extends HTMLElement {
      * Creates the custom element's render root
      *
      * @remarks
-     * The render root is where the {@link render} method will attach its DOM output.
-     * When using the custom element with shadow mode, it will be a shadow root,
-     * otherwise it will be the custom element itself.
-     *
-     * TODO: Can slots be used without shadow DOM?
+     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
+     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
      */
     protected createRenderRoot (): Element | DocumentFragment {
 
@@ -305,12 +315,20 @@ export abstract class CustomElement extends HTMLElement {
             this;
     }
 
-    // TODO: document this
+    /**
+     * Adds the custom element's styles to its {@link _renderRoot}
+     *
+     * @remarks
+     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
+     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}
+     */
     protected adoptStyles () {
 
         const constructor = this.constructor as typeof CustomElement;
         const styleSheet = constructor.styleSheet;
         const styles = constructor.styles;
+
+        // TODO: handle non-shadow roots
 
         if (styleSheet) {
 
@@ -328,13 +346,34 @@ export abstract class CustomElement extends HTMLElement {
         }
     }
 
-    // TODO: add example for override with helpers
     /**
      * Renders the custom element's template to its {@link _renderRoot}
      *
      * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}
-     * to the custom element's render root.
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
+     * custom element's render root. The custom element instance will be passed to the static template method
+     * automatically. To make additional properties available to the template method, you can pass them to the
+     * render method.
+     *
+     * ```typescript
+     * const dateFormatter = (date: Date) => { // return some date transformation...
+     * };
+     *
+     * @customElement({
+     *      selector: 'my-element',
+     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      @property()
+     *      lastUpdated: Date;
+     *
+     *      render () {
+     *          // make the date formatter available in the template by passing it to render()
+     *          super.render(dateFormatter);
+     *      }
+     * }
+     * ```
      */
     protected render (...helpers: any[]) {
 

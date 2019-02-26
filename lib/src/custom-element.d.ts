@@ -21,6 +21,24 @@ export declare type Changes = Map<PropertyKey, any>;
  */
 export declare abstract class CustomElement extends HTMLElement {
     /**
+     * The custom element's cached stylesheet object
+     *
+     * @private
+     * @internal
+     */
+    protected static _styleSheet: CSSStyleSheet | undefined;
+    /**
+     * The custom element's stylesheet object
+     *
+     * @remarks
+     * When constructable stylesheets are available, this getter will create a {@link CSSStyleSheet}
+     * instance and cache it for use with each instance of the custom element.
+     *
+     * @private
+     * @internal
+     */
+    protected static readonly styleSheet: CSSStyleSheet | undefined;
+    /**
      * The custom element's selector
      *
      * @remarks
@@ -57,13 +75,39 @@ export declare abstract class CustomElement extends HTMLElement {
      */
     static listeners: Map<PropertyKey, ListenerDeclaration>;
     /**
+     * The custom element's styles
+     *
+     * @remarks
+     * Can be set through the {@link customElement} decorator's `styles` option (defaults to `undefined`).
+     * Styles set in the {@link customElement} decorator will be merged with the class's static property.
+     * This allows to inherit styles from a parent component and add additional styles on the child component.
+     *
+     * ```typescript
+     * @customElement({
+     *      selector: 'my-element'
+     * })
+     * class MyElement extends MyBaseElement {
+     *
+     *      static get styles (): string[] {
+     *
+     *          return [
+     *              ...super.styles,
+     *              ':host { background-color: green; }'
+     *          ];
+     *      }
+     * }
+     * ```
+     */
+    static readonly styles: string[];
+    /**
      * The custom element's template
      *
      * @remarks
-     * Will be set by the {@link customElement} decorator's template option (defaults to `undefined`).
+     * Can be set though the {@link customElement} decorator's `template` option (defaults to `undefined`).
+     * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
      *
-     * @param element
-     * @param helpers
+     * @param element   The custom element instance
+     * @param helpers   Any additional properties which should exist in the template scope
      */
     static template?: (element: any, ...helpers: any[]) => TemplateResult | void;
     /**
@@ -164,33 +208,58 @@ export declare abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
-     * rendering, property reflection and property change events inside a {@link requestAnimationFrame}. It is safe to
-     * use this callback to set additional attributes or styles on the rendered component that can't be achieved through
-     * template bindings or reflection.
+     * rendering, property reflection and property change events.
      *
      * N.B.: Changes made to properties or attributes inside this callback *won't* cause another update.
      *
      * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
      * @param firstUpdate       A boolean indicating if this was the first update
      */
-    updateCallback(changedProperties: Map<PropertyKey, any>, firstUpdate: boolean): void;
+    updateCallback(changedProperties: Changes, firstUpdate: boolean): void;
     /**
      * Creates the custom element's render root
      *
      * @remarks
-     * The render root is where the {@link render} method will attach its DOM output.
-     * When using the custom element with shadow mode, it will be a shadow root,
-     * otherwise it will be the custom element itself.
-     *
-     * TODO: Can slots be used without shadow DOM?
+     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
+     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
      */
     protected createRenderRoot(): Element | DocumentFragment;
+    /**
+     * Adds the custom element's styles to its {@link _renderRoot}
+     *
+     * @remarks
+     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
+     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}
+     */
+    protected adoptStyles(): void;
     /**
      * Renders the custom element's template to its {@link _renderRoot}
      *
      * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult}
-     * to the custom element's render root.
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
+     * custom element's render root. The custom element instance will be passed to the static template method
+     * automatically. To make additional properties available to the template method, you can pass them to the
+     * render method.
+     *
+     * ```typescript
+     * const dateFormatter = (date: Date) => { // return some date transformation...
+     * };
+     *
+     * @customElement({
+     *      selector: 'my-element',
+     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      @property()
+     *      lastUpdated: Date;
+     *
+     *      render () {
+     *          // make the date formatter available in the template by passing it to render()
+     *          super.render(dateFormatter);
+     *      }
+     * }
+     * ```
      */
     protected render(...helpers: any[]): void;
     /**
@@ -397,7 +466,8 @@ export declare abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * Invokes {@link updateCallback} after performing the update and cleans up the custom element
-     * state.
+     * state. During the first update the element's styles will be added. Dispatches the update
+     * lifecycle event.
      *
      * @private
      * @internal

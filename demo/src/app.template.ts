@@ -9,6 +9,33 @@ export const template = (element: App) => html`
     <main>
 
         <div>
+            <h2>Icon</h2>
+            <ui-icon .icon=${ 'angle-right' }></ui-icon>
+            <ui-icon .icon=${ 'chevron-right' }></ui-icon>
+            <ui-icon .icon=${ 'envelope-open' }></ui-icon>
+            <ui-icon .icon=${ 'lock' }></ui-icon>
+            <ui-icon .icon=${ 'lock-open' }></ui-icon>
+            <ui-icon .icon=${ 'paint-brush' }></ui-icon>
+            <ui-icon .icon=${ 'pen' }></ui-icon>
+            <ui-icon .icon=${ 'check' }></ui-icon>
+            <ui-icon .icon=${ 'times' }></ui-icon>
+            <ui-icon .icon=${ 'trash-alt' }></ui-icon>
+            <ui-icon .icon=${ 'exclamation-triangle' }></ui-icon>
+            <ui-icon .icon=${ 'info-circle' }></ui-icon>
+            <ui-icon .icon=${ 'question-circle' }></ui-icon>
+            <ui-icon .icon=${ 'check-circle' }></ui-icon>
+            <ui-icon .icon=${ 'user-circle' }></ui-icon>
+            <ui-icon .icon=${ 'user' }></ui-icon>
+
+            <ul class="todo-list">
+                <li>
+                    <span>Buy something <ui-icon .icon=${ 'check' }></ui-icon></span>
+                </li>
+                <li>
+                    <span>Buy something else <ui-icon .icon=${ 'times' }></ui-icon></span>
+                </li>
+            </ul>
+
             <h2>Checkbox</h2>
             <ui-checkbox></ui-checkbox>
 
@@ -48,9 +75,9 @@ export const template = (element: App) => html`
 
             <h2>Plain Card</h2>
             <ui-plain-card>
-                <h3 slot="ui-plain-card-header">Card Title</h3>
-                <p slot="ui-plain-card-body">Card body text...</p>
-                <p slot="ui-plain-card-footer">Card footer</p>
+                <h3 slot="ui-card-header">Card Title</h3>
+                <p slot="ui-card-body">Card body text...</p>
+                <p slot="ui-card-footer">Card footer</p>
             </ui-plain-card>
 
             <h2>Tabs</h2>

@@ -26,7 +26,6 @@
   "devDependencies": {
     "@types/jasmine": "^3.3.8",
     "auto-changelog": "^1.11.0",
-    "csstype": "^2.6.2",
     "jasmine-core": "^3.3.0",
     "karma": "^4.0.0",
     "karma-chrome-launcher": "^2.2.0",

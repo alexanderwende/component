@@ -110,7 +110,6 @@ export function property<Type extends CustomElement = CustomElement> (options: P
 
             // remove the inherited attribute as it's overridden
             constructor.attributes.delete(attribute as string);
-
             // mark attribute as overridden for {@link customElement} decorator
             constructor.overridden!.add(attribute as string);
         }
@@ -120,8 +119,8 @@ export function property<Type extends CustomElement = CustomElement> (options: P
             constructor.attributes.set(declaration.attribute, propertyKey);
         }
 
-        // store the property declaration last, so we can still access the inherited declaration
-        // when processing the attributes
+        // store the property declaration *after* processing the attributes, so we can still access the
+        // inherited property declaration when processing the attributes
         constructor.properties.set(propertyKey, declaration as PropertyDeclaration);
 
         if (!propertyDescriptor) {
