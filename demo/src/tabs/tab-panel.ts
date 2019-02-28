@@ -1,8 +1,24 @@
 import { CustomElement, property, html, customElement, AttributeConverterString } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
+import { css } from '../../../src/css';
 
 @customElement({
     selector: 'ui-tab-panel',
+    styles: [css`
+    :host {
+        display: block;
+        position: relative;
+        z-index: 1;
+        padding: 0 1rem;
+        background-color: var(--background-color);
+        border: var(--border);
+        border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+        box-shadow: var(--box-shadow);
+    }
+    :host([aria-hidden=true]) {
+        display: none;
+    }
+    `],
     template: () => html`<slot></slot>`
 })
 export class TabPanel extends CustomElement {

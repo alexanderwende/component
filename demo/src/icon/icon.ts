@@ -1,7 +1,7 @@
 import { CustomElement, customElement, property, html } from '../../../src';
 import { css } from '../../../src/css';
 
-@customElement<FAIcon>({
+@customElement<Icon>({
     selector: 'ui-icon',
     styles: [css`
     :host {
@@ -19,53 +19,90 @@ import { css } from '../../../src/css';
         overflow: visible;
         fill: var(--icon-color, currentColor);
     }
+    /* :host([data-set=mat]) {
+        width: 1.25em;
+        height: 1.25em;
+        vertical-align: -0.3125em;
+    } */
     `],
-    template: icon => html`
-    <svg>
-        <use href="${ (icon.constructor as typeof FAIcon).iconSprite }#${ icon.icon }"
-        xlink:href="${ (icon.constructor as typeof FAIcon).iconSprite }#${ icon.icon }" />
-    </svg>`
+    template: (element) => {
+        const set = element.set;
+        const icon = set === 'mat'
+            ? `ic_${element.icon}_24px`
+            : set === 'ei'
+            ? `ei-${element.icon}-icon`
+            : element.icon;
+
+        return html`
+        <svg>
+            <use href="${ (element.constructor as typeof Icon).getSprite(set) }#${ icon }"
+            xlink:href="${ (element.constructor as typeof Icon).getSprite(set) }#${ icon }" />
+        </svg>`;
+    }
 })
-export class FAIcon extends CustomElement {
+export class Icon extends CustomElement {
 
-    protected static _iconSprite: string;
-
-    // TODO: Loading from CDN does not work!
     /**
-     * The icon sprite url
+     * A map for caching an icon set's sprite url
+     */
+    protected static _sprites: Map<string, string> = new Map();
+
+    /**
+     * Get the svg sprite url for the requested icon set
      *
      * @remarks
-     * Can be set through a meta tag in the html document to point to a custom location, otherwise
-     * it will use the CDN location.
+     * The sprite url for an icon set can be set through a `meta` tag in the html document. You can define
+     * your own icon sets by chosing an identifier (such as `:myset` instead of `:fa`, `:mat` or `:ie`)
+     * and configuring its location.
      *
      * ```html
      * <!doctype html>
      * <html>
      *    <head>
-     *    <meta name="fa:icon-sprite" content="assets/icons/sprites/solid.svg" />
+     *    <!-- supports multiple svg sprites -->
+     *    <meta name="ui-icon:svg-sprite:fa" content="assets/icons/sprites/font-awesome/sprite.svg" />
+     *    <meta name="ui-icon:svg-sprite:mat" content="assets/icons/sprites/material/sprite.svg" />
+     *    <meta name="ui-icon:svg-sprite:ei" content="assets/icon/sprites/evil-icons/sprite.svg" />
+     *    <!-- supports custom svg sprites -->
+     *    <meta name="ui-icon:svg-sprite:myset" content="assets/icon/sprites/myset/my_sprite.svg" />
      *    </head>
      *    ...
      * </html>
      * ```
+     *
+     * When using the icon element, specify your own set.
+     *
+     * ```html
+     * <ui-icon data-icon="my_icon_id" data-set="myset"></ui-icon>
+     * ```
+     *
+     * If no sprite url is specified for a set, the icon element will attempt to use an svg icon from
+     * an inlined svg element in the current document.
      */
-    protected static get iconSprite (): string {
+    protected static getSprite (set: string): string {
 
-        if (!this._iconSprite) {
+        if (!this._sprites.has(set)) {
 
-            const meta = document.querySelector('meta[name="fa:icon-sprite"][content]');
+            const meta = document.querySelector(`meta[name="ui-icon:sprite:${ set }"][content]`);
 
-            this._iconSprite = meta
-                ? meta.getAttribute('content')!
-                : 'https://use.fontawesome.com/releases/v5.7.2/sprites/solid.svg';
+            if (meta) {
+
+                this._sprites.set(set, meta.getAttribute('content')!);
+            }
         }
 
-        return this._iconSprite;
+        return this._sprites.get(set) || '';
     }
 
     @property({
         attribute: 'data-icon'
     })
     icon = 'info';
+
+    @property({
+        attribute: 'data-set'
+    })
+    set = 'fa'
 
     connectedCallback () {
 

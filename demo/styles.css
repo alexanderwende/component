@@ -12,9 +12,9 @@
   /* --disabled-color: rgba(0, 0, 0, 0.25); */
   --disabled-color: #bfbfbf;
   /* --active-color: rgba(40, 40, 200, 0.25); */
-  --active-color: dodgerblue;
+  --active-color: #3399ff88;
   /* --selected-color: rgba(0, 150, 0, 0.5); */
-  --selected-color: forestgreen;
+  --selected-color: #3399ff;
   /* --focus-color: rgba(40, 40, 200, 0.25); */
   --focus-color: var(--active-color);
   --focus-width: 0.25rem;

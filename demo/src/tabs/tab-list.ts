@@ -1,8 +1,15 @@
 import { Changes, CustomElement, customElement, html, listener, property } from '../../../src';
 import { Tab } from './tab';
+import { css } from '../../../src/css';
 
 @customElement<TabList>({
     selector: 'ui-tab-list',
+    styles: [css`
+    :host {
+        display: flex;
+        flex-flow: row nowrap;
+    }
+    `],
     template: () => html`<slot></slot>`
 })
 export class TabList extends CustomElement {

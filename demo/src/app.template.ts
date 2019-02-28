@@ -10,9 +10,11 @@ export const template = (element: App) => html`
 
         <div>
             <h2>Icon</h2>
-            <ui-icon .icon=${ 'angle-right' }></ui-icon>
+
+            <h3>Font Awesome</h3>
+
             <ui-icon .icon=${ 'chevron-right' }></ui-icon>
-            <ui-icon .icon=${ 'envelope-open' }></ui-icon>
+            <ui-icon .icon=${ 'envelope' }></ui-icon>
             <ui-icon .icon=${ 'lock' }></ui-icon>
             <ui-icon .icon=${ 'lock-open' }></ui-icon>
             <ui-icon .icon=${ 'paint-brush' }></ui-icon>
@@ -36,8 +38,60 @@ export const template = (element: App) => html`
                 </li>
             </ul>
 
+            <h3>Material Icons</h3>
+
+            <ui-icon .icon=${ 'chevron_right' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'mail' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'lock' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'lock_open' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'brush' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'edit' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'check' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'clear' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'delete' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'warning' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'info' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'help' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'check_circle' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'account_circle' } .set=${ 'mat' }></ui-icon>
+            <ui-icon .icon=${ 'person' } .set=${ 'mat' }></ui-icon>
+
+            <ul class="todo-list">
+                <li>
+                    <span>Buy something <ui-icon .icon=${ 'check' } .set=${ 'mat' }></ui-icon></span>
+                </li>
+                <li>
+                    <span>Buy something else <ui-icon .icon=${ 'clear' } .set=${ 'mat' }></ui-icon></span>
+                </li>
+            </ul>
+
+            <h3>Evil Icons</h3>
+
+            <ui-icon .icon=${ 'chevron-right' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'envelope' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'lock' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'unlock' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'paperclip' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'pencil' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'check' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'close' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'trash' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'exclamation' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'question' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'check' } .set=${ 'ei' }></ui-icon>
+            <ui-icon .icon=${ 'user' } .set=${ 'ei' }></ui-icon>
+
+            <ul class="todo-list">
+                <li>
+                    <span>Buy something <ui-icon .icon=${ 'check' } .set=${ 'ei' }></ui-icon></span>
+                </li>
+                <li>
+                    <span>Buy something else <ui-icon .icon=${ 'close' } .set=${ 'ei' }></ui-icon></span>
+                </li>
+            </ul>
+
             <h2>Checkbox</h2>
-            <ui-checkbox></ui-checkbox>
+            <ui-checkbox .checked=${ true }></ui-checkbox>
 
             <h2>Toggle</h2>
             <ul class="settings-list">

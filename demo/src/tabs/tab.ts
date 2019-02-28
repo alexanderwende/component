@@ -1,9 +1,36 @@
 import { AttributeConverterString, Changes, CustomElement, customElement, html, listener, property } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
+import { css } from '../../../src/css';
 
 @customElement({
     selector: 'ui-tab',
+    styles: [css`
+    :host {
+        position: relative;
+        display: inline-flex;
+        flex-flow: row;
+        margin-right: 0.25rem;
+        padding: 0 0.5rem;
+        cursor: pointer;
+        border: var(--border);
+        border-bottom: none;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        box-shadow: var(--box-shadow);
+        background-color: var(--background-color);
+    }
+    :host([aria-selected=true]):after {
+        content: '';
+        display: block;
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        bottom: calc(-1 * var(--border-width));
+        width: 100%;
+        height: var(--border-width);
+        background-color: var(--background-color);
+    }
+    `],
     template: () => html`<slot></slot>`
 })
 export class Tab extends CustomElement {
