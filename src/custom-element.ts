@@ -108,7 +108,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
-    // TODO: test style inheritance
+    // TODO: create tests for style inheritance
     // TODO: update docs
     /**
      * The custom element's styles
@@ -328,21 +328,46 @@ export abstract class CustomElement extends HTMLElement {
         const styleSheet = constructor.styleSheet;
         const styles = constructor.styles;
 
-        // TODO: handle non-shadow roots
-
         if (styleSheet) {
 
-            // this will work once constructable stylesheets arrive
-            // https://wicg.github.io/construct-stylesheets/
-            (this._renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
+            // TODO: test this part once we have constructable stylesheets (Chrome 73)
+            if (!constructor.shadow) {
+
+                if ((document as DocumentOrShadowRoot).adoptedStyleSheets.includes(styleSheet)) return;
+
+                (document as DocumentOrShadowRoot).adoptedStyleSheets = [
+                    ...(document as DocumentOrShadowRoot).adoptedStyleSheets,
+                    styleSheet
+                ];
+
+            } else {
+
+                // this will work once constructable stylesheets arrive
+                // https://wicg.github.io/construct-stylesheets/
+                (this._renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
+            }
 
         } else if (styles.length) {
 
-            const style = document.createElement('style');
+            // TODO: test we don't duplicate stylesheets for non-shadow elements
+            const styleAlreadyAdded = constructor.shadow
+                ? false
+                : Array.from(document.styleSheets).find(style => style.title === constructor.selector) && true || false;
 
+            if (styleAlreadyAdded) return;
+
+            const style = document.createElement('style');
+            style.title = constructor.selector;
             style.textContent = styles.join('\n');
 
-            this._renderRoot.appendChild(style);
+            if (constructor.shadow) {
+
+                this._renderRoot.appendChild(style);
+
+            } else {
+
+                document.head.appendChild(style);
+            }
         }
     }
 
