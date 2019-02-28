@@ -22,6 +22,9 @@ import { css } from '../../../src/css';
         overflow: visible;
         fill: var(--icon-color, currentColor);
     }
+    :host([data-set=uni]) {
+        padding: 0em;
+    }
     :host([data-set=mat]) {
         padding: 0;
     }

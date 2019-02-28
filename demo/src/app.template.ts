@@ -39,6 +39,31 @@ export const template = (element: App) => html`
                 </li>
             </ul>
 
+            <h3>Unicons</h3>
+
+            <div class="icons">
+                <ui-icon .icon=${ 'angle-right-b' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'envelope-alt' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'lock' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'unlock' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'brush-alt' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'pen' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'check' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'times' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'trash-alt' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'user-circle' } .set=${ 'uni' }></ui-icon>
+                <ui-icon .icon=${ 'user' } .set=${ 'uni' }></ui-icon>
+            </div>
+
+            <ul>
+                <li>
+                    <span>Buy something<ui-icon .icon=${ 'check' } .set=${ 'uni' }></ui-icon></span>
+                </li>
+                <li>
+                    <span>Buy something else<ui-icon .icon=${ 'times' } .set=${ 'uni' }></ui-icon></span>
+                </li>
+            </ul>
+
             <h3>Material Icons</h3>
 
             <div class="icons">
