@@ -6,32 +6,36 @@ import { css } from '../../../src/css';
     styles: [css`
     :host {
         display: inline-flex;
-        width: 1em;
-        height: 1em;
+        width: var(--line-height, 1.5em);
+        height: var(--line-height, 1.5em);
+        padding: calc((var(--line-height, 1.5em) - var(--font-size, 1em)) / 2);
         line-height: inherit;
         font-size: inherit;
-        vertical-align: var(--icon-vertical-align, -0.1875em);
+        vertical-align: bottom;
+        box-sizing: border-box;
     }
     svg {
         width: 100%;
+        height: 100%;
         line-height: inherit;
         font-size: inherit;
         overflow: visible;
         fill: var(--icon-color, currentColor);
     }
-    /* :host([data-set=mat]) {
-        width: 1.25em;
-        height: 1.25em;
-        vertical-align: -0.3125em;
-    } */
+    :host([data-set=mat]) {
+        padding: 0;
+    }
+    :host([data-set=ei]) {
+        padding: 0;
+    }
     `],
     template: (element) => {
         const set = element.set;
-        const icon = set === 'mat'
-            ? `ic_${element.icon}_24px`
-            : set === 'ei'
-            ? `ei-${element.icon}-icon`
-            : element.icon;
+        const icon = (set === 'mat')
+            ? `ic_${ element.icon }_24px`
+            : (set === 'ei')
+                ? `ei-${ element.icon }-icon`
+                : element.icon;
 
         return html`
         <svg>
@@ -52,8 +56,8 @@ export class Icon extends CustomElement {
      *
      * @remarks
      * The sprite url for an icon set can be set through a `meta` tag in the html document. You can define
-     * your own icon sets by chosing an identifier (such as `:myset` instead of `:fa`, `:mat` or `:ie`)
-     * and configuring its location.
+     * custom icon sets by chosing an identifier (such as `:myset` instead of `:fa`, `:mat` or `:ie`) and
+     * configuring its location.
      *
      * ```html
      * <!doctype html>
@@ -70,10 +74,13 @@ export class Icon extends CustomElement {
      * </html>
      * ```
      *
-     * When using the icon element, specify your own set.
+     * When using the icon element, specify your custom icon set.
      *
      * ```html
+     * <!-- use attributes -->
      * <ui-icon data-icon="my_icon_id" data-set="myset"></ui-icon>
+     * <!-- or use property bindings within lit-html templates -->
+     * <ui-icon .icon=${'my_icon_id'} .set=${'myset'}></ui-icon>
      * ```
      *
      * If no sprite url is specified for a set, the icon element will attempt to use an svg icon from

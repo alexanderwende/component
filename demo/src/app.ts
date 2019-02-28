@@ -8,10 +8,12 @@ import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';
 import './toggle';
+import { styles } from './app.styles';
 
 @customElement({
     selector: 'demo-app',
     shadow: false,
+    styles: [styles],
     template: template
 })
 export class App extends CustomElement { }
