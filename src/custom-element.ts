@@ -29,6 +29,8 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
  */
 export type Changes = Map<PropertyKey, any>;
 
+// TODO: settle on protected vs private API
+
 /**
  * The custom element base class
  */

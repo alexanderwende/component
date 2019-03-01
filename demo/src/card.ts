@@ -1,4 +1,4 @@
-import { CustomElement, customElement, html, listener } from '../../src';
+import { CustomElement, customElement, html, listener, property } from '../../src';
 import { css } from '../../src/css';
 
 // we can define mixins as
@@ -32,14 +32,49 @@ const style = css`
     <slot name="ui-card-header"></slot>
     <slot name="ui-card-body"></slot>
     <slot name="ui-card-footer"></slot>
+    <div>Worker counter: ${ card.counter }</div>
+    <button>Stop worker</button>
     `
 })
 export class Card extends CustomElement {
 
-    @listener({event: 'click'})
+    @property({
+        attribute: false
+    })
+    counter!: number;
+
+    worker!: Worker;
+
+    connectedCallback () {
+
+        super.connectedCallback();
+
+        this.worker = new Worker('worker.js');
+    }
+
+    disconnectedCallback () {
+
+        super.disconnectedCallback();
+
+        this.worker.terminate();
+    }
+
+    @listener<Card>({
+        event: 'click',
+        target: function () { return this._renderRoot.querySelector('button')!; }
+    })
     handleClick (event: MouseEvent) {
 
-        console.log(event);
+        this.worker.terminate();
+    }
+
+    @listener<Card>({
+        event: 'message',
+        target: function () { return this.worker; }
+    })
+    handleMessage (event: MessageEvent) {
+
+        this.watch(() => this.counter = event.data);
     }
 }
 
@@ -60,6 +95,12 @@ export class ActionCard extends Card {
             'slot[name=ui-action-card-actions] { display: block; text-align: right; }'
         ]
     }
+
+    @listener({ event: null })
+    handleClick () { }
+
+    @listener({ event: null })
+    handleMessage () { }
 }
 
 @customElement<PlainCard>({

@@ -1,9 +1,8 @@
 import { CustomElement } from '../custom-element';
 import { customElement } from './custom-element';
 import { listener } from './listener';
-
-// TODO: Add tests for returning DOM children as listener targets
-// TODO: Add tests for worker instance as listener target
+import { property } from './property';
+import { html } from 'lit-html';
 
 describe('@listener decorator', () => {
 
@@ -29,7 +28,7 @@ describe('@listener decorator', () => {
 
             expect([...TestElement.listeners.keys()]).toEqual(['handleClick']);
 
-            const testElement = document.createElement('test-element-listener');
+            const testElement = document.createElement(TestElement.selector);
 
             // listeners are bound after the first update to ensure DOM is created
             // and connectedCallback has been run
@@ -43,7 +42,7 @@ describe('@listener decorator', () => {
                 }
             });
 
-            document.body.append(testElement);
+            document.body.appendChild(testElement);
         });
 
         it('should bind inherited event bindings', (done) => {
@@ -71,7 +70,7 @@ describe('@listener decorator', () => {
 
             expect([...ExtendedTestElement.listeners.keys()]).toEqual(['handleClick']);
 
-            const testElement = document.createElement('test-element-listener-extended');
+            const testElement = document.createElement(ExtendedTestElement.selector);
 
             testElement.addEventListener('on-update', (event: Event) => {
 
@@ -83,7 +82,7 @@ describe('@listener decorator', () => {
                 }
             });
 
-            document.body.append(testElement);
+            document.body.appendChild(testElement);
         });
 
         it('should allow unbinding events when extending a custom element', (done) => {
@@ -120,7 +119,7 @@ describe('@listener decorator', () => {
 
             expect([...ExtendedTestElement.listeners.keys()]).toEqual([]);
 
-            const testElement = document.createElement('test-element-listener-unbind-extended');
+            const testElement = document.createElement(ExtendedTestElement.selector);
 
             testElement.addEventListener('on-update', (event: Event) => {
 
@@ -132,7 +131,119 @@ describe('@listener decorator', () => {
                 }
             });
 
-            document.body.append(testElement);
+            document.body.appendChild(testElement);
+        });
+    });
+
+    describe('@listener decorator: target', () => {
+
+        it('should allow binding to targets created during connectedCallback', (done) => {
+
+            const workerCode = `
+            let counter = 0;
+            function sendCount () {
+                postMessage(counter++);
+                setTimeout(sendCount, 1000);
+            }
+            sendCount();
+            `;
+
+            const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+
+            @customElement({
+                selector: 'test-element-listener-target'
+            })
+            class TestElement extends CustomElement {
+
+                workerUrl!: string;
+
+                worker!: Worker;
+
+                @property()
+                message!: number;
+
+                connectedCallback () {
+
+                    super.connectedCallback();
+                    this.workerUrl = URL.createObjectURL(workerBlob);
+                    this.worker = new Worker(this.workerUrl);
+                }
+
+                disconnectedCallback () {
+
+                    super.disconnectedCallback();
+                    this.worker.terminate();
+                    URL.revokeObjectURL(this.workerUrl);
+                }
+
+                @listener<TestElement>({
+                    event: 'message',
+                    target: function () { return this.worker; }
+                })
+                handleMessage (event: MessageEvent) {
+
+                    this.watch(() => this.message = event.data);
+                }
+            }
+
+            const testElement = document.createElement(TestElement.selector);
+
+            testElement.addEventListener('message-changed', (event: Event) => {
+
+                const message = (event as CustomEvent).detail as { property: string, previous: any, current: any };
+
+                expect(message.property).toBe('message');
+                expect(message.previous).toBe(undefined);
+                expect(message.current).toBe(0);
+
+                document.body.removeChild(testElement);
+
+                done();
+            });
+
+            document.body.appendChild(testElement);
+        });
+
+        it('should allow binding to ShadowDOM children', (done) => {
+
+            @customElement({
+                selector: 'test-element-listener-target-shadow-dom',
+                template: element => html`<button>Test Button</button>`
+            })
+            class TestElement extends CustomElement {
+
+                @property()
+                clicked = false;
+
+                @listener<TestElement>({
+                    event: 'click',
+                    target: function () { return this._renderRoot.querySelector('button')!; }
+                })
+                handleClick (event: MouseEvent) {
+
+                    this.watch(() => this.clicked = true);
+                }
+            }
+
+            const testElement = document.createElement(TestElement.selector) as TestElement;
+
+            testElement.addEventListener('clicked-changed', (event: Event) => {
+
+                expect(testElement.clicked).toBe(true);
+
+                document.body.removeChild(testElement);
+
+                done();
+            });
+
+            testElement.addEventListener('on-update', () => {
+
+                // when we want the custom element to react to state changes, we can't do that in the update loop
+                // we need to defer code that changes the element state
+                Promise.resolve().then(() => testElement.shadowRoot!.querySelector('button')!.click());
+            });
+
+            document.body.appendChild(testElement);
         });
     });
 });

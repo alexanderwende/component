@@ -1,6 +1,8 @@
 import { CustomElement } from '../custom-element';
 import { TemplateResult } from 'lit-html';
 
+// TODO: rename to ComponentDeclaration
+
 /**
  * A {@link CustomElement} declaration
  */

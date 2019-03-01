@@ -2,6 +2,8 @@ import { CustomElement } from '../custom-element';
 import { CustomElementDeclaration, DEFAULT_CUSTOM_ELEMENT_DECLARATION } from './custom-element-declaration';
 import { DecoratedCustomElementType } from './property';
 
+// TODO: rename to component()
+
 /**
  * Decorates a {@link CustomElement} class
  *
