@@ -3,7 +3,7 @@ import { CustomElement } from '../custom-element';
 /**
  * A {@link CustomElement} event listener declaration
  */
-export interface ListenerDeclaration {
+export interface ListenerDeclaration<Type extends CustomElement = CustomElement> {
 
     /**
      * The event to listen to
@@ -26,10 +26,38 @@ export interface ListenerDeclaration {
      * * window.onresize
      * * document.onload
      * * document.onscroll
-     * * Worker.onmessage - TODO: This could be interesting to solve, we might need to get the worker from the
-     *   component instance, maybe a use case for di @self()
+     * * Worker.onmessage
+     *
+     * If a function is provided, the function will be invoked by custom element after its
+     * {@link connectedCallback} has updated the custom element. The context of the function will
+     * be the custom element instance.
+     *
+     * ```typescript
+     * class MyElement extends CustomElement {
+     *
+     *      worker: Worker;
+     *
+     *      connectedCallback () {
+     *          super.connectedCallback();
+     *          this.worker = new Worker('worker.js');
+     *      }
+     *
+     *      disconnectedCallback () {
+     *          super.disconnectedCallback()
+     *          this.worker.terminate();
+     *      }
+     *
+     *      @listener<MyElement>({
+     *          event: 'message',
+     *          target: () => this.worker
+     *      })
+     *      onMessage (event: MessageEvent) {
+     *          // do something with event.data
+     *      }
+     * }
+     * ```
      */
-    target?: EventTarget | (() => EventTarget);
+    target?: EventTarget | ((this: Type) => EventTarget);
 }
 
 /**
@@ -37,7 +65,7 @@ export interface ListenerDeclaration {
  *
  * @param options The listener declaration
  */
-export function listener (options: ListenerDeclaration) {
+export function listener<Type extends CustomElement = CustomElement> (options: ListenerDeclaration<Type>) {
 
     return function (target: Object, propertyKey: string, descriptor: PropertyDescriptor) {
 
@@ -51,7 +79,7 @@ export function listener (options: ListenerDeclaration) {
 
         } else {
 
-            constructor.listeners.set(propertyKey, { ...options });
+            constructor.listeners.set(propertyKey, { ...options } as ListenerDeclaration);
         }
     }
 }

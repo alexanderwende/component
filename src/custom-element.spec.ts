@@ -26,10 +26,7 @@ class TestElement extends CustomElement {
     })
     handleClick (event: MouseEvent) {
 
-        this.watch(() => {
-
-            this.myProperty = !this.myProperty;
-        })
+        this.watch(() => this.myProperty = !this.myProperty);
     }
 }
 
@@ -113,7 +110,7 @@ describe('CustomElement', () => {
 
             addElement(testElement);
 
-            // adding the element and setting the attribute are synchronous, so the setting the attribute
+            // adding the element and setting the attribute are synchronous, so setting the attribute
             // should happen before the update gets scheduled and we should see this lifecycle happen before
             // render and update
             testElement.setAttribute('test-attribute', 'foo');
@@ -144,15 +141,25 @@ describe('CustomElement', () => {
 
         it('should dispatch lifecycle events', (done) => {
 
-            expectedOrder = ['CONNECTED', 'PROPERTY', 'UPDATE', 'DISCONNECTED'];
+            expectedOrder = ['CONNECTED', 'UPDATE', 'PROPERTY', 'UPDATE', 'DISCONNECTED'];
 
             testElement.addEventListener('on-connected', () => {
                 recordedOrder.push('CONNECTED');
             });
 
-            testElement.addEventListener('on-update', () => {
-                recordedOrder.push('UPDATE');
-                removeElement(testElement);
+            testElement.addEventListener('on-update', (event: Event) => {
+                if ((event as CustomEvent).detail.firstUpdate) {
+                    recordedOrder.push('UPDATE');
+                    // on the first update, after listeners are bound, we click the element
+                    // the click handler will be invoked synchronously, and as we are still in the
+                    // update loop, any changes to the element's state won't trigger another update
+                    // in order for the click handler to trigger another update, we have to defer the click
+                    Promise.resolve().then(() => testElement.click());
+                } else {
+                    recordedOrder.push('UPDATE');
+                    // on the second update, which should follow after the click, we remove the element
+                    removeElement(testElement);
+                }
             });
 
             testElement.addEventListener('on-disconnected', () => {
@@ -166,8 +173,6 @@ describe('CustomElement', () => {
             });
 
             addElement(testElement);
-
-            testElement.dispatchEvent(new MouseEvent('click'));
         });
 
         it('should dispatch property change events only when properties change internally', (done) => {

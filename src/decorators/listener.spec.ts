@@ -1,7 +1,9 @@
 import { CustomElement } from '../custom-element';
 import { customElement } from './custom-element';
 import { listener } from './listener';
-import { doesNotReject } from 'assert';
+
+// TODO: Add tests for returning DOM children as listener targets
+// TODO: Add tests for worker instance as listener target
 
 describe('@listener decorator', () => {
 
@@ -28,14 +30,20 @@ describe('@listener decorator', () => {
             expect([...TestElement.listeners.keys()]).toEqual(['handleClick']);
 
             const testElement = document.createElement('test-element-listener');
-            document.body.append(testElement);
-            testElement.click();
 
-            Promise.resolve().then(() => {
+            // listeners are bound after the first update to ensure DOM is created
+            // and connectedCallback has been run
+            testElement.addEventListener('on-update', (event: Event) => {
 
-                expect(clicks).toBe(1);
-                done();
+                if ((event as CustomEvent).detail.firstUpdate) {
+
+                    testElement.click();
+                    expect(clicks).toBe(1);
+                    done();
+                }
             });
+
+            document.body.append(testElement);
         });
 
         it('should bind inherited event bindings', (done) => {
@@ -59,19 +67,23 @@ describe('@listener decorator', () => {
             @customElement({
                 selector: 'test-element-listener-extended'
             })
-            class ExtendedTestElement extends TestElement {}
+            class ExtendedTestElement extends TestElement { }
 
             expect([...ExtendedTestElement.listeners.keys()]).toEqual(['handleClick']);
 
             const testElement = document.createElement('test-element-listener-extended');
-            document.body.append(testElement);
-            testElement.click();
 
-            Promise.resolve().then(() => {
+            testElement.addEventListener('on-update', (event: Event) => {
 
-                expect(clicks).toBe(1);
-                done();
+                if ((event as CustomEvent).detail.firstUpdate) {
+
+                    testElement.click();
+                    expect(clicks).toBe(1);
+                    done();
+                }
             });
+
+            document.body.append(testElement);
         });
 
         it('should allow unbinding events when extending a custom element', (done) => {
@@ -109,14 +121,18 @@ describe('@listener decorator', () => {
             expect([...ExtendedTestElement.listeners.keys()]).toEqual([]);
 
             const testElement = document.createElement('test-element-listener-unbind-extended');
-            document.body.append(testElement);
-            testElement.click();
 
-            Promise.resolve().then(() => {
+            testElement.addEventListener('on-update', (event: Event) => {
 
-                expect(clicks).toBe(0);
-                done();
+                if ((event as CustomEvent).detail.firstUpdate) {
+
+                    testElement.click();
+                    expect(clicks).toBe(0);
+                    done();
+                }
             });
+
+            document.body.append(testElement);
         });
     });
 });

@@ -24,6 +24,9 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
     target: EventTarget;
 }
 
+/**
+ * A type for property changes, as used in ${@link CustomElement.updateCallback}
+ */
 export type Changes = Map<PropertyKey, any>;
 
 /**
@@ -32,7 +35,7 @@ export type Changes = Map<PropertyKey, any>;
 export abstract class CustomElement extends HTMLElement {
 
     /**
-     * The custom element's cached stylesheet object
+     * The custom element's cached stylesheet instance
      *
      * @private
      * @internal
@@ -55,7 +58,7 @@ export abstract class CustomElement extends HTMLElement {
 
             try {
 
-                // create a style sheet and cache on the constructor
+                // create a style sheet and cache it in the constructor
                 // this will work once constructable stylesheets arrive
                 // https://wicg.github.io/construct-stylesheets/
                 this._styleSheet = new CSSStyleSheet();
@@ -71,7 +74,7 @@ export abstract class CustomElement extends HTMLElement {
      * The custom element's selector
      *
      * @remarks
-     * Will be overridden by the {@link customElement} decorator's selector option, if provided.
+     * Will be overridden by the {@link customElement} decorator's `selector` option, if provided.
      * Otherwise the decorator will use this property to define the custom element.
      */
     static selector: string;
@@ -80,7 +83,7 @@ export abstract class CustomElement extends HTMLElement {
      * Use Shadow DOM
      *
      * @remarks
-     * Will be set by the {@link customElement} decorator's shadow option (defaults to `true`).
+     * Will be set by the {@link customElement} decorator's `shadow` option (defaults to `true`).
      */
     static shadow: boolean;
 
@@ -109,7 +112,6 @@ export abstract class CustomElement extends HTMLElement {
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
     // TODO: create tests for style inheritance
-    // TODO: update docs
     /**
      * The custom element's styles
      *
@@ -117,6 +119,8 @@ export abstract class CustomElement extends HTMLElement {
      * Can be set through the {@link customElement} decorator's `styles` option (defaults to `undefined`).
      * Styles set in the {@link customElement} decorator will be merged with the class's static property.
      * This allows to inherit styles from a parent component and add additional styles on the child component.
+     * In order to inherit styles from a parent component, an explicit super call has to be included. By
+     * default no styles are inherited.
      *
      * ```typescript
      * @customElement({
@@ -181,22 +185,58 @@ export abstract class CustomElement extends HTMLElement {
         return [];
     }
 
+    /**
+     * @internal
+     * @private
+     */
     protected _renderRoot: Element | DocumentFragment;
 
+    /**
+     * @internal
+     * @private
+     */
     protected _updateRequest: Promise<boolean> = Promise.resolve(true);
 
+    /**
+     * @internal
+     * @private
+     */
     protected _changedProperties: Map<PropertyKey, any> = new Map();
 
+    /**
+     * @internal
+     * @private
+     */
     protected _reflectingProperties: Map<PropertyKey, any> = new Map();
 
+    /**
+     * @internal
+     * @private
+     */
     protected _notifyingProperties: Map<PropertyKey, any> = new Map();
 
+    /**
+     * @internal
+     * @private
+     */
     protected _listenerDeclarations: InstanceListenerDeclaration[] = [];
 
+    /**
+     * @internal
+     * @private
+     */
     protected _hasUpdated = false;
 
+    /**
+     * @internal
+     * @private
+     */
     protected _hasRequestedUpdate = false;
 
+    /**
+     * @internal
+     * @private
+     */
     protected _isReflecting = false;
 
     /**
@@ -214,6 +254,8 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     *
+     * N.B.: When overriding this callback, make sure to include a super-call.
      */
     adoptedCallback () {
 
@@ -225,12 +267,12 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     *
+     * N.B.: When overriding this callback, make sure to include a super-call.
      */
     connectedCallback () {
 
         this.requestUpdate();
-
-        this._listen();
 
         this._notifyLifecycle('connected');
     }
@@ -240,12 +282,16 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
+     *
+     * N.B.: When overriding this callback, make sure to include a super-call.
      */
     disconnectedCallback () {
 
         this._unlisten();
 
         this._notifyLifecycle('disconnected');
+
+        this._hasUpdated = false;
     }
 
     /**
@@ -307,6 +353,9 @@ export abstract class CustomElement extends HTMLElement {
      * @remarks
      * The render root is where the {@link render} method will attach its DOM output. When using the custom element
      * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
+     *
+     * @internal
+     * @private
      */
     protected createRenderRoot (): Element | DocumentFragment {
 
@@ -320,7 +369,12 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
-     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}
+     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
+     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
+     * instances of the same custom element only one stylesheet will be added to the document.
+     *
+     * @internal
+     * @private
      */
     protected adoptStyles () {
 
@@ -399,6 +453,8 @@ export abstract class CustomElement extends HTMLElement {
      *      }
      * }
      * ```
+     *
+     * @param helpers   Any additional objects which should be available in the template scope
      */
     protected render (...helpers: any[]) {
 
@@ -412,8 +468,11 @@ export abstract class CustomElement extends HTMLElement {
     /**
      * Dispatch a custom event
      *
+     * @remarks
+     * https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/CustomEvent
+     *
      * @param eventName An event name
-     * @param eventInit A CustomEventInit dictionary
+     * @param eventInit A {@link CustomEventInit} dictionary
      */
     protected notify (eventName: string, eventInit?: CustomEventInit) {
 
@@ -554,7 +613,7 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * This method resolves the {@link PropertyChangeDetector} for the property and returns its result.
-     * If none is defined (the property declaration's observe option is `false`) it returns false.
+     * If none is defined (the property declaration's `observe` option is `false`) it returns false.
      * It catches any error in custom {@link PropertyChangeDetector}s and throws a more helpful one.
      *
      * @param propertyKey   The key of the property to check
@@ -602,7 +661,7 @@ export abstract class CustomElement extends HTMLElement {
         const propertyKey = constructor.attributes.get(attributeName);
 
         // ignore user-defined observed attributes
-        // TODO: test this
+        // TODO: test this and remove the log
         if (!propertyKey) {
 
             console.log(`observed attribute "${ attributeName }" not found... ignoring...`);
@@ -612,7 +671,7 @@ export abstract class CustomElement extends HTMLElement {
 
         const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
 
-        // don't reflect if {@link propertyDeclaration.reflectAttribute} is false
+        // don't reflect if {@link PropertyDeclaration.reflectAttribute} is false
         if (propertyDeclaration.reflectAttribute) {
 
             this._isReflecting = true;
@@ -824,6 +883,9 @@ export abstract class CustomElement extends HTMLElement {
      * @param propertyKey
      * @param oldValue
      * @param newValue
+     *
+     * @internal
+     * @private
      */
     protected _notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
 
@@ -846,6 +908,9 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @param lifecycle The lifecycle for which to raise the event
      * @param detail    Optional event details
+     *
+     * @internal
+     * @private
      */
     protected _notifyLifecycle (lifecycle: string, detail?: object) {
 
@@ -879,11 +944,11 @@ export abstract class CustomElement extends HTMLElement {
                 listener: (this[listener as keyof this] as unknown as EventListener).bind(this),
 
                 // determine the event target and store it in the instance declaration
-                target: (declaration.target) ?
-                    (typeof declaration.target === 'function') ?
-                        declaration.target() :
-                        declaration.target :
-                    this
+                target: (declaration.target)
+                    ? (typeof declaration.target === 'function')
+                        ? declaration.target.call(this)
+                        : declaration.target
+                    : this
             };
 
             // add the bound event listener to the target
@@ -941,8 +1006,8 @@ export abstract class CustomElement extends HTMLElement {
      * state. During the first update the element's styles will be added. Dispatches the update
      * lifecycle event.
      *
-     * @private
      * @internal
+     * @private
      */
     private _performUpdate () {
 
@@ -953,8 +1018,17 @@ export abstract class CustomElement extends HTMLElement {
 
             this.update();
 
-            // in the first update we adopt the element's styles
-            !this._hasUpdated && this.adoptStyles();
+            // in the first update we adopt the element's styles and set up declared listeners
+            if (!this._hasUpdated) {
+
+                this.adoptStyles();
+
+                // bind listeners after the update, this way we ensure all DOM is rendered, all properties
+                // are up-to-date and any user-created objects (e.g. workers) will be created in an
+                // overridden connectedCallback
+                // TODO: test overriding the connectedCallback and creating objects, which will be listener targets
+                this._listen();
+            }
 
             this.updateCallback(this._changedProperties, !this._hasUpdated);
 
@@ -977,8 +1051,8 @@ export abstract class CustomElement extends HTMLElement {
     /**
      * Enqueue a request for an asynchronous update
      *
-     * @private
      * @internal
+     * @private
      */
     private async _enqueueUpdate () {
 
