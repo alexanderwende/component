@@ -240,7 +240,7 @@ describe('@listener decorator', () => {
 
                 // when we want the custom element to react to state changes, we can't do that in the update loop
                 // we need to defer code that changes the element state
-                Promise.resolve().then(() => testElement.shadowRoot!.querySelector('button')!.click());
+                Promise.resolve().then(() => testElement.renderRoot.querySelector('button')!.click());
             });
 
             document.body.appendChild(testElement);

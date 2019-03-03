@@ -1130,21 +1130,17 @@ export abstract class CustomElement extends HTMLElement {
         // simply bypass any actual update and clean-up until then
         if (this.isConnected) {
 
-            // TODO: Test the following approach
+            const changes = new Map(this._changedProperties);
 
-            // const changes = new Map(this._changedProperties);
+            // pass a copy of the property changes to the update method, so property changes
+            // are available in an overridden update method
+            this.update(changes);
 
-            // this.update(changes);
-
-            // this._changedProperties = new Map();
-            // this._reflectingProperties = new Map();
-            // this._notifyingProperties = new Map();
-
-            // this way we could do changes in updateCallback which would not get deleted
-            // from the change maps and only defer the update request: Promise.resolve().then(() => this.requestUpdate())
-            // also, consider passing cached change map to lifecycle event
-
-            this.update(this._changedProperties);
+            // reset property maps directly after the update, so changes during the updateCallback
+            // can be recorded for the next update, which has to be triggered manually though
+            this._changedProperties = new Map();
+            this._reflectingProperties = new Map();
+            this._notifyingProperties = new Map();
 
             // in the first update we adopt the element's styles and set up declared listeners
             if (!this._hasUpdated) {
@@ -1157,22 +1153,15 @@ export abstract class CustomElement extends HTMLElement {
                 this._listen();
             }
 
-            // this.updateCallback(changes, !this._hasUpdated);
-            this.updateCallback(this._changedProperties, !this._hasUpdated);
+            this.updateCallback(changes, !this._hasUpdated);
 
-            this._notifyLifecycle('update', { firstUpdate: !this._hasUpdated });
+            this._notifyLifecycle('update', { changes: changes, firstUpdate: !this._hasUpdated });
 
             this._hasUpdated = true;
-
-            this._changedProperties = new Map();
-
-            this._reflectingProperties = new Map();
-
-            this._notifyingProperties = new Map();
         }
 
         // mark custom element as updated *after* the update to prevent infinte loops in the update process
-        // N.B.: any property changes during the update will be ignored
+        // N.B.: any property changes during the update will not trigger another update
         this._hasRequestedUpdate = false;
     }
 }

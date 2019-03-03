@@ -224,9 +224,11 @@ describe('@property decorator', () => {
                         expect(this.selected).toBe(true);
                         expect(count).toBe(1);
 
+                        this.watch(() => this.selected = false);
+
                         // inside of the updateCallback, property changes won't cause another update
-                        // we have to defer setting `selected` with a Promise
-                        Promise.resolve().then(() => this.selected = false);
+                        // we have to defer requesting an update with a Promise
+                        Promise.resolve().then(() => this.requestUpdate());
 
                     } else {
 
