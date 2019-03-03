@@ -2,20 +2,6 @@ import { TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
 import { PropertyDeclaration } from "./decorators/property-declaration";
 /**
- * Extends the static {@link ListenerDeclaration} to include the bound listener
- * for a custom element instance.
- */
-interface InstanceListenerDeclaration extends ListenerDeclaration {
-    /**
-     * The bound listener will be stored here, so it can be removed it later
-     */
-    listener: EventListener;
-    /**
-     * The event target will always be resolved to an actual {@link EventTarget}
-     */
-    target: EventTarget;
-}
-/**
  * A type for property changes, as used in ${@link CustomElement.updateCallback}
  */
 export declare type Changes = Map<PropertyKey, any>;
@@ -24,23 +10,71 @@ export declare type Changes = Map<PropertyKey, any>;
  */
 export declare abstract class CustomElement extends HTMLElement {
     /**
-     * The custom element's cached stylesheet instance
+     * The custom element's cached {@link CSSStyleSheet} instance
      *
-     * @private
      * @internal
+     * @private
      */
-    protected static _styleSheet: CSSStyleSheet | undefined;
+    private static _styleSheet;
     /**
-     * The custom element's stylesheet object
+     * The custom element's {@link CSSStyleSheet}
      *
      * @remarks
      * When constructable stylesheets are available, this getter will create a {@link CSSStyleSheet}
      * instance and cache it for use with each instance of the custom element.
      *
+     * @internal
      * @private
+     */
+    private static readonly styleSheet;
+    /**
+     * The custom element's cached {@link HTMLStyleElement} instance
+     *
+     * @internal
+     * @private
+     */
+    private static _styleElement;
+    /**
+     * The custom element's {@link HTMLStyleElement}
+     *
+     * @remarks
+     * This getter will create a {@link HTMLStyleElement} node and cache it for use with each
+     * instance of the custom element.
+     *
+     * @internal
+     * @private
+     */
+    private static readonly styleElement;
+    /**
+     * A map of attribute names and their respective property keys
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * property key that belongs to an attribute name.
+     *
      * @internal
      */
-    protected static readonly styleSheet: CSSStyleSheet | undefined;
+    static attributes: Map<string, PropertyKey>;
+    /**
+     * A map of property keys and their respective property declarations
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * {@link PropertyDeclaration} of a property.
+     *
+     * @internal
+     */
+    static properties: Map<PropertyKey, PropertyDeclaration>;
+    /**
+     * A map of property keys and their respective listener declarations
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * {@link ListenerDeclaration} of a method.
+     *
+     * @internal
+     */
+    static listeners: Map<PropertyKey, ListenerDeclaration>;
     /**
      * The custom element's selector
      *
@@ -56,27 +90,6 @@ export declare abstract class CustomElement extends HTMLElement {
      * Will be set by the {@link customElement} decorator's `shadow` option (defaults to `true`).
      */
     static shadow: boolean;
-    /**
-     * A map of attribute names and their respective property keys
-     *
-     * @internal
-     * @private
-     */
-    static attributes: Map<string, PropertyKey>;
-    /**
-     * A map of property keys and their respective property declarations
-     *
-     * @internal
-     * @private
-     */
-    static properties: Map<PropertyKey, PropertyDeclaration>;
-    /**
-     * A map of property keys and their respective listener declarations
-     *
-     * @internal
-     * @private
-     */
-    static listeners: Map<PropertyKey, ListenerDeclaration>;
     /**
      * The custom element's styles
      *
@@ -108,7 +121,7 @@ export declare abstract class CustomElement extends HTMLElement {
      * The custom element's template
      *
      * @remarks
-     * Can be set though the {@link customElement} decorator's `template` option (defaults to `undefined`).
+     * Can be set through the {@link customElement} decorator's `template` option (defaults to `undefined`).
      * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
      *
      * @param element   The custom element instance
@@ -145,47 +158,46 @@ export declare abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _renderRoot: Element | DocumentFragment;
+    private _updateRequest;
     /**
      * @internal
      * @private
      */
-    protected _updateRequest: Promise<boolean>;
+    private _changedProperties;
     /**
      * @internal
      * @private
      */
-    protected _changedProperties: Map<PropertyKey, any>;
+    private _reflectingProperties;
     /**
      * @internal
      * @private
      */
-    protected _reflectingProperties: Map<PropertyKey, any>;
+    private _notifyingProperties;
     /**
      * @internal
      * @private
      */
-    protected _notifyingProperties: Map<PropertyKey, any>;
+    private _listenerDeclarations;
     /**
      * @internal
      * @private
      */
-    protected _listenerDeclarations: InstanceListenerDeclaration[];
+    private _hasUpdated;
     /**
      * @internal
      * @private
      */
-    protected _hasUpdated: boolean;
+    private _hasRequestedUpdate;
     /**
      * @internal
      * @private
      */
-    protected _hasRequestedUpdate: boolean;
+    private _isReflecting;
     /**
-     * @internal
-     * @private
+     * The render root is where the {@link render} method will attach its DOM output
      */
-    protected _isReflecting: boolean;
+    readonly renderRoot: Element | DocumentFragment;
     /**
      * The custom element constructor
      */
@@ -254,71 +266,31 @@ export declare abstract class CustomElement extends HTMLElement {
      * Invoked each time the custom element updates
      *
      * @remarks
-     * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
+     * The `updateCallback` is invoked synchronously by the {@link update} method and therefore happens directly after
      * rendering, property reflection and property change events.
      *
      * N.B.: Changes made to properties or attributes inside this callback *won't* cause another update.
-     *
-     * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
-     * @param firstUpdate       A boolean indicating if this was the first update
-     */
-    updateCallback(changedProperties: Changes, firstUpdate: boolean): void;
-    /**
-     * Creates the custom element's render root
-     *
-     * @remarks
-     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
-     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
-     *
-     * @internal
-     * @private
-     */
-    protected createRenderRoot(): Element | DocumentFragment;
-    /**
-     * Adds the custom element's styles to its {@link _renderRoot}
-     *
-     * @remarks
-     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
-     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
-     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
-     * instances of the same custom element only one stylesheet will be added to the document.
-     *
-     * @internal
-     * @private
-     */
-    protected adoptStyles(): void;
-    /**
-     * Renders the custom element's template to its {@link _renderRoot}
-     *
-     * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
-     * custom element's render root. The custom element instance will be passed to the static template method
-     * automatically. To make additional properties available to the template method, you can pass them to the
-     * render method.
+     * To cause an update, defer changes with the help of a Promise.
      *
      * ```typescript
-     * const dateFormatter = (date: Date) => { // return some date transformation...
-     * };
-     *
      * @customElement({
-     *      selector: 'my-element',
-     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     *      selector: 'my-element'
      * })
      * class MyElement extends CustomElement {
      *
-     *      @property()
-     *      lastUpdated: Date;
+     *      updateCallback (changes: Changes, firstUpdate: boolean) {
      *
-     *      render () {
-     *          // make the date formatter available in the template by passing it to render()
-     *          super.render(dateFormatter);
+     *          Promise.resolve().then(() => {
+     *              // perform changes which need to cause another update here
+     *          });
      *      }
      * }
      * ```
      *
-     * @param helpers   Any additional objects which should be available in the template scope
+     * @param changes       A map of properties that changed in the update, containg the property key and the old value
+     * @param firstUpdate   A boolean indicating if this was the first update
      */
-    protected render(...helpers: any[]): void;
+    updateCallback(changes: Changes, firstUpdate: boolean): void;
     /**
      * Dispatch a custom event
      *
@@ -382,19 +354,49 @@ export declare abstract class CustomElement extends HTMLElement {
      */
     protected requestUpdate(propertyKey?: PropertyKey, oldValue?: any, newValue?: any): Promise<boolean>;
     /**
+     * Renders the custom element's template to its {@link renderRoot}
+     *
+     * @remarks
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
+     * custom element's render root. The custom element instance will be passed to the static template method
+     * automatically. To make additional properties available to the template method, you can pass them to the
+     * render method.
+     *
+     * ```typescript
+     * const dateFormatter = (date: Date) => { // return some date transformation...
+     * };
+     *
+     * @customElement({
+     *      selector: 'my-element',
+     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      @property()
+     *      lastUpdated: Date;
+     *
+     *      render () {
+     *          // make the date formatter available in the template by passing it to render()
+     *          super.render(dateFormatter);
+     *      }
+     * }
+     * ```
+     *
+     * @param helpers   Any additional objects which should be available in the template scope
+     */
+    protected render(...helpers: any[]): void;
+    /**
      * Updates the custom element after an update was requested with {@link requestUpdate}
      *
      * @remarks
      * This method renders the template, reflects changed properties to attributes and
      * dispatches change events for properties which are marked for notification.
-     */
-    protected update(): void;
-    /**
-     * Gets the {@link PropertyDeclaration} for a decorated property
+     * To handle updates differently, this method can be overridden and a map of property
+     * changes is provided.
      *
-     * @param propertyKey The property key for which to retrieve the declaration
+     * @param changes   A map of properties that changed in the update, containg the property key and the old value
      */
-    protected getPropertyDeclaration(propertyKey: PropertyKey): PropertyDeclaration | undefined;
+    protected update(changes?: Changes): void;
     /**
      * Check if a property changed
      *
@@ -409,6 +411,12 @@ export declare abstract class CustomElement extends HTMLElement {
      * @returns             `true` if the property changed, `false` otherwise
      */
     protected hasChanged(propertyKey: PropertyKey, oldValue: any, newValue: any): boolean;
+    /**
+     * Gets the {@link PropertyDeclaration} for a decorated property
+     *
+     * @param propertyKey The property key for which to retrieve the declaration
+     */
+    protected getPropertyDeclaration(propertyKey: PropertyKey): PropertyDeclaration | undefined;
     /**
      * Reflect an attribute value to its associated property
      *
@@ -455,6 +463,30 @@ export declare abstract class CustomElement extends HTMLElement {
      */
     protected notifyProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
     /**
+     * Creates the custom element's render root
+     *
+     * @remarks
+     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
+     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
+     *
+     * @internal
+     * @private
+     */
+    private _createRenderRoot;
+    /**
+     * Adds the custom element's styles to its {@link renderRoot}
+     *
+     * @remarks
+     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
+     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
+     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
+     * instances of the same custom element only one stylesheet will be added to the document.
+     *
+     * @internal
+     * @private
+     */
+    private _adoptStyles;
+    /**
      * The default attribute reflector
      *
      * @remarks
@@ -468,7 +500,7 @@ export declare abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflectAttribute(attributeName: string, oldValue: string | null, newValue: string | null): void;
+    private _reflectAttribute;
     /**
      * The default property reflector
      *
@@ -483,7 +515,7 @@ export declare abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflectProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    private _reflectProperty;
     /**
      * Dispatch a property-changed event
      *
@@ -494,39 +526,50 @@ export declare abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _notifyProperty(propertyKey: PropertyKey, oldValue: any, newValue: any): void;
+    private _notifyProperty;
     /**
      * Dispatch a lifecycle event
      *
-     * @param lifecycle The lifecycle for which to raise the event
+     * @param lifecycle The lifecycle for which to raise the event (will be the event name)
      * @param detail    Optional event details
      *
      * @internal
      * @private
      */
-    protected _notifyLifecycle(lifecycle: string, detail?: object): void;
+    private _notifyLifecycle;
     /**
-     * Bind custom element listeners.
+     * Bind custom element listeners
      *
      * @internal
      * @private
      */
-    protected _listen(): void;
+    private _listen;
     /**
-     * Unbind custom element listeners.
+     * Unbind custom element listeners
      *
      * @internal
      * @private
      */
-    protected _unlisten(): void;
+    private _unlisten;
+    /**
+     * Enqueue a request for an asynchronous update
+     *
+     * @internal
+     * @private
+     */
+    private _enqueueUpdate;
     /**
      * Schedule the update of the custom element
      *
      * @remarks
      * Schedules the first update of the custom element as soon as possible and all consecutive updates
-     * just before the next frame.
+     * just before the next frame. In the latter case it returns a Promise which will be resolved after
+     * the update is done.
+     *
+     * @internal
+     * @private
      */
-    protected _scheduleUpdate(): Promise<void> | void;
+    private _scheduleUpdate;
     /**
      * Perform the custom element update
      *
@@ -539,13 +582,5 @@ export declare abstract class CustomElement extends HTMLElement {
      * @private
      */
     private _performUpdate;
-    /**
-     * Enqueue a request for an asynchronous update
-     *
-     * @internal
-     * @private
-     */
-    private _enqueueUpdate;
 }
-export {};
 //# sourceMappingURL=custom-element.d.ts.map

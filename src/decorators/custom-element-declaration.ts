@@ -67,7 +67,7 @@ export interface CustomElementDeclaration<Type extends CustomElement = CustomEle
      * The custom element's template
      *
      * @remarks
-     * A static function which returns a {@link #lit-html.TemplateResult}. The function's `element`
+     * A function which returns a {@link #lit-html.TemplateResult}. The function's `element`
      * parameter will be the current custom element instance. This function will be invoked by the
      * custom element's render method.
      *

@@ -189,7 +189,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
  */
 export declare const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector;
 /**
- * The default {@link CustomElement} property declaration
+ * The default {@link PropertyDeclaration}
  */
 export declare const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration;
 //# sourceMappingURL=property-declaration.d.ts.map

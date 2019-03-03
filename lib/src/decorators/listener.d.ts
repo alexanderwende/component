@@ -45,7 +45,7 @@ export interface ListenerDeclaration<Type extends CustomElement = CustomElement>
      *
      *      @listener<MyElement>({
      *          event: 'message',
-     *          target: () => this.worker
+     *          target: function () { return this.worker; }
      *      })
      *      onMessage (event: MessageEvent) {
      *          // do something with event.data

@@ -200,7 +200,7 @@ export abstract class CustomElement extends HTMLElement {
      * The custom element's template
      *
      * @remarks
-     * Can be set though the {@link customElement} decorator's `template` option (defaults to `undefined`).
+     * Can be set through the {@link customElement} decorator's `template` option (defaults to `undefined`).
      * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
      *
      * @param element   The custom element instance
