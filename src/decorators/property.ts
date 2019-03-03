@@ -80,7 +80,9 @@ export function property<Type extends CustomElement = CustomElement> (options: P
             set (value: any): void {
                 const oldValue = this[propertyKey];
                 setter.call(this, value);
-                this.requestUpdate(propertyKey, oldValue, value);
+                // don't pass `value` on as `newValue` - an inherited setter might modify it
+                // instead get the new value by invoking the getter
+                this.requestUpdate(propertyKey, oldValue, getter.call(this));
             }
         }
 
@@ -152,7 +154,6 @@ export function property<Type extends CustomElement = CustomElement> (options: P
  * @param constructor The custom element constructor to prepare
  *
  * @internal
- * @private
  */
 function prepareConstructor (constructor: DecoratedCustomElementType) {
 

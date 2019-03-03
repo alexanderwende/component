@@ -88,12 +88,12 @@ export class AccordionPanel extends CustomElement {
         });
     }
 
-    updateCallback (changedProperties: Changes, firstUpdate: boolean) {
+    updateCallback (changes: Changes, firstUpdate: boolean) {
 
         if (firstUpdate) {
 
             // in the first update, we query the accordion-panel-body
-            this._body = this._renderRoot.querySelector(`#${ this.id }-body`);
+            this._body = this.renderRoot.querySelector(`#${ this.id }-body`);
 
             // having queried the accordion-panel-body, {@link contentHeight} can now calculate the
             // correct height of the panel body for animation

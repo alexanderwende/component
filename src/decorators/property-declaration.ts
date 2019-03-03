@@ -260,7 +260,7 @@ export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValu
 // TODO: maybe provide flat array/object change detector? date change detector?
 
 /**
- * The default {@link CustomElement} property declaration
+ * The default {@link PropertyDeclaration}
  */
 export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
     attribute: true,

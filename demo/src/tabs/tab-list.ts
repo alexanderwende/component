@@ -26,11 +26,11 @@ export class TabList extends CustomElement {
         this.role = 'tablist'
     }
 
-    updateCallback (changedProperties: Changes, firstUpdate: boolean) {
+    updateCallback (changes: Changes, firstUpdate: boolean) {
 
         if (firstUpdate) {
 
-            // const slot = this._renderRoot.querySelector('slot') as HTMLSlotElement;
+            // const slot = this.renderRoot.querySelector('slot') as HTMLSlotElement;
 
             // slot.addEventListener('slotchange', () => {
 

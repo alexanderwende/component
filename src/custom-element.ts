@@ -2,14 +2,28 @@ import { render, TemplateResult } from 'lit-html';
 import { ListenerDeclaration } from './decorators/listener';
 import { AttributeReflector, createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
 
+/**
+ * @internal
+ */
 const ATTRIBUTE_REFLECTOR_ERROR = (attributeReflector: PropertyKey | Function) => new Error(`Error executing attribute reflector ${ String(attributeReflector) }.`);
+/**
+ * @internal
+ */
 const PROPERTY_REFLECTOR_ERROR = (propertyReflector: PropertyKey | Function) => new Error(`Error executing property reflector ${ String(propertyReflector) }.`);
+/**
+ * @internal
+ */
 const PROPERTY_NOTIFIER_ERROR = (propertyNotifier: PropertyKey | Function) => new Error(`Error executing property notifier ${ String(propertyNotifier) }.`);
+/**
+ * @internal
+ */
 const CHANGE_DETECTOR_ERROR = (changeDetector: PropertyKey | Function) => new Error(`Error executing property change detector ${ String(changeDetector) }.`);
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
  * for a custom element instance.
+ *
+ * @internal
  */
 interface InstanceListenerDeclaration extends ListenerDeclaration {
 
@@ -29,34 +43,32 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
  */
 export type Changes = Map<PropertyKey, any>;
 
-// TODO: settle on protected vs private API
-
 /**
  * The custom element base class
  */
 export abstract class CustomElement extends HTMLElement {
 
     /**
-     * The custom element's cached stylesheet instance
+     * The custom element's cached {@link CSSStyleSheet} instance
      *
-     * @private
      * @internal
+     * @private
      */
-    protected static _styleSheet: CSSStyleSheet | undefined;
+    private static _styleSheet: CSSStyleSheet | undefined;
 
     /**
-     * The custom element's stylesheet object
+     * The custom element's {@link CSSStyleSheet}
      *
      * @remarks
      * When constructable stylesheets are available, this getter will create a {@link CSSStyleSheet}
      * instance and cache it for use with each instance of the custom element.
      *
-     * @private
      * @internal
+     * @private
      */
-    protected static get styleSheet (): CSSStyleSheet | undefined {
+    private static get styleSheet (): CSSStyleSheet | undefined {
 
-        if (!this._styleSheet) {
+        if (this.styles.length && !this.hasOwnProperty('_styleSheet')) {
 
             try {
 
@@ -71,6 +83,69 @@ export abstract class CustomElement extends HTMLElement {
 
         return this._styleSheet;
     }
+
+    /**
+     * The custom element's cached {@link HTMLStyleElement} instance
+     *
+     * @internal
+     * @private
+     */
+    private static _styleElement: HTMLStyleElement | undefined;
+
+    /**
+     * The custom element's {@link HTMLStyleElement}
+     *
+     * @remarks
+     * This getter will create a {@link HTMLStyleElement} node and cache it for use with each
+     * instance of the custom element.
+     *
+     * @internal
+     * @private
+     */
+    private static get styleElement (): HTMLStyleElement | undefined {
+
+        if (this.styles.length && !this.hasOwnProperty('_styleElement')) {
+
+            this._styleElement = document.createElement('style');
+            this._styleElement.title = this.selector;
+            this._styleElement.textContent = this.styles.join('\n');
+        }
+
+        return this._styleElement;
+    }
+
+    /**
+     * A map of attribute names and their respective property keys
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * property key that belongs to an attribute name.
+     *
+     * @internal
+     */
+    static attributes: Map<string, PropertyKey> = new Map();
+
+    /**
+     * A map of property keys and their respective property declarations
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * {@link PropertyDeclaration} of a property.
+     *
+     * @internal
+     */
+    static properties: Map<PropertyKey, PropertyDeclaration> = new Map();
+
+    /**
+     * A map of property keys and their respective listener declarations
+     *
+     * @remarks
+     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * {@link ListenerDeclaration} of a method.
+     *
+     * @internal
+     */
+    static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
     /**
      * The custom element's selector
@@ -88,30 +163,6 @@ export abstract class CustomElement extends HTMLElement {
      * Will be set by the {@link customElement} decorator's `shadow` option (defaults to `true`).
      */
     static shadow: boolean;
-
-    /**
-     * A map of attribute names and their respective property keys
-     *
-     * @internal
-     * @private
-     */
-    static attributes: Map<string, PropertyKey> = new Map();
-
-    /**
-     * A map of property keys and their respective property declarations
-     *
-     * @internal
-     * @private
-     */
-    static properties: Map<PropertyKey, PropertyDeclaration> = new Map();
-
-    /**
-     * A map of property keys and their respective listener declarations
-     *
-     * @internal
-     * @private
-     */
-    static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
     // TODO: create tests for style inheritance
     /**
@@ -191,55 +242,54 @@ export abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _renderRoot: Element | DocumentFragment;
+    private _updateRequest: Promise<boolean> = Promise.resolve(true);
 
     /**
      * @internal
      * @private
      */
-    protected _updateRequest: Promise<boolean> = Promise.resolve(true);
+    private _changedProperties: Map<PropertyKey, any> = new Map();
 
     /**
      * @internal
      * @private
      */
-    protected _changedProperties: Map<PropertyKey, any> = new Map();
+    private _reflectingProperties: Map<PropertyKey, any> = new Map();
 
     /**
      * @internal
      * @private
      */
-    protected _reflectingProperties: Map<PropertyKey, any> = new Map();
+    private _notifyingProperties: Map<PropertyKey, any> = new Map();
 
     /**
      * @internal
      * @private
      */
-    protected _notifyingProperties: Map<PropertyKey, any> = new Map();
+    private _listenerDeclarations: InstanceListenerDeclaration[] = [];
 
     /**
      * @internal
      * @private
      */
-    protected _listenerDeclarations: InstanceListenerDeclaration[] = [];
+    private _hasUpdated = false;
 
     /**
      * @internal
      * @private
      */
-    protected _hasUpdated = false;
+    private _hasRequestedUpdate = false;
 
     /**
      * @internal
      * @private
      */
-    protected _hasRequestedUpdate = false;
+    private _isReflecting = false;
 
     /**
-     * @internal
-     * @private
+     * The render root is where the {@link render} method will attach its DOM output
      */
-    protected _isReflecting = false;
+    readonly renderRoot: Element | DocumentFragment;
 
     /**
      * The custom element constructor
@@ -248,7 +298,7 @@ export abstract class CustomElement extends HTMLElement {
 
         super();
 
-        this._renderRoot = this.createRenderRoot();
+        this.renderRoot = this._createRenderRoot();
     }
 
     /**
@@ -330,142 +380,40 @@ export abstract class CustomElement extends HTMLElement {
      */
     attributeChangedCallback (attribute: string, oldValue: string | null, newValue: string | null) {
 
-        if (this._isReflecting) return;
+        if (this._isReflecting || oldValue === newValue) return;
 
-        if (oldValue !== newValue) this.reflectAttribute(attribute, oldValue, newValue);
+        this.reflectAttribute(attribute, oldValue, newValue);
     }
 
     /**
      * Invoked each time the custom element updates
      *
      * @remarks
-     * The updateCallback is invoked synchronously from the {@link update} method and therefore happens directly after
+     * The `updateCallback` is invoked synchronously by the {@link update} method and therefore happens directly after
      * rendering, property reflection and property change events.
      *
      * N.B.: Changes made to properties or attributes inside this callback *won't* cause another update.
-     *
-     * @param changedProperties A map of properties that changed in the update, containg the property key and the old value
-     * @param firstUpdate       A boolean indicating if this was the first update
-     */
-    updateCallback (changedProperties: Changes, firstUpdate: boolean) { }
-
-    /**
-     * Creates the custom element's render root
-     *
-     * @remarks
-     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
-     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
-     *
-     * @internal
-     * @private
-     */
-    protected createRenderRoot (): Element | DocumentFragment {
-
-        return (this.constructor as typeof CustomElement).shadow ?
-            this.attachShadow({ mode: 'open' }) :
-            this;
-    }
-
-    /**
-     * Adds the custom element's styles to its {@link _renderRoot}
-     *
-     * @remarks
-     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
-     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
-     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
-     * instances of the same custom element only one stylesheet will be added to the document.
-     *
-     * @internal
-     * @private
-     */
-    protected adoptStyles () {
-
-        const constructor = this.constructor as typeof CustomElement;
-        const styleSheet = constructor.styleSheet;
-        const styles = constructor.styles;
-
-        if (styleSheet) {
-
-            // TODO: test this part once we have constructable stylesheets (Chrome 73)
-            if (!constructor.shadow) {
-
-                if ((document as DocumentOrShadowRoot).adoptedStyleSheets.includes(styleSheet)) return;
-
-                (document as DocumentOrShadowRoot).adoptedStyleSheets = [
-                    ...(document as DocumentOrShadowRoot).adoptedStyleSheets,
-                    styleSheet
-                ];
-
-            } else {
-
-                // this will work once constructable stylesheets arrive
-                // https://wicg.github.io/construct-stylesheets/
-                (this._renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
-            }
-
-        } else if (styles.length) {
-
-            // TODO: test we don't duplicate stylesheets for non-shadow elements
-            const styleAlreadyAdded = constructor.shadow
-                ? false
-                : Array.from(document.styleSheets).find(style => style.title === constructor.selector) && true || false;
-
-            if (styleAlreadyAdded) return;
-
-            const style = document.createElement('style');
-            style.title = constructor.selector;
-            style.textContent = styles.join('\n');
-
-            if (constructor.shadow) {
-
-                this._renderRoot.appendChild(style);
-
-            } else {
-
-                document.head.appendChild(style);
-            }
-        }
-    }
-
-    /**
-     * Renders the custom element's template to its {@link _renderRoot}
-     *
-     * @remarks
-     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
-     * custom element's render root. The custom element instance will be passed to the static template method
-     * automatically. To make additional properties available to the template method, you can pass them to the
-     * render method.
+     * To cause an update, defer changes with the help of a Promise.
      *
      * ```typescript
-     * const dateFormatter = (date: Date) => { // return some date transformation...
-     * };
-     *
      * @customElement({
-     *      selector: 'my-element',
-     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     *      selector: 'my-element'
      * })
      * class MyElement extends CustomElement {
      *
-     *      @property()
-     *      lastUpdated: Date;
+     *      updateCallback (changes: Changes, firstUpdate: boolean) {
      *
-     *      render () {
-     *          // make the date formatter available in the template by passing it to render()
-     *          super.render(dateFormatter);
+     *          Promise.resolve().then(() => {
+     *              // perform changes which need to cause another update here
+     *          });
      *      }
      * }
      * ```
      *
-     * @param helpers   Any additional objects which should be available in the template scope
+     * @param changes       A map of properties that changed in the update, containg the property key and the old value
+     * @param firstUpdate   A boolean indicating if this was the first update
      */
-    protected render (...helpers: any[]) {
-
-        const constructor = this.constructor as typeof CustomElement;
-
-        const template = constructor.template && constructor.template(this, ...helpers);
-
-        if (template) render(template, this._renderRoot, { eventContext: this });
-    }
+    updateCallback (changes: Changes, firstUpdate: boolean) { }
 
     /**
      * Dispatch a custom event
@@ -529,7 +477,10 @@ export abstract class CustomElement extends HTMLElement {
         // add all new or updated changed properties to the notifying properties
         for (const [propertyKey, oldValue] of this._changedProperties) {
 
-            if (!previousChanges.has(propertyKey) || this.hasChanged(propertyKey, previousChanges.get(propertyKey), oldValue)) {
+            const added = !previousChanges.has(propertyKey);
+            const updated = !added && this.hasChanged(propertyKey, previousChanges.get(propertyKey), oldValue);
+
+            if (added || updated) {
 
                 this._notifyingProperties.set(propertyKey, oldValue);
             }
@@ -577,13 +528,57 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
+     * Renders the custom element's template to its {@link renderRoot}
+     *
+     * @remarks
+     * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
+     * custom element's render root. The custom element instance will be passed to the static template method
+     * automatically. To make additional properties available to the template method, you can pass them to the
+     * render method.
+     *
+     * ```typescript
+     * const dateFormatter = (date: Date) => { // return some date transformation...
+     * };
+     *
+     * @customElement({
+     *      selector: 'my-element',
+     *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
+     * })
+     * class MyElement extends CustomElement {
+     *
+     *      @property()
+     *      lastUpdated: Date;
+     *
+     *      render () {
+     *          // make the date formatter available in the template by passing it to render()
+     *          super.render(dateFormatter);
+     *      }
+     * }
+     * ```
+     *
+     * @param helpers   Any additional objects which should be available in the template scope
+     */
+    protected render (...helpers: any[]) {
+
+        const constructor = this.constructor as typeof CustomElement;
+
+        const template = constructor.template && constructor.template(this, ...helpers);
+
+        if (template) render(template, this.renderRoot, { eventContext: this });
+    }
+
+    /**
      * Updates the custom element after an update was requested with {@link requestUpdate}
      *
      * @remarks
      * This method renders the template, reflects changed properties to attributes and
      * dispatches change events for properties which are marked for notification.
+     * To handle updates differently, this method can be overridden and a map of property
+     * changes is provided.
+     *
+     * @param changes   A map of properties that changed in the update, containg the property key and the old value
      */
-    protected update () {
+    protected update (changes?: Changes) {
 
         this.render();
 
@@ -598,16 +593,6 @@ export abstract class CustomElement extends HTMLElement {
 
             this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
         });
-    }
-
-    /**
-     * Gets the {@link PropertyDeclaration} for a decorated property
-     *
-     * @param propertyKey The property key for which to retrieve the declaration
-     */
-    protected getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
-
-        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
     }
 
     /**
@@ -640,6 +625,16 @@ export abstract class CustomElement extends HTMLElement {
         }
 
         return false;
+    }
+
+    /**
+     * Gets the {@link PropertyDeclaration} for a decorated property
+     *
+     * @param propertyKey The property key for which to retrieve the declaration
+     */
+    protected getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
+
+        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
     }
 
     /**
@@ -808,6 +803,84 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
+     * Creates the custom element's render root
+     *
+     * @remarks
+     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
+     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
+     *
+     * @internal
+     * @private
+     */
+    private _createRenderRoot (): Element | DocumentFragment {
+
+        return (this.constructor as typeof CustomElement).shadow
+            ? this.attachShadow({ mode: 'open' })
+            : this;
+    }
+
+    /**
+     * Adds the custom element's styles to its {@link renderRoot}
+     *
+     * @remarks
+     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
+     * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
+     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
+     * instances of the same custom element only one stylesheet will be added to the document.
+     *
+     * @internal
+     * @private
+     */
+    private _adoptStyles () {
+
+        const constructor = this.constructor as typeof CustomElement;
+        const styleSheet = constructor.styleSheet;
+        const styleElement = constructor.styleElement;
+        const styles = constructor.styles;
+
+        if (styleSheet) {
+
+            // TODO: test this part once we have constructable stylesheets (Chrome 73)
+            if (!constructor.shadow) {
+
+                if ((document as DocumentOrShadowRoot).adoptedStyleSheets.includes(styleSheet)) return;
+
+                (document as DocumentOrShadowRoot).adoptedStyleSheets = [
+                    ...(document as DocumentOrShadowRoot).adoptedStyleSheets,
+                    styleSheet
+                ];
+
+            } else {
+
+                // this will work once constructable stylesheets arrive
+                // https://wicg.github.io/construct-stylesheets/
+                (this.renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
+            }
+
+        } else if (styleElement) {
+
+            // TODO: test we don't duplicate stylesheets for non-shadow elements
+            const styleAlreadyAdded = constructor.shadow
+                ? false
+                : Array.from(document.styleSheets).find(style => style.title === constructor.selector) && true || false;
+
+            if (styleAlreadyAdded) return;
+
+            // clone the cached style element
+            const style = styleElement.cloneNode(true);
+
+            if (constructor.shadow) {
+
+                this.renderRoot.appendChild(style);
+
+            } else {
+
+                document.head.appendChild(style);
+            }
+        }
+    }
+
+    /**
      * The default attribute reflector
      *
      * @remarks
@@ -821,7 +894,7 @@ export abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
+    private _reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
 
         const constructor = this.constructor as typeof CustomElement;
 
@@ -848,7 +921,7 @@ export abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
+    private _reflectProperty (propertyKey: PropertyKey, oldValue: any, newValue: any) {
 
         // this function is only called for properties which have a declaration
         const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
@@ -889,7 +962,7 @@ export abstract class CustomElement extends HTMLElement {
      * @internal
      * @private
      */
-    protected _notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
+    private _notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
 
         const eventName = createEventName(propertyKey, '', 'changed');
 
@@ -908,31 +981,27 @@ export abstract class CustomElement extends HTMLElement {
     /**
      * Dispatch a lifecycle event
      *
-     * @param lifecycle The lifecycle for which to raise the event
+     * @param lifecycle The lifecycle for which to raise the event (will be the event name)
      * @param detail    Optional event details
      *
      * @internal
      * @private
      */
-    protected _notifyLifecycle (lifecycle: string, detail?: object) {
+    private _notifyLifecycle (lifecycle: 'adopted' | 'connected' | 'disconnected' | 'update', detail?: object) {
 
-        const eventName = createEventName(lifecycle, 'on');
-
-        const eventInit = {
+        this.dispatchEvent(new CustomEvent(lifecycle, {
             composed: true,
             ...(detail ? { detail: detail } : {})
-        };
-
-        this.dispatchEvent(new CustomEvent(eventName, eventInit));
+        }));
     }
 
     /**
-     * Bind custom element listeners.
+     * Bind custom element listeners
      *
      * @internal
      * @private
      */
-    protected _listen () {
+    private _listen () {
 
         (this.constructor as typeof CustomElement).listeners.forEach((declaration, listener) => {
 
@@ -954,25 +1023,64 @@ export abstract class CustomElement extends HTMLElement {
             };
 
             // add the bound event listener to the target
-            instanceDeclaration.target.addEventListener(instanceDeclaration.event as string, instanceDeclaration.listener, instanceDeclaration.options);
+            instanceDeclaration.target.addEventListener(
+                instanceDeclaration.event as string,
+                instanceDeclaration.listener,
+                instanceDeclaration.options);
 
-            // save the instance listener declaration on the component instance
+            // save the instance listener declaration in the component instance
             this._listenerDeclarations.push(instanceDeclaration);
         });
     }
 
     /**
-     * Unbind custom element listeners.
+     * Unbind custom element listeners
      *
      * @internal
      * @private
      */
-    protected _unlisten () {
+    private _unlisten () {
 
         this._listenerDeclarations.forEach((declaration) => {
 
-            declaration.target.removeEventListener(declaration.event as string, declaration.listener, declaration.options);
+            declaration.target.removeEventListener(
+                declaration.event as string,
+                declaration.listener,
+                declaration.options);
         });
+    }
+
+    /**
+     * Enqueue a request for an asynchronous update
+     *
+     * @internal
+     * @private
+     */
+    private async _enqueueUpdate () {
+
+        let resolve: (result: boolean) => void;
+
+        const previousRequest = this._updateRequest;
+
+        // mark the custom element as having requested an update, the {@link _requestUpdate}
+        // method will not enqueue a further request for update if one is scheduled
+        this._hasRequestedUpdate = true;
+
+        this._updateRequest = new Promise<boolean>(res => resolve = res);
+
+        // wait for the previous update to resolve
+        // `await` is asynchronous and will return execution to the {@link requestUpdate} method
+        // and essentially allows us to batch multiple synchronous property changes, before the
+        // execution can resume here
+        await previousRequest;
+
+        const result = this._scheduleUpdate();
+
+        // the actual update may be scheduled asynchronously as well
+        if (result) await result;
+
+        // resolve the new {@link _updateRequest} after the result of the current update resolves
+        resolve!(!this._hasRequestedUpdate);
     }
 
     /**
@@ -980,9 +1088,13 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * Schedules the first update of the custom element as soon as possible and all consecutive updates
-     * just before the next frame.
+     * just before the next frame. In the latter case it returns a Promise which will be resolved after
+     * the update is done.
+     *
+     * @internal
+     * @private
      */
-    protected _scheduleUpdate (): Promise<void> | void {
+    private _scheduleUpdate (): Promise<void> | void {
 
         if (!this._hasUpdated) {
 
@@ -1018,20 +1130,34 @@ export abstract class CustomElement extends HTMLElement {
         // simply bypass any actual update and clean-up until then
         if (this.isConnected) {
 
-            this.update();
+            // TODO: Test the following approach
+
+            // const changes = new Map(this._changedProperties);
+
+            // this.update(changes);
+
+            // this._changedProperties = new Map();
+            // this._reflectingProperties = new Map();
+            // this._notifyingProperties = new Map();
+
+            // this way we could do changes in updateCallback which would not get deleted
+            // from the change maps and only defer the update request: Promise.resolve().then(() => this.requestUpdate())
+            // also, consider passing cached change map to lifecycle event
+
+            this.update(this._changedProperties);
 
             // in the first update we adopt the element's styles and set up declared listeners
             if (!this._hasUpdated) {
 
-                this.adoptStyles();
+                this._adoptStyles();
 
                 // bind listeners after the update, this way we ensure all DOM is rendered, all properties
                 // are up-to-date and any user-created objects (e.g. workers) will be created in an
                 // overridden connectedCallback
-                // TODO: test overriding the connectedCallback and creating objects, which will be listener targets
                 this._listen();
             }
 
+            // this.updateCallback(changes, !this._hasUpdated);
             this.updateCallback(this._changedProperties, !this._hasUpdated);
 
             this._notifyLifecycle('update', { firstUpdate: !this._hasUpdated });
@@ -1048,38 +1174,5 @@ export abstract class CustomElement extends HTMLElement {
         // mark custom element as updated *after* the update to prevent infinte loops in the update process
         // N.B.: any property changes during the update will be ignored
         this._hasRequestedUpdate = false;
-    }
-
-    /**
-     * Enqueue a request for an asynchronous update
-     *
-     * @internal
-     * @private
-     */
-    private async _enqueueUpdate () {
-
-        let resolve: (result: boolean) => void;
-
-        const previousRequest = this._updateRequest;
-
-        // mark the custom element as having requested an update, the {@link _requestUpdate} method
-        // will not enqueue a further request for update if one is scheduled
-        this._hasRequestedUpdate = true;
-
-        this._updateRequest = new Promise<boolean>(res => resolve = res);
-
-        // wait for the previous update to resolve
-        // `await` is asynchronous and will return execution to the {@link requestUpdate} method
-        // and essentially allows us to batch multiple synchronous property changes, before the
-        // execution can resume here
-        await previousRequest;
-
-        const result = this._scheduleUpdate();
-
-        // the actual update may be scheduled asynchronously as well
-        if (result) await result;
-
-        // resolve the new {@link _updateRequest} after the result of the current update resolves
-        resolve!(!this._hasRequestedUpdate);
     }
 }

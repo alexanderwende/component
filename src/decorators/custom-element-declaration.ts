@@ -81,6 +81,9 @@ export interface CustomElementDeclaration<Type extends CustomElement = CustomEle
     template?: (element: Type, ...helpers: any[]) => TemplateResult | void;
 }
 
+/**
+ * The default {@link CustomElementDeclaration}
+ */
 export const DEFAULT_CUSTOM_ELEMENT_DECLARATION: CustomElementDeclaration = {
     selector: '',
     shadow: true,

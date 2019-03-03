@@ -143,11 +143,11 @@ describe('CustomElement', () => {
 
             expectedOrder = ['CONNECTED', 'UPDATE', 'PROPERTY', 'UPDATE', 'DISCONNECTED'];
 
-            testElement.addEventListener('on-connected', () => {
+            testElement.addEventListener('connected', () => {
                 recordedOrder.push('CONNECTED');
             });
 
-            testElement.addEventListener('on-update', (event: Event) => {
+            testElement.addEventListener('update', (event: Event) => {
                 if ((event as CustomEvent).detail.firstUpdate) {
                     recordedOrder.push('UPDATE');
                     // on the first update, after listeners are bound, we click the element
@@ -162,7 +162,7 @@ describe('CustomElement', () => {
                 }
             });
 
-            testElement.addEventListener('on-disconnected', () => {
+            testElement.addEventListener('disconnected', () => {
                 recordedOrder.push('DISCONNECTED');
                 assertOrder();
                 done();
@@ -179,7 +179,7 @@ describe('CustomElement', () => {
 
             expectedOrder = ['UPDATE', 'DISCONNECTED'];
 
-            testElement.addEventListener('on-update', () => {
+            testElement.addEventListener('update', () => {
                 recordedOrder.push('UPDATE');
                 removeElement(testElement);
             });
@@ -188,7 +188,7 @@ describe('CustomElement', () => {
                 recordedOrder.push('PROPERTY');
             });
 
-            testElement.addEventListener('on-disconnected', () => {
+            testElement.addEventListener('disconnected', () => {
                 recordedOrder.push('DISCONNECTED');
                 assertOrder();
                 done();

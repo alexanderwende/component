@@ -32,7 +32,7 @@ describe('@listener decorator', () => {
 
             // listeners are bound after the first update to ensure DOM is created
             // and connectedCallback has been run
-            testElement.addEventListener('on-update', (event: Event) => {
+            testElement.addEventListener('update', (event: Event) => {
 
                 if ((event as CustomEvent).detail.firstUpdate) {
 
@@ -72,7 +72,7 @@ describe('@listener decorator', () => {
 
             const testElement = document.createElement(ExtendedTestElement.selector);
 
-            testElement.addEventListener('on-update', (event: Event) => {
+            testElement.addEventListener('update', (event: Event) => {
 
                 if ((event as CustomEvent).detail.firstUpdate) {
 
@@ -121,7 +121,7 @@ describe('@listener decorator', () => {
 
             const testElement = document.createElement(ExtendedTestElement.selector);
 
-            testElement.addEventListener('on-update', (event: Event) => {
+            testElement.addEventListener('update', (event: Event) => {
 
                 if ((event as CustomEvent).detail.firstUpdate) {
 
@@ -217,7 +217,7 @@ describe('@listener decorator', () => {
 
                 @listener<TestElement>({
                     event: 'click',
-                    target: function () { return this._renderRoot.querySelector('button')!; }
+                    target: function () { return this.renderRoot.querySelector('button')!; }
                 })
                 handleClick (event: MouseEvent) {
 
@@ -236,7 +236,7 @@ describe('@listener decorator', () => {
                 done();
             });
 
-            testElement.addEventListener('on-update', () => {
+            testElement.addEventListener('update', () => {
 
                 // when we want the custom element to react to state changes, we can't do that in the update loop
                 // we need to defer code that changes the element state

@@ -61,7 +61,7 @@ export class Card extends CustomElement {
 
     @listener<Card>({
         event: 'click',
-        target: function () { return this._renderRoot.querySelector('button')!; }
+        target: function () { return this.renderRoot.querySelector('button')!; }
     })
     handleClick (event: MouseEvent) {
 
