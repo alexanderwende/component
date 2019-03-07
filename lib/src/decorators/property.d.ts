@@ -1,25 +1,25 @@
-import { CustomElement } from '../custom-element';
+import { Component } from '../component';
 import { PropertyDeclaration } from './property-declaration';
 /**
- * A type extension to add additional properties to a {@link CustomElement} constructor during decoration
+ * A type extension to add additional properties to a {@link Component} constructor during decoration
  *
  * @internal
  * @private
  */
-export declare type DecoratedCustomElementType = typeof CustomElement & {
+export declare type DecoratedComponentType = typeof Component & {
     overridden?: Set<string>;
 };
 /**
- * Decorates a {@link CustomElement} property
+ * Decorates a {@link Component} property
  *
  * @remarks
  * Many of the {@link PropertyDeclaration} options support custom functions, which will be invoked
- * with the custom element instance as `this`-context during execution. In order to support correct
+ * with the component instance as `this`-context during execution. In order to support correct
  * typing in these functions, the `@property` decorator supports generic types. Here is an example
  * of how you can use this with a custom {@link PropertyReflector}:
  *
  * ```typescript
- * class MyElement extends CustomElement {
+ * class MyElement extends Component {
  *
  *      myHiddenProperty = true;
  *
@@ -40,5 +40,5 @@ export declare type DecoratedCustomElementType = typeof CustomElement & {
  *
  * @param options A property declaration
  */
-export declare function property<Type extends CustomElement = CustomElement>(options?: Partial<PropertyDeclaration<Type>>): (target: Object, propertyKey: string | number | symbol, propertyDescriptor?: PropertyDescriptor | undefined) => any;
+export declare function property<Type extends Component = Component>(options?: Partial<PropertyDeclaration<Type>>): (target: Object, propertyKey: string | number | symbol, propertyDescriptor?: PropertyDescriptor | undefined) => any;
 //# sourceMappingURL=property.d.ts.map

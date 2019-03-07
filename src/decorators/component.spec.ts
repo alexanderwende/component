@@ -1,15 +1,15 @@
-import { CustomElement } from '../custom-element';
-import { customElement } from './custom-element';
+import { Component } from '../component';
+import { component } from './component';
 import { property } from './property';
 
-describe('@customElement decorator', () => {
+describe('@component decorator', () => {
 
-    it('decorates a custom element class', (done) => {
+    it('decorates a component class', (done) => {
 
-        @customElement({
+        @component({
             selector: 'test-element-decorator'
         })
-        class TestElement extends CustomElement { }
+        class TestElement extends Component { }
 
         // assert the correct selector
         expect(TestElement.selector).toBe('test-element-decorator');
@@ -17,43 +17,43 @@ describe('@customElement decorator', () => {
         // assert shadow mode to be true by default
         expect(TestElement.shadow).toBe(true, 'shadow mode should be true by default');
 
-        // assert custom element is defined by default
-        expect(window.customElements.get('test-element-decorator')).toBe(TestElement, 'decorated custom element is not registered');
+        // assert component is defined by default
+        expect(window.customElements.get('test-element-decorator')).toBe(TestElement, 'decorated component is not registered');
 
         // assert whenDefined promise resolves
         window.customElements
             .whenDefined('test-element-decorator')
             .then(() => {
                 done();
-            }).catch(() => done.fail('decorated custom element not registered'));
+            }).catch(() => done.fail('decorated component not registered'));
     });
 
-    it('allows turning off shadow mode for custom element class', () => {
+    it('allows turning off shadow mode for component class', () => {
 
-        @customElement({
+        @component({
             selector: 'test-element-noshadow',
             shadow: false
         })
-        class TestElement extends CustomElement { }
+        class TestElement extends Component { }
 
         expect(TestElement.shadow).toBe(false);
     });
 
     it('allows turning off automatic custom element definition', () => {
 
-        @customElement({
+        @component({
             selector: 'test-element-undefined',
             define: false
         })
-        class TestElement extends CustomElement { }
+        class TestElement extends Component { }
 
         expect(window.customElements.get('test-element-undefined')).toBe(undefined);
     });
 
-    it('allows using the static selector property of the decorated custom element class', () => {
+    it('allows using the static selector property of the decorated component class', () => {
 
-        @customElement()
-        class TestElement extends CustomElement {
+        @component()
+        class TestElement extends Component {
 
             static selector = 'test-element-static-selector'
         }
@@ -65,10 +65,10 @@ describe('@customElement decorator', () => {
 
     it(`uses the decorator's selector property over the static class property`, () => {
 
-        @customElement({
+        @component({
             selector: 'test-element-decorator-over-static'
         })
-        class TestElement extends CustomElement {
+        class TestElement extends Component {
 
             static selector = 'test-element-static-selector'
         }
@@ -82,8 +82,8 @@ describe('@customElement decorator', () => {
 
         expect(() => {
 
-            @customElement()
-            class TestElement extends CustomElement { }
+            @component()
+            class TestElement extends Component { }
 
         }).toThrow();
     });
@@ -93,30 +93,30 @@ describe('@customElement decorator', () => {
         // selectors need to use a hyphen in the selector name, e.g.: 'my-element'
         expect(() => {
 
-            @customElement({
+            @component({
                 selector: 'foo'
             })
-            class TestElement extends CustomElement { }
+            class TestElement extends Component { }
 
         }).toThrow();
 
         // selectors cennot be already existing hyphen-containing element names
         expect(() => {
 
-            @customElement({
+            @component({
                 selector: 'font-face'
             })
-            class TestElement extends CustomElement { }
+            class TestElement extends Component { }
 
         }).toThrow();
     });
 
     it('stores observed attributes correctly', () => {
 
-        @customElement({
+        @component({
             selector: 'test-element-observed-attributes'
         })
-        class TestElement extends CustomElement {
+        class TestElement extends Component {
 
             static get observedAttributes (): string[] {
 
@@ -132,7 +132,7 @@ describe('@customElement decorator', () => {
 
         expect(TestElement.observedAttributes).toEqual(['test-attribute-one', 'test-attribute-two', 'test-property-one', 'test-property-two']);
 
-        @customElement({
+        @component({
             selector: 'child-test-element-observed-attributes'
         })
         class ChildTestElement extends TestElement {

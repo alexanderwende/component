@@ -1,8 +1,8 @@
-import { AttributeConverterBoolean, customElement, CustomElement, html, listener, property } from '../../src';
+import { AttributeConverterBoolean, component, Component, html, listener, property } from '../../src';
 import { css } from '../../src/css';
 import { Enter, Space } from './keys';
 
-@customElement<Checkbox>({
+@component<Checkbox>({
     selector: 'ui-checkbox',
     styles: [css`
     :host {
@@ -41,7 +41,7 @@ import { Enter, Space } from './keys';
     <span class="check-mark"></span>
     `
 })
-export class Checkbox extends CustomElement {
+export class Checkbox extends Component {
 
     // Chrome already reflects aria properties, but Firefox doesn't, so we need a property decorator
     // however, we cannot initialize role with a value here, as Chrome's reflection will cause an

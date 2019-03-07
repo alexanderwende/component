@@ -1,39 +1,37 @@
-import { CustomElement } from '../custom-element';
-import { CustomElementDeclaration, DEFAULT_CUSTOM_ELEMENT_DECLARATION } from './custom-element-declaration';
-import { DecoratedCustomElementType } from './property';
-
-// TODO: rename to component()
+import { Component } from '../component';
+import { ComponentDeclaration, DEFAULT_COMPONENT_DECLARATION } from './component-declaration';
+import { DecoratedComponentType } from './property';
 
 /**
- * Decorates a {@link CustomElement} class
+ * Decorates a {@link Component} class
  *
- * @param options A custom element declaration
+ * @param options A {@link ComponentDeclaration}
  */
-export function customElement<Type extends CustomElement = CustomElement> (options: Partial<CustomElementDeclaration<Type>> = {}) {
+export function component<Type extends Component = Component> (options: Partial<ComponentDeclaration<Type>> = {}) {
 
-    const declaration = { ...DEFAULT_CUSTOM_ELEMENT_DECLARATION, ...options };
+    const declaration = { ...DEFAULT_COMPONENT_DECLARATION, ...options };
 
-    return (target: typeof CustomElement) => {
+    return (target: typeof Component) => {
 
-        const constructor = target as DecoratedCustomElementType;
+        const constructor = target as DecoratedComponentType;
 
         constructor.selector = declaration.selector || target.selector;
         constructor.shadow = declaration.shadow;
         constructor.template = declaration.template || target.template;
 
         // use keyof signatures to catch refactoring errors
-        const observedAttributesKey: keyof typeof CustomElement = 'observedAttributes';
-        const stylesKey: keyof typeof CustomElement = 'styles';
+        const observedAttributesKey: keyof typeof Component = 'observedAttributes';
+        const stylesKey: keyof typeof Component = 'styles';
 
         /**
          * Property decorators get called before class decorators, so at this point all decorated properties
-         * have stored their associated attributes in {@link CustomElement.attributes}.
-         * We can now combine them with the user-defined {@link CustomElement.observedAttributes} and,
+         * have stored their associated attributes in {@link Component.attributes}.
+         * We can now combine them with the user-defined {@link Component.observedAttributes} and,
          * by using a Set, eliminate all duplicates in the process.
          *
-         * As the user-defined {@link CustomElement.observedAttributes} will also include decorator generated
+         * As the user-defined {@link Component.observedAttributes} will also include decorator generated
          * observed attributes, we always inherit all observed attributes from a base class. For that reason
-         * we have to keep track of attribute overrides when extending any {@link CustomElement} base class.
+         * we have to keep track of attribute overrides when extending any {@link Component} base class.
          * This is done in the {@link property} decorator. Here we have to make sure to remove overridden
          * attributes.
          */
@@ -71,7 +69,7 @@ export function customElement<Type extends CustomElement = CustomElement> (optio
         ];
 
         /**
-         * Finally we override the {@link CustomElement.observedAttributes} getter with a new one, which returns
+         * Finally we override the {@link Component.observedAttributes} getter with a new one, which returns
          * the unique set of user defined and decorator generated observed attributes.
          */
         Reflect.defineProperty(constructor, observedAttributesKey, {
@@ -83,7 +81,7 @@ export function customElement<Type extends CustomElement = CustomElement> (optio
         });
 
         /**
-         * We override the {@link CustomElement.styles} getter with a new one, which returns
+         * We override the {@link Component.styles} getter with a new one, which returns
          * the unique set of statically defined and decorator defined styles.
          */
         Reflect.defineProperty(constructor, stylesKey, {

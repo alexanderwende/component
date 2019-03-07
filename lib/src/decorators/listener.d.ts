@@ -1,8 +1,8 @@
-import { CustomElement } from '../custom-element';
+import { Component } from '../component';
 /**
- * A {@link CustomElement} event listener declaration
+ * A {@link Component} event listener declaration
  */
-export interface ListenerDeclaration<Type extends CustomElement = CustomElement> {
+export interface ListenerDeclaration<Type extends Component = Component> {
     /**
      * The event to listen to
      *
@@ -15,7 +15,7 @@ export interface ListenerDeclaration<Type extends CustomElement = CustomElement>
      */
     options?: AddEventListenerOptions;
     /**
-     * An alternative event target (by default this will be the {@link CustomElement} instance)
+     * An alternative event target (by default this will be the {@link Component} instance)
      *
      * @remarks
      * This can be useful if you want to listen to e.g.:
@@ -24,12 +24,12 @@ export interface ListenerDeclaration<Type extends CustomElement = CustomElement>
      * * document.onscroll
      * * Worker.onmessage
      *
-     * If a function is provided, the function will be invoked by custom element after its
-     * {@link connectedCallback} has updated the custom element. The context of the function will
-     * be the custom element instance.
+     * If a function is provided, the function will be invoked by component after its
+     * {@link connectedCallback} has updated the component. The context of the function will
+     * be the component instance.
      *
      * ```typescript
-     * class MyElement extends CustomElement {
+     * class MyElement extends Component {
      *
      *      worker: Worker;
      *
@@ -56,9 +56,9 @@ export interface ListenerDeclaration<Type extends CustomElement = CustomElement>
     target?: EventTarget | ((this: Type) => EventTarget);
 }
 /**
- * Decorates a {@link CustomElement} method as an event listener
+ * Decorates a {@link Component} method as an event listener
  *
  * @param options The listener declaration
  */
-export declare function listener<Type extends CustomElement = CustomElement>(options: ListenerDeclaration<Type>): (target: Object, propertyKey: string, descriptor: PropertyDescriptor) => void;
+export declare function listener<Type extends Component = Component>(options: ListenerDeclaration<Type>): (target: Object, propertyKey: string, descriptor: PropertyDescriptor) => void;
 //# sourceMappingURL=listener.d.ts.map

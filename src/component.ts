@@ -21,7 +21,7 @@ const CHANGE_DETECTOR_ERROR = (changeDetector: PropertyKey | Function) => new Er
 
 /**
  * Extends the static {@link ListenerDeclaration} to include the bound listener
- * for a custom element instance.
+ * for a component instance.
  *
  * @internal
  */
@@ -39,17 +39,17 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
 }
 
 /**
- * A type for property changes, as used in ${@link CustomElement.updateCallback}
+ * A type for property changes, as used in ${@link Component.updateCallback}
  */
 export type Changes = Map<PropertyKey, any>;
 
 /**
- * The custom element base class
+ * The component base class
  */
-export abstract class CustomElement extends HTMLElement {
+export abstract class Component extends HTMLElement {
 
     /**
-     * The custom element's cached {@link CSSStyleSheet} instance
+     * The component's cached {@link CSSStyleSheet} instance
      *
      * @internal
      * @private
@@ -57,11 +57,11 @@ export abstract class CustomElement extends HTMLElement {
     private static _styleSheet: CSSStyleSheet | undefined;
 
     /**
-     * The custom element's {@link CSSStyleSheet}
+     * The component's {@link CSSStyleSheet}
      *
      * @remarks
      * When constructable stylesheets are available, this getter will create a {@link CSSStyleSheet}
-     * instance and cache it for use with each instance of the custom element.
+     * instance and cache it for use with each instance of the component.
      *
      * @internal
      * @private
@@ -85,7 +85,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * The custom element's cached {@link HTMLStyleElement} instance
+     * The component's cached {@link HTMLStyleElement} instance
      *
      * @internal
      * @private
@@ -93,11 +93,11 @@ export abstract class CustomElement extends HTMLElement {
     private static _styleElement: HTMLStyleElement | undefined;
 
     /**
-     * The custom element's {@link HTMLStyleElement}
+     * The component's {@link HTMLStyleElement}
      *
      * @remarks
      * This getter will create a {@link HTMLStyleElement} node and cache it for use with each
-     * instance of the custom element.
+     * instance of the component.
      *
      * @internal
      * @private
@@ -148,11 +148,11 @@ export abstract class CustomElement extends HTMLElement {
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
 
     /**
-     * The custom element's selector
+     * The component's selector
      *
      * @remarks
-     * Will be overridden by the {@link customElement} decorator's `selector` option, if provided.
-     * Otherwise the decorator will use this property to define the custom element.
+     * Will be overridden by the {@link component} decorator's `selector` option, if provided.
+     * Otherwise the decorator will use this property to define the component.
      */
     static selector: string;
 
@@ -160,23 +160,23 @@ export abstract class CustomElement extends HTMLElement {
      * Use Shadow DOM
      *
      * @remarks
-     * Will be set by the {@link customElement} decorator's `shadow` option (defaults to `true`).
+     * Will be set by the {@link component} decorator's `shadow` option (defaults to `true`).
      */
     static shadow: boolean;
 
     // TODO: create tests for style inheritance
     /**
-     * The custom element's styles
+     * The component's styles
      *
      * @remarks
-     * Can be set through the {@link customElement} decorator's `styles` option (defaults to `undefined`).
-     * Styles set in the {@link customElement} decorator will be merged with the class's static property.
+     * Can be set through the {@link component} decorator's `styles` option (defaults to `undefined`).
+     * Styles set in the {@link component} decorator will be merged with the class's static property.
      * This allows to inherit styles from a parent component and add additional styles on the child component.
      * In order to inherit styles from a parent component, an explicit super call has to be included. By
      * default no styles are inherited.
      *
      * ```typescript
-     * @customElement({
+     * @component({
      *      selector: 'my-element'
      * })
      * class MyElement extends MyBaseElement {
@@ -197,13 +197,13 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * The custom element's template
+     * The component's template
      *
      * @remarks
-     * Can be set through the {@link customElement} decorator's `template` option (defaults to `undefined`).
-     * If set in the {@link customElement} decorator, it will have precedence over the class's static property.
+     * Can be set through the {@link component} decorator's `template` option (defaults to `undefined`).
+     * If set in the {@link component} decorator, it will have precedence over the class's static property.
      *
-     * @param element   The custom element instance
+     * @param element   The component instance
      * @param helpers   Any additional properties which should exist in the template scope
      */
     static template?: (element: any, ...helpers: any[]) => TemplateResult | void;
@@ -217,11 +217,11 @@ export abstract class CustomElement extends HTMLElement {
      * have an associated property, return the attribute names in this getter. Changes to these
      * attributes can be handled in the {@link attributeChangedCallback} method.
      *
-     * When extending custom elements, make sure to return the super class's observedAttributes
+     * When extending components, make sure to return the super class's observedAttributes
      * if you override this getter (except if you don't want to inherit observed attributes):
      *
      * ```typescript
-     * @customElement({
+     * @component({
      *      selector: 'my-element'
      * })
      * class MyElement extends MyBaseElement {
@@ -292,7 +292,7 @@ export abstract class CustomElement extends HTMLElement {
     readonly renderRoot: Element | DocumentFragment;
 
     /**
-     * The custom element constructor
+     * The component constructor
      */
     constructor () {
 
@@ -302,7 +302,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Invoked each time the custom element is moved to a new document
+     * Invoked each time the component is moved to a new document
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
@@ -315,7 +315,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Invoked each time the custom element is appended into a document-connected element
+     * Invoked each time the component is appended into a document-connected element
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
@@ -330,7 +330,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Invoked each time the custom element is disconnected from the document's DOM
+     * Invoked each time the component is disconnected from the document's DOM
      *
      * @remarks
      * https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements#Using_the_lifecycle_callbacks
@@ -347,7 +347,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Invoked each time one of the custom element's attributes is added, removed, or changed
+     * Invoked each time one of the component's attributes is added, removed, or changed
      *
      * @remarks
      * Which attributes to notice change for is specified in {@link observedAttributes}.
@@ -360,10 +360,10 @@ export abstract class CustomElement extends HTMLElement {
      * are processed correctly.
      *
      * ```typescript
-     * @customElement({
+     * @component({
      *      selector: 'my-element'
      * })
-     * class MyElement extends CustomElement {
+     * class MyElement extends Component {
      *
      *      attributeChangedCallback (attribute: string, oldValue: any, newValue: any) {
      *
@@ -386,7 +386,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Invoked each time the custom element updates
+     * Invoked each time the component updates
      *
      * @remarks
      * The `updateCallback` is invoked synchronously by the {@link update} method and therefore happens directly after
@@ -396,10 +396,10 @@ export abstract class CustomElement extends HTMLElement {
      * To cause an update, defer changes with the help of a Promise.
      *
      * ```typescript
-     * @customElement({
+     * @component({
      *      selector: 'my-element'
      * })
-     * class MyElement extends CustomElement {
+     * class MyElement extends Component {
      *
      *      updateCallback (changes: Changes, firstUpdate: boolean) {
      *
@@ -434,7 +434,7 @@ export abstract class CustomElement extends HTMLElement {
      *
      * @remarks
      * Property changes should trigger custom events when they are caused by internal state changes,
-     * but not if they are caused by a consumer of the custom element API directly, e.g.:
+     * but not if they are caused by a consumer of the component API directly, e.g.:
      *
      * ```typescript
      * document.querySelector('my-custom-element').customProperty = true;
@@ -488,11 +488,11 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Request an update of the custom element
+     * Request an update of the component
      *
      * @remarks
      * This method is called automatically when the value of a decorated property or its associated
-     * attribute changes. If you need the custom element to update based on a state change that is
+     * attribute changes. If you need the component to update based on a state change that is
      * not covered by a decorated property, call this method without any arguments.
      *
      * @param propertyKey   The name of the changed property that requests the update
@@ -528,11 +528,11 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Renders the custom element's template to its {@link renderRoot}
+     * Renders the component's template to its {@link renderRoot}
      *
      * @remarks
      * Uses lit-html's {@link lit-html#render} method to render a {@link lit-html#TemplateResult} to the
-     * custom element's render root. The custom element instance will be passed to the static template method
+     * component's render root. The component instance will be passed to the static template method
      * automatically. To make additional properties available to the template method, you can pass them to the
      * render method.
      *
@@ -540,11 +540,11 @@ export abstract class CustomElement extends HTMLElement {
      * const dateFormatter = (date: Date) => { // return some date transformation...
      * };
      *
-     * @customElement({
+     * @component({
      *      selector: 'my-element',
      *      template: (element, formatDate) => html`<span>Last updated: ${ formatDate(element.lastUpdated) }</span>`
      * })
-     * class MyElement extends CustomElement {
+     * class MyElement extends Component {
      *
      *      @property()
      *      lastUpdated: Date;
@@ -560,7 +560,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected render (...helpers: any[]) {
 
-        const constructor = this.constructor as typeof CustomElement;
+        const constructor = this.constructor as typeof Component;
 
         const template = constructor.template && constructor.template(this, ...helpers);
 
@@ -568,7 +568,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Updates the custom element after an update was requested with {@link requestUpdate}
+     * Updates the component after an update was requested with {@link requestUpdate}
      *
      * @remarks
      * This method renders the template, reflects changed properties to attributes and
@@ -585,13 +585,13 @@ export abstract class CustomElement extends HTMLElement {
         // reflect all properties marked for reflection
         this._reflectingProperties.forEach((oldValue: any, propertyKey: PropertyKey) => {
 
-            this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
+            this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
         });
 
         // notify all properties marked for notification
         this._notifyingProperties.forEach((oldValue, propertyKey) => {
 
-            this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof CustomElement]);
+            this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
         });
     }
 
@@ -634,7 +634,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
 
-        return (this.constructor as typeof CustomElement).properties.get(propertyKey);
+        return (this.constructor as typeof Component).properties.get(propertyKey);
     }
 
     /**
@@ -653,7 +653,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     protected reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
 
-        const constructor = this.constructor as typeof CustomElement;
+        const constructor = this.constructor as typeof Component;
 
         const propertyKey = constructor.attributes.get(attributeName);
 
@@ -803,37 +803,37 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Creates the custom element's render root
+     * Creates the component's render root
      *
      * @remarks
-     * The render root is where the {@link render} method will attach its DOM output. When using the custom element
-     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the custom element itself.
+     * The render root is where the {@link render} method will attach its DOM output. When using the component
+     * with shadow mode, it will be a {@link ShadowRoot}, otherwise it will be the component itself.
      *
      * @internal
      * @private
      */
     private _createRenderRoot (): Element | DocumentFragment {
 
-        return (this.constructor as typeof CustomElement).shadow
+        return (this.constructor as typeof Component).shadow
             ? this.attachShadow({ mode: 'open' })
             : this;
     }
 
     /**
-     * Adds the custom element's styles to its {@link renderRoot}
+     * Adds the component's styles to its {@link renderRoot}
      *
      * @remarks
-     * If constructable stylesheets are available, the custom element's {@link CSSStyleSheet} instance will be adopted
+     * If constructable stylesheets are available, the component's {@link CSSStyleSheet} instance will be adopted
      * by the {@link ShadowRoot}. If not, a style element is created and attached to the {@link ShadowRoot}. If the
-     * custom element is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
-     * instances of the same custom element only one stylesheet will be added to the document.
+     * component is not using shadow mode, a script tag will be appended to the document's `<head>`. For multiple
+     * instances of the same component only one stylesheet will be added to the document.
      *
      * @internal
      * @private
      */
     private _adoptStyles () {
 
-        const constructor = this.constructor as typeof CustomElement;
+        const constructor = this.constructor as typeof Component;
         const styleSheet = constructor.styleSheet;
         const styleElement = constructor.styleElement;
         const styles = constructor.styles;
@@ -896,7 +896,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     private _reflectAttribute (attributeName: string, oldValue: string | null, newValue: string | null) {
 
-        const constructor = this.constructor as typeof CustomElement;
+        const constructor = this.constructor as typeof Component;
 
         const propertyKey = constructor.attributes.get(attributeName)!;
 
@@ -996,14 +996,14 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Bind custom element listeners
+     * Bind component listeners
      *
      * @internal
      * @private
      */
     private _listen () {
 
-        (this.constructor as typeof CustomElement).listeners.forEach((declaration, listener) => {
+        (this.constructor as typeof Component).listeners.forEach((declaration, listener) => {
 
             const instanceDeclaration: InstanceListenerDeclaration = {
 
@@ -1034,7 +1034,7 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Unbind custom element listeners
+     * Unbind component listeners
      *
      * @internal
      * @private
@@ -1062,7 +1062,7 @@ export abstract class CustomElement extends HTMLElement {
 
         const previousRequest = this._updateRequest;
 
-        // mark the custom element as having requested an update, the {@link _requestUpdate}
+        // mark the component as having requested an update, the {@link _requestUpdate}
         // method will not enqueue a further request for update if one is scheduled
         this._hasRequestedUpdate = true;
 
@@ -1084,10 +1084,10 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Schedule the update of the custom element
+     * Schedule the update of the component
      *
      * @remarks
-     * Schedules the first update of the custom element as soon as possible and all consecutive updates
+     * Schedules the first update of the component as soon as possible and all consecutive updates
      * just before the next frame. In the latter case it returns a Promise which will be resolved after
      * the update is done.
      *
@@ -1113,10 +1113,10 @@ export abstract class CustomElement extends HTMLElement {
     }
 
     /**
-     * Perform the custom element update
+     * Perform the component update
      *
      * @remarks
-     * Invokes {@link updateCallback} after performing the update and cleans up the custom element
+     * Invokes {@link updateCallback} after performing the update and cleans up the component
      * state. During the first update the element's styles will be added. Dispatches the update
      * lifecycle event.
      *
@@ -1125,7 +1125,7 @@ export abstract class CustomElement extends HTMLElement {
      */
     private _performUpdate () {
 
-        // we have to wait until the custom element is connected before we can do any updates
+        // we have to wait until the component is connected before we can do any updates
         // the {@link connectedCallback} will call {@link requestUpdate} in any case, so we can
         // simply bypass any actual update and clean-up until then
         if (this.isConnected) {
@@ -1160,7 +1160,7 @@ export abstract class CustomElement extends HTMLElement {
             this._hasUpdated = true;
         }
 
-        // mark custom element as updated *after* the update to prevent infinte loops in the update process
+        // mark component as updated *after* the update to prevent infinte loops in the update process
         // N.B.: any property changes during the update will not trigger another update
         this._hasRequestedUpdate = false;
     }

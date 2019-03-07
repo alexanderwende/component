@@ -1,7 +1,7 @@
-import { CustomElement, customElement, property, html } from '../../../src';
+import { Component, component, property, html } from '../../../src';
 import { css } from '../../../src/css';
 
-@customElement<Icon>({
+@component<Icon>({
     selector: 'ui-icon',
     styles: [css`
     :host {
@@ -47,7 +47,7 @@ import { css } from '../../../src/css';
         </svg>`;
     }
 })
-export class Icon extends CustomElement {
+export class Icon extends Component {
 
     /**
      * A map for caching an icon set's sprite url

@@ -1,9 +1,9 @@
-import { AttributeConverterString, Changes, CustomElement, customElement, html, listener, property } from '../../../src';
+import { AttributeConverterString, Changes, Component, component, html, listener, property } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
 import { css } from '../../../src/css';
 
-@customElement({
+@component({
     selector: 'ui-tab',
     styles: [css`
     :host {
@@ -33,7 +33,7 @@ import { css } from '../../../src/css';
     `],
     template: () => html`<slot></slot>`
 })
-export class Tab extends CustomElement {
+export class Tab extends Component {
 
     private _panel: TabPanel | null = null;
 

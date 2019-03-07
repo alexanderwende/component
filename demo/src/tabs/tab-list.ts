@@ -1,8 +1,8 @@
-import { Changes, CustomElement, customElement, html, listener, property } from '../../../src';
+import { Changes, Component, component, html, listener, property } from '../../../src';
 import { Tab } from './tab';
 import { css } from '../../../src/css';
 
-@customElement<TabList>({
+@component<TabList>({
     selector: 'ui-tab-list',
     styles: [css`
     :host {
@@ -12,7 +12,7 @@ import { css } from '../../../src/css';
     `],
     template: () => html`<slot></slot>`
 })
-export class TabList extends CustomElement {
+export class TabList extends Component {
 
     protected selectedTab: Tab | undefined;
 

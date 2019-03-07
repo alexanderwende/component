@@ -13,9 +13,7 @@ export declare type PropertyMapper<T = any> = (value: T | null) => string | null
  * For the most common types, a converter exists which can be referenced in the {@link PropertyDeclaration}.
  *
  * ```typescript
- * import { CustomElement, property, AttributeConverterBoolean } from 'custom-element';
- *
- * export class MyElement extends CustomElement {
+ * export class MyElement extends Component {
  *
  *      @property({
  *          converter: AttributeConverterBoolean

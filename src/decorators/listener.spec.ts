@@ -1,5 +1,5 @@
-import { CustomElement } from '../custom-element';
-import { customElement } from './custom-element';
+import { Component } from '../component';
+import { component } from './component';
 import { listener } from './listener';
 import { property } from './property';
 import { html } from 'lit-html';
@@ -12,10 +12,10 @@ describe('@listener decorator', () => {
 
             let clicks = 0;
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @listener({
                     event: 'click'
@@ -49,10 +49,10 @@ describe('@listener decorator', () => {
 
             let clicks = 0;
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-base'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @listener({
                     event: 'click'
@@ -63,7 +63,7 @@ describe('@listener decorator', () => {
                 }
             }
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-extended'
             })
             class ExtendedTestElement extends TestElement { }
@@ -85,14 +85,14 @@ describe('@listener decorator', () => {
             document.body.appendChild(testElement);
         });
 
-        it('should allow unbinding events when extending a custom element', (done) => {
+        it('should allow unbinding events when extending a component', (done) => {
 
             let clicks = 0;
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-unbind-base'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @listener({
                     event: 'click'
@@ -103,7 +103,7 @@ describe('@listener decorator', () => {
                 }
             }
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-unbind-extended'
             })
             class ExtendedTestElement extends TestElement {
@@ -150,10 +150,10 @@ describe('@listener decorator', () => {
 
             const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-target'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 workerUrl!: string;
 
@@ -206,11 +206,11 @@ describe('@listener decorator', () => {
 
         it('should allow binding to ShadowDOM children', (done) => {
 
-            @customElement({
+            @component({
                 selector: 'test-element-listener-target-shadow-dom',
                 template: element => html`<button>Test Button</button>`
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @property()
                 clicked = false;
@@ -238,7 +238,7 @@ describe('@listener decorator', () => {
 
             testElement.addEventListener('update', () => {
 
-                // when we want the custom element to react to state changes, we can't do that in the update loop
+                // when we want the component to react to state changes, we can't do that in the update loop
                 // we need to defer code that changes the element state
                 Promise.resolve().then(() => testElement.renderRoot.querySelector('button')!.click());
             });

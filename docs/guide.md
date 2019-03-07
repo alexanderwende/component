@@ -1,31 +1,35 @@
 ## Guide
 
 ### Introduction
+
 * Installation
-* Creating a CustomElement
-* Using a CustomElement
+* Creating a Component
+* Using a Component
   * In Typescipt projects
   * In an HTML page
 
-### CustomElement
+### Component
+
 * Overview
-* customElement decorator
-* CustomElement declaration
+* Component decorator
+* Component declaration
 
 ### Templates
+
 * Defining a template
 * Injecting helpers into a template
 * lit-html documentation link
 
 ### Styles
-* Defining element styles
+
+* Defining component styles
   * Static styles
   * Inline styles
   * Importing styles from css modules
-* Inheriting element styles
-
+* Inheriting component styles
 
 ### Attributes and Properties
+
 * Overview
 * Property decorator
 * Property declaration
@@ -33,6 +37,7 @@
 * Attribute converters
 
 ### Events
+
 * Overview
 * Listener decorator
 * Listener declaration
@@ -42,6 +47,7 @@
 * Lifecycle events
 
 ### Lifecycle
-* CustomElement lifecycle explained
+
+* Component lifecycle explained
 * Lifecycle callbacks
 * Lifecycle events

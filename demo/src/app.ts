@@ -1,4 +1,4 @@
-import { CustomElement, customElement } from '../../src';
+import { Component, component } from '../../src';
 import './accordion/accordion';
 import { template } from './app.template';
 import './card';
@@ -10,10 +10,10 @@ import './tabs/tab-panel';
 import './toggle';
 import { styles } from './app.styles';
 
-@customElement({
+@component({
     selector: 'demo-app',
     shadow: false,
     styles: [styles],
     template: template
 })
-export class App extends CustomElement { }
+export class App extends Component { }

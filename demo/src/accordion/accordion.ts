@@ -1,7 +1,7 @@
-import { CustomElement, customElement, html, property } from '../../../src';
+import { Component, component, html, property } from '../../../src';
 import './accordion-panel';
 
-@customElement({
+@component({
     selector: 'ui-accordion',
     template: () => html`
     <style>
@@ -18,7 +18,7 @@ import './accordion-panel';
     <slot></slot>
     `
 })
-export class Accordion extends CustomElement {
+export class Accordion extends Component {
 
     @property({
         reflectAttribute: false

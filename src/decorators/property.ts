@@ -1,26 +1,26 @@
-import { CustomElement } from '../custom-element';
+import { Component } from '../component';
 import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
 import { getPropertyDescriptor } from './utils/get-property-descriptor';
 
 /**
- * A type extension to add additional properties to a {@link CustomElement} constructor during decoration
+ * A type extension to add additional properties to a {@link Component} constructor during decoration
  *
  * @internal
  * @private
  */
-export type DecoratedCustomElementType = typeof CustomElement & { overridden?: Set<string> };
+export type DecoratedComponentType = typeof Component & { overridden?: Set<string> };
 
 /**
- * Decorates a {@link CustomElement} property
+ * Decorates a {@link Component} property
  *
  * @remarks
  * Many of the {@link PropertyDeclaration} options support custom functions, which will be invoked
- * with the custom element instance as `this`-context during execution. In order to support correct
+ * with the component instance as `this`-context during execution. In order to support correct
  * typing in these functions, the `@property` decorator supports generic types. Here is an example
  * of how you can use this with a custom {@link PropertyReflector}:
  *
  * ```typescript
- * class MyElement extends CustomElement {
+ * class MyElement extends Component {
  *
  *      myHiddenProperty = true;
  *
@@ -41,7 +41,7 @@ export type DecoratedCustomElementType = typeof CustomElement & { overridden?: S
  *
  * @param options A property declaration
  */
-export function property<Type extends CustomElement = CustomElement> (options: Partial<PropertyDeclaration<Type>> = {}) {
+export function property<Type extends Component = Component> (options: Partial<PropertyDeclaration<Type>> = {}) {
 
     return function (
         target: Object,
@@ -70,7 +70,7 @@ export function property<Type extends CustomElement = CustomElement> (options: P
         const setter = descriptor && descriptor.set || function (this: any, value: any) { this[hiddenKey] = value; };
 
         // we define a new accessor descriptor which will wrap the previously retrieved or created accessors
-        // and request an update of the custom element whenever the property is set
+        // and request an update of the component whenever the property is set
         const wrappedDescriptor: PropertyDescriptor & ThisType<any> = {
             configurable: true,
             enumerable: true,
@@ -86,7 +86,7 @@ export function property<Type extends CustomElement = CustomElement> (options: P
             }
         }
 
-        const constructor = target.constructor as DecoratedCustomElementType;
+        const constructor = target.constructor as DecoratedComponentType;
 
         const declaration: PropertyDeclaration<Type> = { ...DEFAULT_PROPERTY_DECLARATION, ...options };
 
@@ -112,7 +112,7 @@ export function property<Type extends CustomElement = CustomElement> (options: P
 
             // remove the inherited attribute as it's overridden
             constructor.attributes.delete(attribute as string);
-            // mark attribute as overridden for {@link customElement} decorator
+            // mark attribute as overridden for {@link component} decorator
             constructor.overridden!.add(attribute as string);
         }
 
@@ -141,7 +141,7 @@ export function property<Type extends CustomElement = CustomElement> (options: P
 };
 
 /**
- * Prepares the custom element constructor by initializing static properties for the property decorator,
+ * Prepares the component constructor by initializing static properties for the property decorator,
  * so we don't modify a base class's static properties.
  *
  * @remarks
@@ -151,17 +151,17 @@ export function property<Type extends CustomElement = CustomElement> (options: P
  * sure to initialize the constructors maps with the values of the base class's maps to properly
  * inherit all property declarations and attributes.
  *
- * @param constructor The custom element constructor to prepare
+ * @param constructor The component constructor to prepare
  *
  * @internal
  */
-function prepareConstructor (constructor: DecoratedCustomElementType) {
+function prepareConstructor (constructor: DecoratedComponentType) {
 
     // this will give us a compile-time error if we refactor one of the static constructor properties
     // and we won't miss renaming the property keys
-    const properties: keyof DecoratedCustomElementType = 'properties';
-    const attributes: keyof DecoratedCustomElementType = 'attributes';
-    const overridden: keyof DecoratedCustomElementType = 'overridden';
+    const properties: keyof DecoratedComponentType = 'properties';
+    const attributes: keyof DecoratedComponentType = 'attributes';
+    const overridden: keyof DecoratedComponentType = 'overridden';
 
     if (!constructor.hasOwnProperty(properties)) constructor.properties = new Map(constructor.properties);
     if (!constructor.hasOwnProperty(attributes)) constructor.attributes = new Map(constructor.attributes);

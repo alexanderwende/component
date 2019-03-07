@@ -1,6 +1,6 @@
-import { Changes, CustomElement } from '../custom-element';
+import { Changes, Component } from '../component';
 import { AttributeConverter } from './attribute-converter';
-import { customElement } from './custom-element';
+import { component } from './component';
 import { property } from './property';
 
 const ARIABooleanConverter: AttributeConverter<boolean> = {
@@ -17,10 +17,10 @@ describe('@property decorator', () => {
             // a symbol with invalid attribute characters in its description
             const symbol = Symbol('foo   bar >= baz/');
 
-            @customElement({
+            @component({
                 selector: 'test-element-generate-attributes'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @property()
                 testPropertyOne = 'foo';
@@ -49,10 +49,10 @@ describe('@property decorator', () => {
 
         it('should set observed attributes for decorated properties', () => {
 
-            @customElement({
+            @component({
                 selector: 'test-element-property-attributes'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 @property({
                     attribute: 'foo'
@@ -70,10 +70,10 @@ describe('@property decorator', () => {
 
         it('should set observed attributes for decorated properties and respect user-defined observed attributes', () => {
 
-            @customElement({
+            @component({
                 selector: 'test-element-property-attributes-user-defined'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 static get observedAttributes (): string[] {
 
@@ -96,10 +96,10 @@ describe('@property decorator', () => {
 
         it('should *not* set observed attributes for properties whose attribute option is set to false', () => {
 
-            @customElement({
+            @component({
                 selector: 'test-element-property-attributes-false'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 static get observedAttributes (): string[] {
 
@@ -121,12 +121,12 @@ describe('@property decorator', () => {
             expect([...TestElement.attributes.keys()]).toEqual(['foo']);
         });
 
-        it('should correctly inherit observed attributes for custom elements', () => {
+        it('should correctly inherit observed attributes for components', () => {
 
-            @customElement({
+            @component({
                 selector: 'test-element-property-attributes-base'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 static get observedAttributes (): string[] {
 
@@ -149,7 +149,7 @@ describe('@property decorator', () => {
             expect(TestElement.observedAttributes).toEqual(['user', 'checked', 'hidden', 'selected', 'active']);
             expect([...TestElement.attributes.keys()]).toEqual(['checked', 'hidden', 'selected', 'active']);
 
-            @customElement({
+            @component({
                 selector: 'test-element-property-attributes-extended'
             })
             class ExtendedTestElement extends TestElement {
@@ -188,10 +188,10 @@ describe('@property decorator', () => {
 
             let count = 0;
 
-            @customElement({
+            @component({
                 selector: 'test-element-propert-accessors'
             })
-            class TestElement extends CustomElement {
+            class TestElement extends Component {
 
                 private _selected = false;
 

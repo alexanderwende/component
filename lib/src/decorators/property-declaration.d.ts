@@ -1,17 +1,17 @@
-import { CustomElement } from '../custom-element';
+import { Component } from '../component';
 import { AttributeConverter } from './attribute-converter';
 /**
  * A function that will reflect an attribute value to a property
  */
-export declare type AttributeReflector<Type extends CustomElement = CustomElement> = (this: Type, attributeName: string, oldValue: string | null, newValue: string | null) => void;
+export declare type AttributeReflector<Type extends Component = Component> = (this: Type, attributeName: string, oldValue: string | null, newValue: string | null) => void;
 /**
  * A function that will reflect a property value to an attribute
  */
-export declare type PropertyReflector<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
+export declare type PropertyReflector<Type extends Component = Component> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 /**
  * A function that will dispatch a custom event for a property change
  */
-export declare type PropertyNotifier<Type extends CustomElement = CustomElement> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
+export declare type PropertyNotifier<Type extends Component = Component> = (this: Type, propertyKey: PropertyKey, oldValue: any, newValue: any) => void;
 /**
  * A function that will return `true` if the `oldValue` and the `newValue` of a property are different, `false` otherwise
  */
@@ -99,9 +99,9 @@ export declare function createAttributeName(propertyKey: PropertyKey): string;
  */
 export declare function createEventName(propertyKey: PropertyKey, prefix?: string, suffix?: string): string;
 /**
- * A {@link CustomElement} property declaration
+ * A {@link Component} property declaration
  */
-export interface PropertyDeclaration<Type extends CustomElement = CustomElement> {
+export interface PropertyDeclaration<Type extends Component = Component> {
     /**
      * Does property have an associated attribute?
      *
@@ -131,8 +131,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: The attribute value will not be reflected to the property automatically
      * * `true`: Any attribute change will be reflected automatically to the property using the default attribute reflector
-     * * `PropertyKey`: A method on the custom element with that property key will be invoked to handle the attribute reflection
-     * * `Function`: The provided function will be invoked with its `this` context bound to the custom element instance
+     * * `PropertyKey`: A method on the component with that property key will be invoked to handle the attribute reflection
+     * * `Function`: The provided function will be invoked with its `this` context bound to the component instance
      *
      * Default value: `true`
      */
@@ -144,8 +144,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: The property value will not be reflected to the associated attribute automatically
      * * `true`: Any property change will be reflected automatically to the associated attribute using the default property reflector
-     * * `PropertyKey`: A method on the custom element with that property key will be invoked to handle the property reflection
-     * * `Function`: The provided function will be invoked with its `this` context bound to the custom element instance
+     * * `PropertyKey`: A method on the component with that property key will be invoked to handle the property reflection
+     * * `Function`: The provided function will be invoked with its `this` context bound to the component instance
      *
      * Default value: `true`
      */
@@ -157,8 +157,8 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      * Possible values:
      * * `false`: Don't create a custom event for this property
      * * `true`: Create custom events for this property automatically
-     * * `PropertyKey`: Use the method with this property key on the custom element to create custom events
-     * * `Function`: Use the the provided function to create custom events (`this` context will be the custom element instance)
+     * * `PropertyKey`: Use the method with this property key on the component to create custom events
+     * * `Function`: Use the the provided function to create custom events (`this` context will be the component instance)
      *
      * Default value: `true`
      */
@@ -168,7 +168,7 @@ export interface PropertyDeclaration<Type extends CustomElement = CustomElement>
      *
      * @remarks
      * By default a decorated property will be observed for changes (through a custom setter for the property).
-     * Any `set`-operation of this property will therefore request an update of the custom element and initiate
+     * Any `set`-operation of this property will therefore request an update of the component and initiate
      * a render as well as reflection and notification.
      *
      * Possible values:

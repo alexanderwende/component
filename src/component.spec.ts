@@ -1,20 +1,20 @@
-import { CustomElement, Changes } from './custom-element';
-import { AttributeConverterBoolean, customElement, listener, property } from './decorators';
+import { Component, Changes } from './component';
+import { AttributeConverterBoolean, component, listener, property } from './decorators';
 
-function addElement (element: CustomElement) {
+function addElement (element: Component) {
 
     document.body.appendChild(element);
 }
 
-function removeElement (element: CustomElement) {
+function removeElement (element: Component) {
 
     document.body.removeChild(element);
 }
 
-@customElement({
+@component({
     selector: 'test-element'
 })
-class TestElement extends CustomElement {
+class TestElement extends Component {
 
     @property({
         converter: AttributeConverterBoolean
@@ -30,9 +30,9 @@ class TestElement extends CustomElement {
     }
 }
 
-describe('CustomElement', () => {
+describe('Component', () => {
 
-    describe('CustomElement lifecycle', () => {
+    describe('Component lifecycle', () => {
 
         // TODO: add adopted callback test
         it('should call lifecycle hooks in correct order', (done) => {
@@ -40,10 +40,10 @@ describe('CustomElement', () => {
             const expectedOrder = ['CONSTRUCTED', 'CONNECTED', 'ATTRIBUTE', 'UPDATE', 'DISCONNECTED'];
             const recordedOrder: string[] = [];
 
-            @customElement({
+            @component({
                 selector: 'test-element-lifecycle'
             })
-            class TestElementLifecycle extends CustomElement {
+            class TestElementLifecycle extends Component {
 
                 static get observedAttributes (): string[] {
 
@@ -106,7 +106,7 @@ describe('CustomElement', () => {
                 done();
             }
 
-            const testElement = document.createElement('test-element-lifecycle') as CustomElement;
+            const testElement = document.createElement('test-element-lifecycle') as Component;
 
             addElement(testElement);
 
@@ -121,7 +121,7 @@ describe('CustomElement', () => {
         });
     });
 
-    describe('CustomElement events', () => {
+    describe('Component events', () => {
 
         let expectedOrder: string[] = [];
         let recordedOrder: string[] = [];
@@ -147,6 +147,7 @@ describe('CustomElement', () => {
                 recordedOrder.push('CONNECTED');
             });
 
+            // TODO: test event paylpoad
             testElement.addEventListener('update', (event: Event) => {
                 if ((event as CustomEvent).detail.firstUpdate) {
                     recordedOrder.push('UPDATE');
@@ -168,6 +169,7 @@ describe('CustomElement', () => {
                 done();
             });
 
+            // TODO: test event payload
             testElement.addEventListener('my-property-changed', () => {
                 recordedOrder.push('PROPERTY');
             });
@@ -201,3 +203,16 @@ describe('CustomElement', () => {
         });
     });
 });
+
+// TODO: test Component.shadow
+// TODO: test Component.styles
+// TODO: test Component.template
+// TODO: test renderRoot
+// TODO: test notify
+// TODO: test watch
+// TODO: test watch
+// TODO: test requestUpdate
+// TODO: test render
+// TODO: test update
+// TODO: test hasChanged
+// TODO: test getPropertyDeclaration

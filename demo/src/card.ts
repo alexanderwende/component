@@ -1,4 +1,4 @@
-import { CustomElement, customElement, html, listener, property } from '../../src';
+import { Component, component, html, listener, property } from '../../src';
 import { css } from '../../src/css';
 
 // we can define mixins as
@@ -25,7 +25,7 @@ const style = css`
 }
 `;
 
-@customElement<Card>({
+@component<Card>({
     selector: 'ui-card',
     styles: [style],
     template: card => html`
@@ -36,7 +36,7 @@ const style = css`
     <button>Stop worker</button>
     `
 })
-export class Card extends CustomElement {
+export class Card extends Component {
 
     @property({
         attribute: false
@@ -78,7 +78,7 @@ export class Card extends CustomElement {
     }
 }
 
-@customElement<ActionCard>({
+@component<ActionCard>({
     selector: 'ui-action-card',
     template: card => html`
     <slot name="ui-action-card-header"></slot>
@@ -103,7 +103,7 @@ export class ActionCard extends Card {
     handleMessage () { }
 }
 
-@customElement<PlainCard>({
+@component<PlainCard>({
     selector: 'ui-plain-card',
     styles: [
         `:host {

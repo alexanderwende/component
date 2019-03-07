@@ -1,9 +1,9 @@
-import { AttributeConverterBoolean, Changes, CustomElement, customElement, html, property } from '../../../src';
+import { AttributeConverterBoolean, Changes, Component, component, html, property } from '../../../src';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
 
 let nextAccordionPanelId = 0;
 
-@customElement<AccordionPanel>({
+@component<AccordionPanel>({
     selector: 'ui-accordion-panel',
     template: (panel, copyright: CopyrightHelper) => html`
     <style>
@@ -52,7 +52,7 @@ let nextAccordionPanelId = 0;
     </div>
     `
 })
-export class AccordionPanel extends CustomElement {
+export class AccordionPanel extends Component {
 
     protected _body: HTMLElement | null = null;
 

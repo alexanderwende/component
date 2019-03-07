@@ -1,8 +1,8 @@
-import { AttributeConverterString, CustomElement, customElement, html, listener, property } from '../../src';
+import { AttributeConverterString, Component, component, html, listener, property } from '../../src';
 import { ARIABooleanConverter } from './aria-boolean-converter';
 import { Enter, Space } from './keys';
 
-@customElement<Toggle>({
+@component<Toggle>({
     selector: 'ui-toggle',
     template: toggle => html`
     <style>
@@ -98,7 +98,7 @@ import { Enter, Space } from './keys';
     }
     `
 })
-export class Toggle extends CustomElement {
+export class Toggle extends Component {
 
     @property({
         attribute: 'aria-checked',
