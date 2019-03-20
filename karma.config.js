@@ -1,7 +1,7 @@
 const pluginLocalResolve = require('rollup-plugin-local-resolve');
-const pluginNodeResolve  = require('rollup-plugin-node-resolve');
-const pluginCommonJS     = require('rollup-plugin-commonjs');
-const pluginIstanbul     = require('rollup-plugin-istanbul');
+const pluginNodeResolve = require('rollup-plugin-node-resolve');
+const pluginCommonJS = require('rollup-plugin-commonjs');
+const pluginIstanbul = require('rollup-plugin-istanbul');
 
 module.exports = function (config) {
 
@@ -88,7 +88,8 @@ module.exports = function (config) {
         // the coverage folder and output a text result on the
         // console, additional reports can be configured here
         remapCoverageReporter: {
-            html: './coverage',
+            html: './coverage/html',
+            lcovonly: 'coverage/lcov.info',
             text: null
         },
 
