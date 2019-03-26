@@ -17,8 +17,6 @@ export class TabList extends Component {
 
     private _tabs: Tab[] | undefined;
 
-    protected selectedTab: Tab | undefined;
-
     protected get tabs (): Tab[] {
 
         if (!this._tabs) {
@@ -28,6 +26,8 @@ export class TabList extends Component {
 
         return this._tabs;
     }
+
+    protected selectedTab: Tab | undefined;
 
     @property()
     role!: string;
@@ -58,18 +58,15 @@ export class TabList extends Component {
 
     setSelectedTab (tab?: Tab) {
 
-        // if no tab is provided, select the first tab
-        if (!tab) tab = this.querySelector(Tab.selector)! as Tab;
+        // if no tab is provided, select the first, non-disabled tab
+        if (!tab) tab = this.getNextTab();
 
         if (this.selectedTab && this.selectedTab !== tab) {
 
-            this.selectedTab.deselect();
-            if (this.selectedTab.panel) this.selectedTab.panel.hidden = true;
+            this.deselectTab(this.selectedTab);
         }
 
-        tab.select();
-        tab.focus();
-        if (tab.panel) tab.panel.hidden = false;
+        this.selectTab(tab);
 
         this.selectedTab = tab;
     }
@@ -112,30 +109,53 @@ export class TabList extends Component {
         }
     }
 
-    protected getPreviousTab (): Tab {
+    protected getPreviousTab (): Tab | undefined {
 
         const selectedIndex = this.selectedTab ? this.tabs.indexOf(this.selectedTab) : 0;
         let previousIndex = selectedIndex - 1;
+        let previousTab = this.tabs[previousIndex];
 
-        while (previousIndex >= 0 && this.tabs[previousIndex].disabled) {
+        while (previousIndex > 0 && previousTab && previousTab.disabled) {
 
-            previousIndex--;
+            previousTab = this.tabs[--previousIndex];
         }
 
-        return this.tabs[Math.max(previousIndex, 0)];
+        return (previousTab && !previousTab.disabled) ? previousTab : this.selectedTab;
     }
 
-    protected getNextTab (): Tab {
+    protected getNextTab (): Tab | undefined {
 
-        const length = this.tabs.length;
-        const selectedIndex = this.selectedTab ? this.tabs.indexOf(this.selectedTab) : 0;
+        const selectedIndex = this.selectedTab ? this.tabs.indexOf(this.selectedTab) : -1;
+        const lastIndex = this.tabs.length - 1;
         let nextIndex = selectedIndex + 1;
+        let nextTab = this.tabs[nextIndex];
 
-        while (nextIndex < length && this.tabs[nextIndex].disabled) {
+        while (nextIndex < lastIndex && nextTab && nextTab.disabled) {
 
-            nextIndex++;
+            nextTab = this.tabs[++nextIndex];
         }
 
-        return this.tabs[Math.min(nextIndex, length - 1)];
+        return (nextTab && !nextTab.disabled) ? nextTab : this.selectedTab;
+    }
+
+    protected selectTab (tab?: Tab) {
+
+        if (tab) {
+
+            tab.select();
+            tab.focus();
+
+            if (tab.panel) tab.panel.hidden = false;
+        }
+    }
+
+    protected deselectTab (tab?: Tab) {
+
+        if (tab) {
+
+            tab.deselect();
+
+            if (tab.panel) tab.panel.hidden = true;
+        }
     }
 }

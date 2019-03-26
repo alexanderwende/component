@@ -164,9 +164,10 @@ export const template = (element: App) => html`
 
             <h2>Tabs</h2>
             <ui-tab-list>
-                <ui-tab id="tab-1" aria-controls="tab-panel-1" aria-selected="true"><span>First Tab</span></ui-tab>
+                <ui-tab id="tab-1" aria-controls="tab-panel-1"><span>First Tab</span></ui-tab>
                 <ui-tab id="tab-2" aria-controls="tab-panel-2">Second Tab</ui-tab>
                 <ui-tab id="tab-3" aria-controls="tab-panel-3" aria-disabled="true">Third Tab</ui-tab>
+                <ui-tab id="tab-4" aria-controls="tab-panel-4" >Fourth Tab</ui-tab>
             </ui-tab-list>
             <ui-tab-panel id="tab-panel-1">
                 <h3>First Tab Panel</h3>
@@ -184,6 +185,12 @@ export const template = (element: App) => html`
             <ui-tab-panel id="tab-panel-3">
                 <h3>Third Tab Panel</h3>
                 <p>I'm disabled, you shouldn't see me.</p>
+            </ui-tab-panel>
+            <ui-tab-panel id="tab-panel-4">
+                <h3>Fourth Tab Panel</h3>
+                <p>Lorem ipsum dolor sit amet, no prima qualisque euripidis est. Qualisque quaerendum at est. Laudem
+                    constituam ea usu, virtute ponderum posidonium no eos. Dolores consetetur ex has. Nostro recusabo an
+                    est, wisi summo necessitatibus cum ne.</p>
             </ui-tab-panel>
         </div>
 
