@@ -1,7 +1,16 @@
-import { AttributeConverterString, Changes, Component, component, html, listener, property } from '../../../src';
+import {
+    AttributeConverterNumber,
+    AttributeConverterString,
+    Changes,
+    Component,
+    component,
+    html,
+    listener,
+    property
+} from '../../../src';
+import { css } from '../../../src/css';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
-import { css } from '../../../src/css';
 
 @component({
     selector: 'ui-tab',
@@ -39,6 +48,8 @@ export class Tab extends Component {
 
     private _selected = false;
 
+    private _disabled = false;
+
     @property({
         converter: AttributeConverterString,
     })
@@ -49,6 +60,16 @@ export class Tab extends Component {
         converter: AttributeConverterString,
     })
     controls!: string;
+
+    /**
+     * We provide our own tabindex property, so we can set it to `null`
+     * to remove the tabindex-attribute.
+     */
+    @property({
+        attribute: 'tabindex',
+        converter: AttributeConverterNumber
+    })
+    tabindex!: number | null;
 
     @property({
         attribute: 'aria-selected',
@@ -62,14 +83,25 @@ export class Tab extends Component {
     set selected (value: boolean) {
 
         this._selected = value;
-        this.tabIndex = value ? 0 : -1;
+
+        this.tabindex = this.disabled ? null : (value ? 0 : -1);
     }
 
     @property({
         attribute: 'aria-disabled',
         converter: ARIABooleanConverter,
     })
-    disabled!: boolean;
+    get disabled (): boolean {
+
+        return this._disabled;
+    }
+
+    set disabled (value: boolean) {
+
+        this._disabled = value;
+
+        this.tabindex = value ? null : (this.selected ? 0 : -1);
+    }
 
     get panel (): TabPanel | null {
 
@@ -86,7 +118,7 @@ export class Tab extends Component {
         super.connectedCallback();
 
         this.role = 'tab'
-        this.tabIndex = -1;
+        this.tabindex = this.disabled ? null : -1;
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -95,8 +127,6 @@ export class Tab extends Component {
 
             if (this.panel) this.panel.labelledBy = this.id;
         }
-
-        if (this.panel) this.panel.hidden = !this.selected;
     }
 
     select () {
@@ -116,9 +146,10 @@ export class Tab extends Component {
     @listener({ event: 'click' })
     protected handleClick (event: MouseEvent) {
 
+        event.preventDefault();
+
         if (this.disabled) {
 
-            event.preventDefault();
             return;
         }
 
