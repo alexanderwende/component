@@ -10,6 +10,9 @@ import { ArrowLeft, ArrowRight, ArrowDown } from '../keys';
         display: flex;
         flex-flow: row nowrap;
     }
+    ::slotted(ui-tab) {
+        margin-right: 0.25rem;
+    }
     `],
     template: () => html`<slot></slot>`
 })

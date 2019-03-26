@@ -19,8 +19,7 @@ import { TabPanel } from './tab-panel';
         position: relative;
         display: inline-flex;
         flex-flow: row;
-        margin-right: 0.25rem;
-        padding: 0 0.5rem;
+        padding: 0.5rem 0.5rem;
         cursor: pointer;
         border: var(--border);
         border-bottom: none;
@@ -36,7 +35,7 @@ import { TabPanel } from './tab-panel';
         left: 0;
         bottom: calc(-1 * var(--border-width));
         width: 100%;
-        height: var(--border-width);
+        height: calc(var(--border-width) + 0.5rem);
         background-color: var(--background-color);
     }
     `],
