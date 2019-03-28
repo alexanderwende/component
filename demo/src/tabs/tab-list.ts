@@ -82,11 +82,13 @@ export class TabList extends Component {
             case ArrowLeft:
 
                 this.setSelectedTab(this.getPreviousTab());
+                if (this.selectedTab) this.selectedTab.focus();
                 break;
 
             case ArrowRight:
 
                 this.setSelectedTab(this.getNextTab());
+                if (this.selectedTab) this.selectedTab.focus();
                 break;
 
             case ArrowDown:
@@ -146,7 +148,6 @@ export class TabList extends Component {
         if (tab) {
 
             tab.select();
-            tab.focus();
 
             if (tab.panel) tab.panel.hidden = false;
         }
