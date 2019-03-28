@@ -41,7 +41,7 @@ import { css } from '../../../src/css';
                 : element.icon;
 
         return html`
-        <svg>
+        <svg focusable="false">
             <use href="${ (element.constructor as typeof Icon).getSprite(set) }#${ icon }"
             xlink:href="${ (element.constructor as typeof Icon).getSprite(set) }#${ icon }" />
         </svg>`;
