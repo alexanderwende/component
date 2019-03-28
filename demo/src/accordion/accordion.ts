@@ -1,4 +1,5 @@
 import { Component, component, html, property } from '../../../src';
+import './accordion-header';
 import './accordion-panel';
 
 @component({

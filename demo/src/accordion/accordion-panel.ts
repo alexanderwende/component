@@ -1,45 +1,42 @@
-import { AttributeConverterBoolean, Changes, Component, component, html, property } from '../../../src';
+import { AttributeConverterBoolean, Changes, Component, component, html, property, AttributeConverterNumber } from '../../../src';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
+import { AccordionHeader } from './accordion-header';
+import { css } from '../../../src/css';
 
 let nextAccordionPanelId = 0;
 
 @component<AccordionPanel>({
     selector: 'ui-accordion-panel',
+    styles: [css`
+    :host {
+        display: flex;
+        flex-direction: column;
+    }
+    :host > .ui-accordion-header {
+        display: flex;
+        flex-flow: row;
+    }
+    :host > .ui-accordion-body {
+        height: auto;
+        overflow: auto;
+        transition: height .2s ease-out;
+    }
+    :host > .ui-accordion-body[aria-hidden=true] {
+        height: 0;
+        overflow: hidden;
+    }
+    .copyright {
+        padding: 0 1rem 1rem;
+        color: var(--disabled-color, '#ccc');
+        font-size: 0.75rem;
+    }
+    `],
     template: (panel, copyright: CopyrightHelper) => html`
-    <style>
-        :host {
-            display: flex;
-            flex-direction: column;
-        }
-        :host > .ui-accordion-body {
-            height: auto;
-            overflow: auto;
-            transition: height .2s ease-out;
-        }
-        :host > .ui-accordion-body[aria-hidden=true] {
-            height: 0;
-            overflow: hidden;
-        }
-        *:focus {
-            outline: none;
-            box-shadow: var(--focus-shadow);
-        }
-        .copyright {
-            padding: 0 1rem 1rem;
-            color: var(--disabled-color, '#ccc');
-            font-size: 0.75rem;
-        }
-    </style>
     <div class="ui-accordion-header"
-        id="${ panel.id }-header"
-        tabindex="${ panel.disabled ? -1 : 0 }"
-        role="button"
-        aria-controls="${ panel.id }-body"
-        aria-expanded="${ panel.expanded }"
-        aria-disabled=${ panel.disabled }
-        @keydown="${ (event: KeyboardEvent) => (event.key === 'Enter' || event.key === ' ') && panel.toggle() }"
+        role="heading"
+        aria-level="${ panel.level }"
         @click=${ panel.toggle }>
-        <slot name="ui-accordion-panel-header"></slot>
+        <slot name="header"></slot>
     </div>
     <div class="ui-accordion-body"
         id="${ panel.id }-body"
@@ -47,13 +44,14 @@ let nextAccordionPanelId = 0;
         role="region"
         aria-hidden="${ !panel.expanded }"
         aria-labelledby="${ panel.id }-header">
-        <slot name="ui-accordion-panel-body"></slot>
+        <slot></slot>
         <span class="copyright">${ copyright(new Date(), 'Alexander Wende') }</span>
     </div>
     `
 })
 export class AccordionPanel extends Component {
 
+    protected _header: AccordionHeader | null = null;
     protected _body: HTMLElement | null = null;
 
     protected get contentHeight (): string {
@@ -66,6 +64,11 @@ export class AccordionPanel extends Component {
     }
 
     @property({
+        converter: AttributeConverterNumber
+    })
+    level = 1;
+
+    @property({
         converter: AttributeConverterBoolean
     })
     expanded = false;
@@ -75,7 +78,12 @@ export class AccordionPanel extends Component {
     })
     disabled = false;
 
-    id = `ui-accordion-panel-${ nextAccordionPanelId++ }`;
+    constructor () {
+
+        super();
+
+        this.id = this.id || `ui-accordion-panel-${ nextAccordionPanelId++ }`;
+    }
 
     toggle () {
 
@@ -85,7 +93,15 @@ export class AccordionPanel extends Component {
         this.watch(() => {
 
             this.expanded = !this.expanded;
+            if (this._header) this._header.expanded = this.expanded;
         });
+    }
+
+    connectedCallback () {
+
+        super.connectedCallback();
+
+        this.setHeader(this.querySelector('ui-accordion-header'));
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -111,5 +127,19 @@ export class AccordionPanel extends Component {
     protected render () {
 
         super.render(copyright);
+    }
+
+    protected setHeader (header: AccordionHeader | null) {
+
+        this._header = header;
+
+        if (!header) return;
+
+        header.setAttribute('slot', 'header');
+
+        header.id = header.id || `${ this.id }-header`;
+        header.controls = `${ this.id }-body`;
+        header.expanded = this.expanded;
+        header.disabled = this.disabled;
     }
 }
