@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowLeft, ArrowDown, ArrowRight } from './keys';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from './keys';
 
 export interface ListItem extends HTMLElement {
     disabled?: boolean;
@@ -9,8 +9,14 @@ type ListEntry<T extends ListItem> = [number | undefined, T | undefined];
 export interface ActiveItemChange<T extends ListItem> extends CustomEvent {
     type: 'active-item-change';
     detail: {
-        index: number | undefined;
-        item: T | undefined;
+        previous: {
+            index: number | undefined;
+            item: T | undefined;
+        },
+        current: {
+            index: number | undefined;
+            item: T | undefined;
+        }
     }
 }
 
@@ -19,14 +25,23 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
     protected activeIndex: number | undefined;
     protected activeItem: T | undefined;
 
-    // TODO: Use a map?
+    protected listeners: Map<string, EventListener> = new Map();
+
+    protected itemType: any;
+
     public items: T[];
 
-    constructor (items: NodeListOf<T>, public direction: 'horizontal' | 'vertical' = 'vertical') {
+    constructor (
+        public host: HTMLElement,
+        items: NodeListOf<T>,
+        public direction: 'horizontal' | 'vertical' = 'vertical') {
 
         super();
 
         this.items = Array.from(items);
+        this.itemType = this.items[0] && this.items[0].constructor;
+
+        this.bindHost();
     }
 
     getActiveItem (): T | undefined {
@@ -90,19 +105,49 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
             event.preventDefault();
 
-            if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange();
+            if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange(prevIndex);
         }
     }
 
-    protected dispatchActiveItemChange () {
+    handleMousedown (event: MouseEvent) {
+
+        if (this.itemType && event.target instanceof this.itemType) {
+
+            const prevIndex = this.activeIndex;
+
+            this.setActiveItem(event.target as T);
+
+            if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange(prevIndex);
+        }
+    }
+
+    handleFocus (event: FocusEvent) {
+
+        if (this.itemType && event.target instanceof this.itemType) {
+
+            const prevIndex = this.activeIndex;
+
+            this.setActiveItem(event.target as T);
+
+            if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange(prevIndex);
+        }
+    }
+
+    protected dispatchActiveItemChange (previousIndex: number | undefined) {
 
         const event: ActiveItemChange<T> = new CustomEvent('active-item-change', {
             bubbles: true,
             cancelable: true,
             composed: true,
             detail: {
-                index: this.activeIndex,
-                item: this.activeItem
+                previous: {
+                    index: previousIndex,
+                    item: (typeof previousIndex === 'number') ? this.items[previousIndex] : undefined
+                },
+                current: {
+                    index: this.activeIndex,
+                    item: this.activeItem
+                }
             }
         }) as ActiveItemChange<T>;
 
@@ -161,6 +206,24 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
     protected getLastEntry (): ListEntry<T> {
 
         return this.getPreviousEntry(this.items.length);
+    }
+
+    protected bindHost () {
+
+        // TODO: enable reconnecting the host element? no need if FocusManager is created in connectedCallback
+        this.listeners = new Map([
+            ['focusin', this.handleFocus.bind(this) as EventListener],
+            ['keydown', this.handleKeydown.bind(this) as EventListener],
+            ['mousedown', this.handleMousedown.bind(this) as EventListener],
+            ['disconnected', this.unbindHost.bind(this)]
+        ]);
+
+        this.listeners.forEach((listener, event) => this.host.addEventListener(event, listener));
+    }
+
+    protected unbindHost () {
+
+        this.listeners.forEach((listener, event) => this.host.removeEventListener(event, listener));
     }
 }
 

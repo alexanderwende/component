@@ -37,36 +37,6 @@ export class Accordion extends Component {
 
         this.role = 'presentation';
 
-        this.focusManager = new FocusKeyManager(this.querySelectorAll('ui-accordion-header'));
-    }
-
-    @listener({
-        event: 'keydown'
-    })
-    protected handleKeydown (event: KeyboardEvent) {
-
-        this.focusManager.handleKeydown(event);
-    }
-
-    @listener({
-        event: 'mousedown'
-    })
-    protected handleMousedown (event: MouseEvent) {
-
-        if (event.target instanceof AccordionHeader) {
-
-            this.focusManager.setActiveItem(event.target as AccordionHeader);
-        }
-    }
-
-    @listener({
-        event: 'focusin'
-    })
-    protected handleFocus (event: FocusEvent) {
-
-        if (event.target instanceof AccordionHeader) {
-
-            this.focusManager.setActiveItem(event.target as AccordionHeader);
-        }
+        this.focusManager = new FocusKeyManager(this, this.querySelectorAll('ui-accordion-header'));
     }
 }
