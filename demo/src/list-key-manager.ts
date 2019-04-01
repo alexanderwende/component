@@ -4,8 +4,6 @@ export interface ListItem extends HTMLElement {
     disabled?: boolean;
 }
 
-type ListEntry<T extends ListItem> = [number | undefined, T | undefined];
-
 export interface ActiveItemChange<T extends ListItem> extends CustomEvent {
     type: 'active-item-change';
     detail: {
@@ -20,9 +18,12 @@ export interface ActiveItemChange<T extends ListItem> extends CustomEvent {
     }
 }
 
+type ListEntry<T extends ListItem> = [number | undefined, T | undefined];
+
 export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
     protected activeIndex: number | undefined;
+
     protected activeItem: T | undefined;
 
     protected listeners: Map<string, EventListener> = new Map();
@@ -49,7 +50,7 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
         return this.activeItem;
     };
 
-    setActiveItem (item: T) {
+    setActiveItem (item: T, interactive = false) {
 
         const index = this.items.indexOf(item);
         const entry: ListEntry<T> = [
@@ -57,27 +58,27 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
             index > -1 ? item : undefined
         ];
 
-        this.setEntryActive(entry);
+        this.setEntryActive(entry, interactive);
     }
 
-    setNextItemActive () {
+    setNextItemActive (interactive = false) {
 
-        this.setEntryActive(this.getNextEntry());
+        this.setEntryActive(this.getNextEntry(), interactive);
     }
 
-    setPreviousItemActive () {
+    setPreviousItemActive (interactive = false) {
 
-        this.setEntryActive(this.getPreviousEntry());
+        this.setEntryActive(this.getPreviousEntry(), interactive);
     }
 
-    setFirstItemActive () {
+    setFirstItemActive (interactive = false) {
 
-        this.setEntryActive(this.getFirstEntry());
+        this.setEntryActive(this.getFirstEntry(), interactive);
     }
 
-    setLastItemActive () {
+    setLastItemActive (interactive = false) {
 
-        this.setEntryActive(this.getLastEntry());
+        this.setEntryActive(this.getLastEntry(), interactive);
     }
 
     handleKeydown (event: KeyboardEvent) {
@@ -90,13 +91,13 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
             case prev:
 
-                this.setPreviousItemActive();
+                this.setPreviousItemActive(true);
                 handled = true;
                 break;
 
             case next:
 
-                this.setNextItemActive();
+                this.setNextItemActive(true);
                 handled = true;
                 break;
         }
@@ -115,7 +116,7 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
             const prevIndex = this.activeIndex;
 
-            this.setActiveItem(event.target as T);
+            this.setActiveItem(event.target as T, true);
 
             if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange(prevIndex);
         }
@@ -127,7 +128,7 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
             const prevIndex = this.activeIndex;
 
-            this.setActiveItem(event.target as T);
+            this.setActiveItem(event.target as T, true);
 
             if (prevIndex !== this.activeIndex) this.dispatchActiveItemChange(prevIndex);
         }
@@ -154,7 +155,7 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
         this.dispatchEvent(event);
     }
 
-    protected setEntryActive (entry: ListEntry<T>) {
+    protected setEntryActive (entry: ListEntry<T>, interactive = false) {
 
         [this.activeIndex, this.activeItem] = entry;
     }
@@ -229,10 +230,10 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
 export class FocusKeyManager<T extends ListItem> extends ListKeyManager<T> {
 
-    protected setEntryActive (entry: ListEntry<T>) {
+    protected setEntryActive (entry: ListEntry<T>, interactive = false) {
 
-        super.setEntryActive(entry);
+        super.setEntryActive(entry, interactive);
 
-        if (this.activeItem) this.activeItem.focus();
+        if (this.activeItem && interactive) this.activeItem.focus();
     }
 }
