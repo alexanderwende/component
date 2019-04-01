@@ -1,4 +1,4 @@
-import { Component, component, html, listener, property } from '../../../src';
+import { Component, component, html, property } from '../../../src';
 import { css } from '../../../src/css';
 import { FocusKeyManager } from '../list-key-manager';
 import './accordion-header';
@@ -37,6 +37,6 @@ export class Accordion extends Component {
 
         this.role = 'presentation';
 
-        this.focusManager = new FocusKeyManager(this, this.querySelectorAll('ui-accordion-header'));
+        this.focusManager = new FocusKeyManager(this, this.querySelectorAll(AccordionHeader.selector));
     }
 }

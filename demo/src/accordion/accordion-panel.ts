@@ -1,7 +1,7 @@
-import { AttributeConverterBoolean, Changes, Component, component, html, property, AttributeConverterNumber } from '../../../src';
+import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, html, property } from '../../../src';
+import { css } from '../../../src/css';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
 import { AccordionHeader } from './accordion-header';
-import { css } from '../../../src/css';
 
 let nextAccordionPanelId = 0;
 
@@ -101,7 +101,7 @@ export class AccordionPanel extends Component {
 
         super.connectedCallback();
 
-        this.setHeader(this.querySelector('ui-accordion-header'));
+        this.setHeader(this.querySelector(AccordionHeader.selector));
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {

@@ -1,8 +1,8 @@
-import { AttributeConverterNumber, Component, component, html, property, AttributeConverterString, listener } from '../../../src';
+import { AttributeConverterNumber, AttributeConverterString, Component, component, html, listener, property } from '../../../src';
 import { css } from '../../../src/css';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
-import { Enter, Space } from '../keys';
 import '../icon/icon';
+import { Enter, Space } from '../keys';
 
 @component<AccordionHeader>({
     selector: 'ui-accordion-header',
