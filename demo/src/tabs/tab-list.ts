@@ -1,9 +1,10 @@
 import { Changes, Component, component, html, listener, property } from '../../../src';
-import { Tab } from './tab';
 import { css } from '../../../src/css';
-import { ArrowLeft, ArrowRight, ArrowDown } from '../keys';
+import { ArrowDown } from '../keys';
+import { ActiveItemChange, FocusKeyManager } from '../list-key-manager';
+import { Tab } from './tab';
 
-@component<TabList>({
+@component({
     selector: 'ui-tab-list',
     styles: [css`
     :host {
@@ -16,21 +17,11 @@ import { ArrowLeft, ArrowRight, ArrowDown } from '../keys';
     `],
     template: () => html`<slot></slot>`
 })
-export class TabList extends Component {
+export class TabListNew extends Component {
 
-    private _tabs: Tab[] | undefined;
+    protected focusManager!: FocusKeyManager<Tab>;
 
-    protected get tabs (): Tab[] {
-
-        if (!this._tabs) {
-
-            this._tabs = Array.from(this.querySelectorAll(Tab.selector));
-        }
-
-        return this._tabs;
-    }
-
-    protected selectedTab: Tab | undefined;
+    protected selectedTab!: Tab;
 
     @property()
     role!: string;
@@ -39,7 +30,9 @@ export class TabList extends Component {
 
         super.connectedCallback();
 
-        this.role = 'tablist'
+        this.role = 'tablist';
+
+        this.focusManager = new FocusKeyManager(this, this.querySelectorAll(Tab.selector), 'horizontal');
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -53,25 +46,16 @@ export class TabList extends Component {
             //     console.log(`${slot.name} changed...`, slot.assignedNodes());
             // });
 
-            // if the selector matches, the tab will already be selected, if not, the first tab
-            // will be selected
-            this.setSelectedTab(this.querySelector(`${ Tab.selector }[aria-selected=true]`) as Tab);
+            const selectedTab = this.querySelector(`${ Tab.selector }[aria-selected=true]`) as Tab;
+
+            selectedTab
+                ? this.focusManager.setActiveItem(selectedTab)
+                : this.focusManager.setFirstItemActive();
+
+            // setting the active item via the focus manager's API will not trigger an event
+            // so we have to manually select the initially active tab
+            Promise.resolve().then(() => this.selectTab(this.focusManager.getActiveItem()));
         }
-    }
-
-    setSelectedTab (tab?: Tab) {
-
-        // if no tab is provided, select the first, non-disabled tab
-        if (!tab) tab = this.getNextTab();
-
-        if (this.selectedTab && this.selectedTab !== tab) {
-
-            this.deselectTab(this.selectedTab);
-        }
-
-        this.selectTab(tab);
-
-        this.selectedTab = tab;
     }
 
     @listener({ event: 'keydown' })
@@ -79,68 +63,28 @@ export class TabList extends Component {
 
         switch (event.key) {
 
-            case ArrowLeft:
-
-                this.setSelectedTab(this.getPreviousTab());
-                if (this.selectedTab) this.selectedTab.focus();
-                break;
-
-            case ArrowRight:
-
-                this.setSelectedTab(this.getNextTab());
-                if (this.selectedTab) this.selectedTab.focus();
-                break;
-
             case ArrowDown:
 
-                if (this.selectedTab && this.selectedTab.panel) this.selectedTab.panel.focus();
+                const selectedTab = this.focusManager.getActiveItem();
+                if (selectedTab && selectedTab.panel) selectedTab.panel.focus();
                 break;
         }
     }
 
-    @listener({ event: 'selected-changed' })
-    protected handleSelectedChange (event: CustomEvent) {
+    @listener<TabListNew>({
+        event: 'active-item-change',
+        target: function () { return this.focusManager; }
+    })
+    protected handleActiveTabChange (event: ActiveItemChange<Tab>) {
 
-        const tab = event.target as Tab;
-        const selected = event.detail.current as boolean;
+        const previousTab = event.detail.previous.item;
+        const selectedTab = event.detail.current.item;
 
-        if (selected) {
+        if (previousTab !== selectedTab) {
 
-            this.setSelectedTab(tab);
-
-        } else if (this.selectedTab === tab) {
-
-            this.selectedTab = undefined;
+            this.deselectTab(previousTab);
+            this.selectTab(selectedTab);
         }
-    }
-
-    protected getPreviousTab (): Tab | undefined {
-
-        const selectedIndex = this.selectedTab ? this.tabs.indexOf(this.selectedTab) : 0;
-        let previousIndex = selectedIndex - 1;
-        let previousTab = this.tabs[previousIndex];
-
-        while (previousIndex > 0 && previousTab && previousTab.disabled) {
-
-            previousTab = this.tabs[--previousIndex];
-        }
-
-        return (previousTab && !previousTab.disabled) ? previousTab : this.selectedTab;
-    }
-
-    protected getNextTab (): Tab | undefined {
-
-        const selectedIndex = this.selectedTab ? this.tabs.indexOf(this.selectedTab) : -1;
-        const lastIndex = this.tabs.length - 1;
-        let nextIndex = selectedIndex + 1;
-        let nextTab = this.tabs[nextIndex];
-
-        while (nextIndex < lastIndex && nextTab && nextTab.disabled) {
-
-            nextTab = this.tabs[++nextIndex];
-        }
-
-        return (nextTab && !nextTab.disabled) ? nextTab : this.selectedTab;
     }
 
     protected selectTab (tab?: Tab) {
