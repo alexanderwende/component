@@ -1,5 +1,4 @@
-import { Component, component, html, property } from '../../../src';
-import { css } from '../../../src/css';
+import { Component, component, css, html, property } from '../../../src';
 import { FocusKeyManager } from '../list-key-manager';
 import './accordion-header';
 import { AccordionHeader } from './accordion-header';

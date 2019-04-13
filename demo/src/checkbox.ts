@@ -1,5 +1,4 @@
-import { AttributeConverterBoolean, component, Component, html, listener, property } from '../../src';
-import { css } from '../../src/css';
+import { AttributeConverterBoolean, component, Component, css, html, listener, property } from '../../src';
 import { Enter, Space } from './keys';
 
 @component<Checkbox>({

@@ -1,5 +1,4 @@
-import { AttributeConverterNumber, AttributeConverterString, Component, component, html, listener, property } from '../../../src';
-import { css } from '../../../src/css';
+import { AttributeConverterNumber, AttributeConverterString, Component, component, css, html, listener, property } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import '../icon/icon';
 import { Enter, Space } from '../keys';

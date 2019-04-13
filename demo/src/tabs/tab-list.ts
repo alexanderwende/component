@@ -1,5 +1,4 @@
-import { Changes, Component, component, html, listener, property } from '../../../src';
-import { css } from '../../../src/css';
+import { Changes, Component, component, css, html, listener, property } from '../../../src';
 import { ArrowDown } from '../keys';
 import { ActiveItemChange, FocusKeyManager } from '../list-key-manager';
 import { Tab } from './tab';

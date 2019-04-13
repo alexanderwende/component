@@ -4,11 +4,11 @@ import {
     Changes,
     Component,
     component,
+    css,
     html,
     listener,
     property
 } from '../../../src';
-import { css } from '../../../src/css';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
 

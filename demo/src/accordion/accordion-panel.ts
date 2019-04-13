@@ -1,5 +1,4 @@
-import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, html, property } from '../../../src';
-import { css } from '../../../src/css';
+import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, css, html, property } from '../../../src';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
 import { AccordionHeader } from './accordion-header';
 

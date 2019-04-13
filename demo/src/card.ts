@@ -1,5 +1,4 @@
-import { Component, component, html, listener, property } from '../../src';
-import { css } from '../../src/css';
+import { Component, component, css, html, listener, property } from '../../src';
 
 // we can define mixins as
 const mixinContainer: (background?: string) => string = (background: string = '#fff') => css`

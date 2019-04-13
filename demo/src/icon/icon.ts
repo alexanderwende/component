@@ -1,5 +1,4 @@
-import { Component, component, property, html } from '../../../src';
-import { css } from '../../../src/css';
+import { Component, component, css, html, property } from '../../../src';
 
 @component<Icon>({
     selector: 'ui-icon',

@@ -1,6 +1,5 @@
-import { Component, property, html, component, AttributeConverterString } from '../../../src';
+import { AttributeConverterString, Component, component, css, html, property } from '../../../src';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
-import { css } from '../../../src/css';
 
 @component({
     selector: 'ui-tab-panel',

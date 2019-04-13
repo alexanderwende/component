@@ -1,4 +1,4 @@
-import { css } from '../../src/css';
+import { css } from '../../src';
 
 export const styles = css`
 demo-app {
