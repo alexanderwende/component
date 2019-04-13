@@ -19,15 +19,16 @@
   "bugs": "https://github.com/alexanderwende/component/issues",
   "sideEffects": false,
   "types": "dist/index.d.ts",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "files": [
     "/dist/",
     "/src/"
   ],
   "scripts": {
     "prebuild": "rimraf ./dist",
-    "build": "rollup -c",
+    "build": "tsc -p tsconfig.build.json && npm run checksize",
+    "checksize": "rollup -c && rimraf dist/index.bundle.js",
     "pretest": "rimraf ./dev ./coverage",
     "test": "tsc -p tsconfig.dev.json && karma start karma.config.js",
     "test:watch": "tsc -w -p tsconfig.dev.json & karma start karma.config.js --auto-watch --no-single-run",
@@ -36,8 +37,6 @@
     "docs": "api-extractor run && api-documenter markdown --input-folder ./docs --output-folder ./docs",
     "prerelease": "npm run test && npm run build",
     "release": "git add ./dist ./docs && standard-version -a",
-    "release:minor": "npm run release -- --release-as minor",
-    "release:major": "npm run release -- --release-as major",
     "release:dry": "standard-version --dry-run"
   },
   "devDependencies": {
@@ -50,6 +49,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-remap-coverage": "^0.1.5",
     "karma-rollup-preprocessor": "^7.0.0",
+    "lit-html": "^1.0.0",
     "rimraf": "^2.6.3",
     "rollup": "^1.7.0",
     "rollup-plugin-commonjs": "^9.2.1",
@@ -65,7 +65,7 @@
     "tslint-clean-code": "^0.2.9",
     "typescript": "^3.3.4000"
   },
-  "dependencies": {
+  "peerDependencies": {
     "lit-html": "^1.0.0"
   },
   "publishConfig": {
