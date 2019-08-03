@@ -33,8 +33,6 @@
     "test": "tsc -p tsconfig.dev.json && karma start karma.config.js",
     "test:watch": "tsc -w -p tsconfig.dev.json & karma start karma.config.js --auto-watch --no-single-run",
     "demo": "rollup -c rollup.demo.config.js -w",
-    "predocs": "rimraf ./docs",
-    "docs": "api-extractor run && api-documenter markdown --input-folder ./docs --output-folder ./docs",
     "prerelease": "npm run test && npm run build",
     "release": "git add ./dist ./docs && standard-version -a",
     "release:dry": "standard-version --dry-run"
@@ -49,7 +47,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-remap-coverage": "^0.1.5",
     "karma-rollup-preprocessor": "^7.0.0",
-    "lit-html": "^1.0.0",
+    "lit-html": "^1.1.1",
     "rimraf": "^2.6.3",
     "rollup": "^1.7.0",
     "rollup-plugin-commonjs": "^9.2.1",
@@ -66,7 +64,7 @@
     "typescript": "^3.3.4000"
   },
   "peerDependencies": {
-    "lit-html": "^1.0.0"
+    "lit-html": "^1.1.1"
   },
   "publishConfig": {
     "access": "public"
