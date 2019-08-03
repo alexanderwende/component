@@ -23,7 +23,7 @@ export class Component extends HTMLElement {
     /**
      * The component constructor
      */
-    constructor() {
+    constructor(...args) {
         super();
         /**
          * @internal
@@ -743,7 +743,10 @@ export class Component extends HTMLElement {
      * @private
      */
     _notifyLifecycle(lifecycle, detail) {
-        this.dispatchEvent(new CustomEvent(lifecycle, Object.assign({ composed: true }, (detail ? { detail: detail } : {}))));
+        this.dispatchEvent(new CustomEvent(lifecycle, {
+            composed: true,
+            ...(detail ? { detail: detail } : {})
+        }));
     }
     /**
      * Bind component listeners

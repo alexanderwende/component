@@ -201,7 +201,7 @@ export declare abstract class Component extends HTMLElement {
     /**
      * The component constructor
      */
-    constructor();
+    constructor(...args: any[]);
     /**
      * Invoked each time the component is moved to a new document
      *
