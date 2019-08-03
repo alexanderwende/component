@@ -1,5 +1,6 @@
 import { Component, component } from '../../src';
 import './accordion/accordion';
+import { styles } from './app.styles';
 import { template } from './app.template';
 import './card';
 import './checkbox';
@@ -8,7 +9,6 @@ import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';
 import './toggle';
-import { styles } from './app.styles';
 
 @component({
     selector: 'demo-app',
