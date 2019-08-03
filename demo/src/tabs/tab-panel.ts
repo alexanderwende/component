@@ -1,4 +1,5 @@
-import { AttributeConverterString, Component, component, css, html, property } from '../../../src';
+import { AttributeConverterString, Component, component, css, property } from '@partkit/component';
+import { html } from 'lit-html';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 
 @component({

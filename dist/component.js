@@ -1,5 +1,5 @@
 import { render } from 'lit-html';
-import { createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from "./decorators/property-declaration";
+import { createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from "./decorators/index.js";
 /**
  * @internal
  */

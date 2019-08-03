@@ -1,4 +1,4 @@
-import { css } from '../../src';
+import { css } from '@partkit/component';
 
 export const styles = css`
 demo-app {

@@ -1,4 +1,4 @@
-import { DEFAULT_COMPONENT_DECLARATION } from './component-declaration';
+import { DEFAULT_COMPONENT_DECLARATION } from './component-declaration.js';
 /**
  * Decorates a {@link Component} class
  *

@@ -1,4 +1,4 @@
-import { Component, component } from '../../src';
+import { Component, component } from '@partkit/component';
 import './accordion/accordion';
 import { styles } from './app.styles';
 import { template } from './app.template';

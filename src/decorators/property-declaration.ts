@@ -1,6 +1,6 @@
-import { Component } from '../component';
-import { AttributeConverter, AttributeConverterDefault } from './attribute-converter';
-import { kebabCase } from './utils/string-utils';
+import { Component } from '../component.js';
+import { AttributeConverter, AttributeConverterDefault } from './attribute-converter.js';
+import { kebabCase } from './utils/string-utils.js';
 
 /**
  * A function that will reflect an attribute value to a property

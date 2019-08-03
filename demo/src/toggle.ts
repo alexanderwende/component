@@ -1,4 +1,5 @@
-import { AttributeConverterString, Component, component, html, listener, property } from '../../src';
+import { AttributeConverterString, Component, component, listener, property } from '@partkit/component';
+import { html } from 'lit-html';
 import { ARIABooleanConverter } from './aria-boolean-converter';
 import { Enter, Space } from './keys';
 
@@ -93,9 +94,9 @@ import { Enter, Space } from './keys';
     </style>
     <span class="toggle-thumb"></span>
     ${ toggle.labelOn && toggle.labelOff
-        ? html`<span class="label label-off">${ toggle.labelOff }</span><span class="label label-on">${ toggle.labelOn }</span>`
-        : ''
-    }
+            ? html`<span class="label label-off">${ toggle.labelOff }</span><span class="label label-on">${ toggle.labelOn }</span>`
+            : ''
+        }
     `
 })
 export class Toggle extends Component {

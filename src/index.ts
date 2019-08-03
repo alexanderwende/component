@@ -1,4 +1,3 @@
-export * from './component';
-export * from './decorators';
-export * from './css';
-export { html, svg, TemplateResult, SVGTemplateResult } from 'lit-html';
+export * from './component.js';
+export * from './decorators/index.js';
+export * from './css.js';

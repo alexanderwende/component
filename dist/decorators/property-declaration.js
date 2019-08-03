@@ -1,5 +1,5 @@
-import { AttributeConverterDefault } from './attribute-converter';
-import { kebabCase } from './utils/string-utils';
+import { AttributeConverterDefault } from './attribute-converter.js';
+import { kebabCase } from './utils/string-utils.js';
 /**
  * A type guard for {@link AttributeReflector}
  *

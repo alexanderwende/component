@@ -1,4 +1,4 @@
-import { AttributeConverter } from '../../src';
+import { AttributeConverter } from '@partkit/component';
 
 export const ARIABooleanConverter: AttributeConverter<boolean> = {
     fromAttribute: (value) => value === 'true',

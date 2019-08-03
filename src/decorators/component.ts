@@ -1,6 +1,6 @@
-import { Component } from '../component';
-import { ComponentDeclaration, DEFAULT_COMPONENT_DECLARATION } from './component-declaration';
-import { DecoratedComponentType } from './property';
+import { Component } from '../component.js';
+import { ComponentDeclaration, DEFAULT_COMPONENT_DECLARATION } from './component-declaration.js';
+import { DecoratedComponentType } from './property.js';
 
 /**
  * Decorates a {@link Component} class

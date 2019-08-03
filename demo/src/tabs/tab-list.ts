@@ -1,4 +1,5 @@
-import { Changes, Component, component, css, html, listener, property } from '../../../src';
+import { Changes, Component, component, css, listener, property } from '@partkit/component';
+import { html } from 'lit-html';
 import { ArrowDown } from '../keys';
 import { ActiveItemChange, FocusKeyManager } from '../list-key-manager';
 import { Tab } from './tab';

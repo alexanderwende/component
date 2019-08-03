@@ -1,5 +1,5 @@
-import { Component } from '../component';
-import { PropertyDeclaration } from './property-declaration';
+import { Component } from '../component.js';
+import { PropertyDeclaration } from './property-declaration.js';
 /**
  * A type extension to add additional properties to a {@link Component} constructor during decoration
  *

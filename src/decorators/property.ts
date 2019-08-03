@@ -1,6 +1,6 @@
-import { Component } from '../component';
-import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration';
-import { getPropertyDescriptor } from './utils/get-property-descriptor';
+import { Component } from '../component.js';
+import { createAttributeName, DEFAULT_PROPERTY_DECLARATION, PropertyDeclaration } from './property-declaration.js';
+import { getPropertyDescriptor } from './utils/get-property-descriptor.js';
 
 /**
  * A type extension to add additional properties to a {@link Component} constructor during decoration

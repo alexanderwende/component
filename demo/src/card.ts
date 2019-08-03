@@ -1,4 +1,5 @@
-import { Component, component, css, html, listener, property } from '../../src';
+import { Component, component, css, listener, property } from '@partkit/component';
+import { html } from 'lit-html';
 
 // we can define mixins as
 const mixinContainer: (background?: string) => string = (background: string = '#fff') => css`

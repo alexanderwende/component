@@ -1,6 +1,17 @@
 import { render, TemplateResult } from 'lit-html';
-import { ListenerDeclaration } from './decorators/listener';
-import { AttributeReflector, createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, PropertyDeclaration, PropertyNotifier, PropertyReflector } from "./decorators/property-declaration";
+import {
+    AttributeReflector,
+    createEventName,
+    isAttributeReflector,
+    isPropertyChangeDetector,
+    isPropertyKey,
+    isPropertyNotifier,
+    isPropertyReflector,
+    ListenerDeclaration,
+    PropertyDeclaration,
+    PropertyNotifier,
+    PropertyReflector
+} from "./decorators/index.js";
 
 /**
  * @internal

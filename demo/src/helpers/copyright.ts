@@ -1,5 +1,4 @@
 import { html, TemplateResult } from 'lit-html';
-import { capitalize } from '../../../src/decorators/utils/string-utils';
 
 export type CopyrightHelper = (date: Date, author: string) => TemplateResult;
 

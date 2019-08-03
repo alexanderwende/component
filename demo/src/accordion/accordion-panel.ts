@@ -1,4 +1,5 @@
-import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, css, html, property } from '../../../src';
+import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, css, property } from '@partkit/component';
+import { html } from 'lit-html';
 import { copyright, CopyrightHelper } from '../helpers/copyright';
 import { AccordionHeader } from './accordion-header';
 

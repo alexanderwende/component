@@ -1,4 +1,5 @@
-import { AttributeConverterBoolean, component, Component, css, html, listener, property } from '../../src';
+import { AttributeConverterBoolean, component, Component, css, listener, property } from '@partkit/component';
+import { html } from 'lit-html';
 import { Enter, Space } from './keys';
 
 @component<Checkbox>({

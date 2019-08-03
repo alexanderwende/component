@@ -5,10 +5,10 @@ import {
     Component,
     component,
     css,
-    html,
     listener,
     property
-} from '../../../src';
+} from '@partkit/component';
+import { html } from 'lit-html';
 import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
 

@@ -1,6 +1,5 @@
 import { TemplateResult } from 'lit-html';
-import { ListenerDeclaration } from './decorators/listener';
-import { PropertyDeclaration } from "./decorators/property-declaration";
+import { ListenerDeclaration, PropertyDeclaration } from "./decorators/index.js";
 /**
  * A type for property changes, as used in ${@link Component.updateCallback}
  */

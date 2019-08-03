@@ -1,5 +1,5 @@
-import { Component } from '../component';
-import { ComponentDeclaration } from './component-declaration';
+import { Component } from '../component.js';
+import { ComponentDeclaration } from './component-declaration.js';
 /**
  * Decorates a {@link Component} class
  *

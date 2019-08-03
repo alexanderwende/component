@@ -15,7 +15,10 @@
     "baseUrl": "./",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "@partkit/component": ["src"],
+    }
   },
   "include": [
     "src/**/*.ts",

@@ -1,5 +1,5 @@
-import { createAttributeName, DEFAULT_PROPERTY_DECLARATION } from './property-declaration';
-import { getPropertyDescriptor } from './utils/get-property-descriptor';
+import { createAttributeName, DEFAULT_PROPERTY_DECLARATION } from './property-declaration.js';
+import { getPropertyDescriptor } from './utils/get-property-descriptor.js';
 /**
  * Decorates a {@link Component} property
  *

@@ -1,4 +1,5 @@
-import { Component, component, css, html, property } from '../../../src';
+import { Component, component, css, property } from '@partkit/component';
+import { html } from 'lit-html';
 
 @component<Icon>({
     selector: 'ui-icon',

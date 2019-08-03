@@ -1,5 +1,5 @@
-import { Component } from '../component';
-import { AttributeConverter } from './attribute-converter';
+import { Component } from '../component.js';
+import { AttributeConverter } from './attribute-converter.js';
 /**
  * A function that will reflect an attribute value to a property
  */
