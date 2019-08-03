@@ -4,6 +4,7 @@ import pluginNodeResolve from 'rollup-plugin-node-resolve';
 import pluginCommonJS from 'rollup-plugin-commonjs';
 import pluginServe from 'rollup-plugin-serve';
 import typescript from 'typescript';
+import fs from 'fs';
 
 export default {
     input: 'demo/main.ts',
@@ -25,8 +26,16 @@ export default {
         // needed for commonjs imports from node_modules
         pluginCommonJS(),
         pluginServe({
+            host: 'localhost',
             open: true,
-            contentBase: 'demo'
+            contentBase: 'demo',
+            https: {
+                key: fs.readFileSync('/Users/alex/.https/server.key'),
+                cert: fs.readFileSync('/Users/alex/.https/server.crt')
+            },
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            }
         })
     ]
 };
