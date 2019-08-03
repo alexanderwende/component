@@ -294,7 +294,7 @@ export abstract class Component extends HTMLElement {
     /**
      * The component constructor
      */
-    constructor () {
+    constructor (...args: any[]) {
 
         super();
 
