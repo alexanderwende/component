@@ -1,3 +1,11 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { render } from 'lit-html';
 import { createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from "./decorators/index.js";
 /**
@@ -743,10 +751,7 @@ export class Component extends HTMLElement {
      * @private
      */
     _notifyLifecycle(lifecycle, detail) {
-        this.dispatchEvent(new CustomEvent(lifecycle, {
-            composed: true,
-            ...(detail ? { detail: detail } : {})
-        }));
+        this.dispatchEvent(new CustomEvent(lifecycle, Object.assign({ composed: true }, (detail ? { detail: detail } : {}))));
     }
     /**
      * Bind component listeners
@@ -792,24 +797,26 @@ export class Component extends HTMLElement {
      * @internal
      * @private
      */
-    async _enqueueUpdate() {
-        let resolve;
-        const previousRequest = this._updateRequest;
-        // mark the component as having requested an update, the {@link _requestUpdate}
-        // method will not enqueue a further request for update if one is scheduled
-        this._hasRequestedUpdate = true;
-        this._updateRequest = new Promise(res => resolve = res);
-        // wait for the previous update to resolve
-        // `await` is asynchronous and will return execution to the {@link requestUpdate} method
-        // and essentially allows us to batch multiple synchronous property changes, before the
-        // execution can resume here
-        await previousRequest;
-        const result = this._scheduleUpdate();
-        // the actual update may be scheduled asynchronously as well
-        if (result)
-            await result;
-        // resolve the new {@link _updateRequest} after the result of the current update resolves
-        resolve(!this._hasRequestedUpdate);
+    _enqueueUpdate() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let resolve;
+            const previousRequest = this._updateRequest;
+            // mark the component as having requested an update, the {@link _requestUpdate}
+            // method will not enqueue a further request for update if one is scheduled
+            this._hasRequestedUpdate = true;
+            this._updateRequest = new Promise(res => resolve = res);
+            // wait for the previous update to resolve
+            // `await` is asynchronous and will return execution to the {@link requestUpdate} method
+            // and essentially allows us to batch multiple synchronous property changes, before the
+            // execution can resume here
+            yield previousRequest;
+            const result = this._scheduleUpdate();
+            // the actual update may be scheduled asynchronously as well
+            if (result)
+                yield result;
+            // resolve the new {@link _updateRequest} after the result of the current update resolves
+            resolve(!this._hasRequestedUpdate);
+        });
     }
     /**
      * Schedule the update of the component

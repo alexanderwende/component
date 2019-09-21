@@ -5,7 +5,7 @@ import { DEFAULT_COMPONENT_DECLARATION } from './component-declaration.js';
  * @param options A {@link ComponentDeclaration}
  */
 export function component(options = {}) {
-    const declaration = { ...DEFAULT_COMPONENT_DECLARATION, ...options };
+    const declaration = Object.assign({}, DEFAULT_COMPONENT_DECLARATION, options);
     return (target) => {
         const constructor = target;
         constructor.selector = declaration.selector || target.selector;

@@ -68,7 +68,7 @@ export function property(options = {}) {
             }
         };
         const constructor = target.constructor;
-        const declaration = { ...DEFAULT_PROPERTY_DECLARATION, ...options };
+        const declaration = Object.assign({}, DEFAULT_PROPERTY_DECLARATION, options);
         // generate the default attribute name
         if (declaration.attribute === true) {
             declaration.attribute = createAttributeName(propertyKey);

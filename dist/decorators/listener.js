@@ -11,7 +11,7 @@ export function listener(options) {
             constructor.listeners.delete(propertyKey);
         }
         else {
-            constructor.listeners.set(propertyKey, { ...options });
+            constructor.listeners.set(propertyKey, Object.assign({}, options));
         }
     };
 }
