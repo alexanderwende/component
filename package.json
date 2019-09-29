@@ -30,47 +30,49 @@
     "build": "tsc -p tsconfig.build.json && npm run checksize",
     "checksize": "rollup -c && rimraf dist/index.bundle.js",
     "pretest": "rimraf ./dev ./coverage",
-    "test": "tsc -p tsconfig.dev.json && karma start karma.config.js",
-    "test:watch": "tsc -w -p tsconfig.dev.json & karma start karma.config.js --auto-watch --no-single-run",
-    "test:debug": "karma start karma.config.typescript.js --browsers ChromeDebug  --auto-watch --no-single-run",
-    "test:single": "karma start karma.config.typescript.js",
+    "test": "karma start karma.config.js",
+    "test:watch": "karma start karma.config.js --auto-watch --no-single-run",
+    "test:debug": "karma start karma.config.js --browsers ChromeDebug  --auto-watch --no-single-run",
     "demo": "rollup -c rollup.demo.config.js -w",
     "prerelease": "npm run test && npm run build",
     "release": "git add ./dist ./docs && standard-version -a",
     "release:dry": "standard-version --dry-run"
   },
   "devDependencies": {
-    "@types/jasmine": "^3.3.16",
-    "jasmine-core": "^3.4.0",
-    "karma": "^4.2.0",
-    "karma-chrome-launcher": "^3.0.0",
-    "karma-coverage": "^1.1.2",
+    "@types/jasmine": "^3.4.1",
+    "commitizen": "^4.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "jasmine-core": "^3.5.0",
+    "karma": "^4.3.0",
+    "karma-chrome-launcher": "^3.1.0",
     "karma-jasmine": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
-    "karma-remap-coverage": "^0.1.5",
-    "karma-rollup-preprocessor": "^7.0.2",
     "karma-typescript": "^4.1.1",
     "karma-typescript-es6-transform": "^4.1.1",
-    "lit-html": "^1.1.1",
-    "rimraf": "^2.6.3",
-    "rollup": "^1.18.0",
-    "rollup-plugin-commonjs": "^10.0.2",
-    "rollup-plugin-filesize": "^6.1.1",
-    "rollup-plugin-istanbul": "^2.0.1",
+    "lit-html": "^1.1.2",
+    "rimraf": "^3.0.0",
+    "rollup": "^1.22.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-filesize": "^6.2.0",
     "rollup-plugin-local-resolve": "^1.0.7",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-serve": "^1.0.1",
-    "rollup-plugin-terser": "^5.1.1",
-    "rollup-plugin-typescript2": "^0.22.1",
+    "rollup-plugin-terser": "^5.1.2",
+    "rollup-plugin-typescript2": "^0.24.3",
     "standard-version": "^7.0.0",
-    "tslint": "^5.18.0",
-    "tslint-clean-code": "^0.2.9",
-    "typescript": "^3.5.3"
+    "tslint": "^5.20.0",
+    "tslint-clean-code": "^0.2.10",
+    "typescript": "^3.6.3"
   },
   "peerDependencies": {
     "lit-html": "^1.1.1"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

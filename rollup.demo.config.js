@@ -29,10 +29,10 @@ export default {
             host: 'localhost',
             open: true,
             contentBase: 'demo',
-            https: {
-                key: fs.readFileSync('/Users/alex/.https/server.key'),
-                cert: fs.readFileSync('/Users/alex/.https/server.crt')
-            },
+            // https: {
+            //     key: fs.readFileSync('/Users/alex/.https/server.key'),
+            //     cert: fs.readFileSync('/Users/alex/.https/server.crt')
+            // },
             headers: {
                 'Access-Control-Allow-Origin': '*'
             }
