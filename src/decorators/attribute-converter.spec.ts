@@ -1,4 +1,4 @@
-import { AttributeConverterBoolean, AttributeConverterString, AttributeConverterNumber, AttributeConverterObject, AttributeConverterArray, AttributeConverterDate, AttributeConverterDefault } from './attribute-converter';
+import { AttributeConverterARIABoolean, AttributeConverterArray, AttributeConverterBoolean, AttributeConverterDate, AttributeConverterDefault, AttributeConverterNumber, AttributeConverterObject, AttributeConverterString } from './attribute-converter';
 
 describe('AttributeConverter', () => {
 
@@ -52,6 +52,22 @@ describe('AttributeConverter', () => {
             expect(AttributeConverterBoolean.toAttribute(true)).toBe('');
             expect(AttributeConverterBoolean.toAttribute(false)).toBe(null);
             expect(AttributeConverterBoolean.toAttribute(null)).toBe(null);
+        });
+    });
+
+    describe('AttributeConverterARIABoolean', () => {
+
+        it('should correctly convert boolean attributes', () => {
+
+            expect(AttributeConverterARIABoolean.fromAttribute('true')).toBe(true);
+            expect(AttributeConverterARIABoolean.fromAttribute('foo')).toBe(false);
+            expect(AttributeConverterARIABoolean.fromAttribute('false')).toBe(false);
+            expect(AttributeConverterARIABoolean.fromAttribute('')).toBe(false);
+            expect(AttributeConverterARIABoolean.fromAttribute(null)).toBe(false);
+
+            expect(AttributeConverterARIABoolean.toAttribute(true)).toBe('true');
+            expect(AttributeConverterARIABoolean.toAttribute(false)).toBe('false');
+            expect(AttributeConverterARIABoolean.toAttribute(null)).toBe(null);
         });
     });
 

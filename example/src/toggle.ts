@@ -1,6 +1,5 @@
-import { AttributeConverterString, Component, component, listener, property } from '@partkit/component';
+import { AttributeConverterARIABoolean, AttributeConverterString, Component, component, listener, property } from '@partkit/component';
 import { html } from 'lit-html';
-import { ARIABooleanConverter } from './aria-boolean-converter';
 import { Enter, Space } from './keys';
 
 @component<Toggle>({
@@ -103,7 +102,7 @@ export class Toggle extends Component {
 
     @property({
         attribute: 'aria-checked',
-        converter: ARIABooleanConverter
+        converter: AttributeConverterARIABoolean
     })
     checked = false;
 

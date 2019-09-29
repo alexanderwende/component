@@ -36,7 +36,17 @@ export interface AttributeConverter<T = any> {
  * the converter will use the attribute value as a string.
  */
 export declare const AttributeConverterDefault: AttributeConverter;
+/**
+ * Handles boolean attributes, like `disabled`, which are considered true if they are set with
+ * any value at all. In order to set the attribute to false, the attribute has to be removed by
+ * setting the attribute value to `null`.
+ */
 export declare const AttributeConverterBoolean: AttributeConverter<boolean>;
+/**
+ * Handles boolean ARIA attributes, like `aria-checked` or `aria-selected`, which have to be
+ * set explicitly to `true` or `false`.
+ */
+export declare const AttributeConverterARIABoolean: AttributeConverter<boolean>;
 export declare const AttributeConverterString: AttributeConverter<string>;
 export declare const AttributeConverterNumber: AttributeConverter<number>;
 export declare const AttributeConverterObject: AttributeConverter<object>;

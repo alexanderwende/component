@@ -1,6 +1,5 @@
-import { AttributeConverterString, Component, component, css, property } from '@partkit/component';
+import { AttributeConverterARIABoolean, AttributeConverterString, Component, component, css, property } from '@partkit/component';
 import { html } from 'lit-html';
-import { ARIABooleanConverter } from '../aria-boolean-converter';
 
 @component({
     selector: 'ui-tab-panel',
@@ -30,7 +29,7 @@ export class TabPanel extends Component {
 
     @property({
         attribute: 'aria-hidden',
-        converter: ARIABooleanConverter,
+        converter: AttributeConverterARIABoolean,
     })
     hidden!: boolean;
 

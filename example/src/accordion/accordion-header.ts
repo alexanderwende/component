@@ -1,6 +1,5 @@
-import { AttributeConverterNumber, AttributeConverterString, Component, component, css, listener, property } from '@partkit/component';
+import { AttributeConverterARIABoolean, AttributeConverterNumber, AttributeConverterString, Component, component, css, listener, property } from '@partkit/component';
 import { html } from 'lit-html';
-import { ARIABooleanConverter } from '../aria-boolean-converter';
 import '../icon/icon';
 import { Enter, Space } from '../keys';
 
@@ -37,7 +36,7 @@ export class AccordionHeader extends Component {
 
     @property({
         attribute: 'aria-disabled',
-        converter: ARIABooleanConverter
+        converter: AttributeConverterARIABoolean
     })
     get disabled (): boolean {
 
@@ -52,7 +51,7 @@ export class AccordionHeader extends Component {
 
     @property({
         attribute: 'aria-expanded',
-        converter: ARIABooleanConverter
+        converter: AttributeConverterARIABoolean
     })
     expanded = false;
 

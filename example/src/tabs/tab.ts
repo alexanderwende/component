@@ -1,15 +1,14 @@
 import {
+    AttributeConverterARIABoolean,
     AttributeConverterNumber,
     AttributeConverterString,
-    Changes,
-    Component,
+    Changes, Component,
     component,
     css,
     listener,
     property
 } from '@partkit/component';
 import { html } from 'lit-html';
-import { ARIABooleanConverter } from '../aria-boolean-converter';
 import { TabPanel } from './tab-panel';
 
 @component({
@@ -72,7 +71,7 @@ export class Tab extends Component {
 
     @property({
         attribute: 'aria-selected',
-        converter: ARIABooleanConverter
+        converter: AttributeConverterARIABoolean
     })
     get selected (): boolean {
 
@@ -88,7 +87,7 @@ export class Tab extends Component {
 
     @property({
         attribute: 'aria-disabled',
-        converter: ARIABooleanConverter,
+        converter: AttributeConverterARIABoolean,
     })
     get disabled (): boolean {
 

@@ -38,9 +38,23 @@ export const AttributeConverterDefault = {
         }
     }
 };
+/**
+ * Handles boolean attributes, like `disabled`, which are considered true if they are set with
+ * any value at all. In order to set the attribute to false, the attribute has to be removed by
+ * setting the attribute value to `null`.
+ */
 export const AttributeConverterBoolean = {
     fromAttribute: (value) => (value !== null),
     toAttribute: (value) => value ? '' : null
+};
+/**
+ * Handles boolean ARIA attributes, like `aria-checked` or `aria-selected`, which have to be
+ * set explicitly to `true` or `false`.
+ */
+export const AttributeConverterARIABoolean = {
+    fromAttribute: (value) => value === 'true',
+    // pass through null or undefined using `value == null`
+    toAttribute: (value) => (value == null) ? value : value.toString()
 };
 export const AttributeConverterString = {
     fromAttribute: (value) => (value === null) ? null : value,
