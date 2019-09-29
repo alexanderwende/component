@@ -4,19 +4,18 @@ import pluginNodeResolve from 'rollup-plugin-node-resolve';
 import pluginCommonJS from 'rollup-plugin-commonjs';
 import pluginServe from 'rollup-plugin-serve';
 import typescript from 'typescript';
-import fs from 'fs';
 
 export default {
-    input: 'demo/main.ts',
+    input: 'example/main.ts',
     output: {
-        file: 'demo/main.bundle.js',
+        file: 'example/main.bundle.js',
         format: 'iife',
         sourcemap: 'inline'
     },
     plugins: [
         pluginTypescript({
             typescript: typescript,
-            tsconfig: "tsconfig.demo.json",
+            tsconfig: "tsconfig.example.json",
             clean: true
         }),
         // needed for imports from directories via index.ts files
@@ -28,11 +27,7 @@ export default {
         pluginServe({
             host: 'localhost',
             open: true,
-            contentBase: 'demo',
-            // https: {
-            //     key: fs.readFileSync('/Users/alex/.https/server.key'),
-            //     cert: fs.readFileSync('/Users/alex/.https/server.crt')
-            // },
+            contentBase: 'example',
             headers: {
                 'Access-Control-Allow-Origin': '*'
             }

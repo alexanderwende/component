@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "demo",
+    "outDir": "example",
     "declaration": false,
     "declarationMap": false
   }

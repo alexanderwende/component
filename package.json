@@ -33,7 +33,7 @@
     "test": "karma start karma.config.js",
     "test:watch": "karma start karma.config.js --auto-watch --no-single-run",
     "test:debug": "karma start karma.config.js --browsers ChromeDebug  --auto-watch --no-single-run",
-    "demo": "rollup -c rollup.demo.config.js -w",
+    "serve": "rollup -c rollup.config.serve.js -w",
     "prerelease": "npm run test && npm run build",
     "release": "git add ./dist ./docs && standard-version -a",
     "release:dry": "standard-version --dry-run"
