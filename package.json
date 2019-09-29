@@ -29,7 +29,7 @@
     "prebuild": "rimraf ./dist",
     "build": "tsc -p tsconfig.build.json && npm run checksize",
     "checksize": "rollup -c && rimraf dist/index.bundle.js",
-    "pretest": "rimraf ./dev ./coverage",
+    "pretest": "rimraf ./coverage",
     "test": "karma start karma.config.js",
     "test:watch": "karma start karma.config.js --auto-watch --no-single-run",
     "test:debug": "karma start karma.config.js --browsers ChromeDebug  --auto-watch --no-single-run",
