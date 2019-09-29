@@ -17,7 +17,7 @@ import { Tab } from './tab';
     `],
     template: () => html`<slot></slot>`
 })
-export class TabListNew extends Component {
+export class TabList extends Component {
 
     protected focusManager!: FocusKeyManager<Tab>;
 
@@ -71,7 +71,7 @@ export class TabListNew extends Component {
         }
     }
 
-    @listener<TabListNew>({
+    @listener<TabList>({
         event: 'active-item-change',
         target: function () { return this.focusManager; }
     })

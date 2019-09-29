@@ -112,7 +112,9 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
     handleMousedown (event: MouseEvent) {
 
-        if (this.itemType && event.target instanceof this.itemType) {
+        const target: T | null = event.target as T | null;
+
+        if (this.itemType && target instanceof this.itemType && !target!.disabled) {
 
             const prevIndex = this.activeIndex;
 
@@ -124,7 +126,9 @@ export abstract class ListKeyManager<T extends ListItem> extends EventTarget {
 
     handleFocus (event: FocusEvent) {
 
-        if (this.itemType && event.target instanceof this.itemType) {
+        const target: T | null = event.target as T | null;
+
+        if (this.itemType && target instanceof this.itemType && !target!.disabled) {
 
             const prevIndex = this.activeIndex;
 

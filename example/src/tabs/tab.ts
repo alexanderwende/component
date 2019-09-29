@@ -140,17 +140,4 @@ export class Tab extends Component {
 
         this.watch(() => this.selected = false);
     }
-
-    @listener({ event: 'click' })
-    protected handleClick (event: MouseEvent) {
-
-        event.preventDefault();
-
-        if (this.disabled) {
-
-            return;
-        }
-
-        this.select();
-    }
 }
