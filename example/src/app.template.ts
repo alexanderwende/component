@@ -236,8 +236,10 @@ export const template = (element: App) => html`
             <button id="popover">Show Popover</button>
 
             <ui-popover trigger="popover">
-                <h3>Popover</h3>
-                <p>This is the content of the popover: ${ element.counter }</p>
+                <template slot="template">
+                    <h3>Popover</h3>
+                    <p>This is the content of the popover: ${ element.counter }</p>
+                </template>
             </ui-popover>
         </div>
 

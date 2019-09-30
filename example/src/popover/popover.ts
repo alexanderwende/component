@@ -1,4 +1,4 @@
-import { AttributeConverter, AttributeConverterARIABoolean, AttributeConverterString, Component, component, css, property, Changes } from "@partkit/component";
+import { AttributeConverter, AttributeConverterARIABoolean, AttributeConverterString, Component, component, css, property, Changes, listener } from "@partkit/component";
 import { html } from "lit-html";
 
 export interface HiddenChangeEvent extends CustomEvent {
@@ -8,7 +8,7 @@ export interface HiddenChangeEvent extends CustomEvent {
     }
 }
 
-@component({
+@component<Popover>({
     selector: 'ui-popover',
     styles: [css`
     :host {
@@ -18,14 +18,21 @@ export interface HiddenChangeEvent extends CustomEvent {
         border: 2px solid #bfbfbf;
         background-color: #fff;
         border-radius: 4px;
+        will-change: transform;
     }
     :host([aria-hidden=true]) {
         display: none;
+        will-change: auto;
     }
     `],
-    template: () => html`<slot></slot>`
+    template: () => html`
+    <slot name="template"></slot>
+    <slot name="content"></slot>
+    `,
 })
 export class Popover extends Component {
+
+    protected templateObserver!: MutationObserver;
 
     @property({
         converter: AttributeConverterString
@@ -44,6 +51,8 @@ export class Popover extends Component {
     })
     trigger!: string;
 
+    content!: DocumentFragment;
+
     protected triggerElement: HTMLElement | null = null;
 
     protected triggerListener: EventListener | null = null;
@@ -59,12 +68,41 @@ export class Popover extends Component {
 
         super.connectedCallback();
 
+        this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
+
         this.role = 'dialog';
 
         this.hidden = true;
     }
 
+    disconnectedCallback () {
+
+        if (this.templateObserver) this.templateObserver.disconnect();
+    }
+
     updateCallback (changes: Changes, firstUpdate: boolean) {
+
+        if (firstUpdate) {
+
+            // slotchange only emits, if distributed nodes in the slot change, we need to update on every change
+            // this.renderRoot.querySelector('slot[name=template]')!.addEventListener('slotchange', (event) => {
+
+            //     console.log(event);
+            //     this.updateTemplate();
+            // });
+
+            this.templateObserver.observe(
+                // we can't observe a template directly, but the DocumentFragment stored in its content property
+                // (this.querySelector('template[slot=template') as HTMLTemplateElement).content,
+                ((this.renderRoot.querySelector('slot[name=template]') as HTMLSlotElement).assignedNodes()[0] as HTMLTemplateElement).content,
+                {
+                    attributes: true,
+                    characterData: true,
+                    childList: true,
+                    subtree: true,
+                }
+            );
+        }
 
         if (changes.has('trigger')) {
 
@@ -77,6 +115,10 @@ export class Popover extends Component {
         if (this.hidden) {
 
             this.watch(() => this.hidden = false);
+
+            this.updateTemplate();
+
+            this.reposition();
         }
     }
 
@@ -100,6 +142,31 @@ export class Popover extends Component {
         }
     }
 
+    reposition () {
+
+
+
+        if (this.triggerElement) {
+
+            const triggerClientRect = this.triggerElement.getBoundingClientRect();
+
+            this.style.transform = `translate(${ triggerClientRect.left }px, ${ triggerClientRect.bottom }px)`;
+            // this.style.left = `${ triggerClientRect.left }px`;
+        }
+    }
+
+    @listener({
+        event: 'scroll',
+        target: document,
+        options: {
+            capture: true,
+        },
+    })
+    protected handleScroll (event: Event) {
+
+        if (!this.hidden) this.reposition();
+    }
+
     protected updateTrigger (triggerElement: HTMLElement) {
 
         if (this.triggerElement && this.triggerListener) {
@@ -111,5 +178,23 @@ export class Popover extends Component {
         this.triggerListener = (event) => this.toggle();
 
         this.triggerElement.addEventListener('click', this.triggerListener);
+    }
+
+    protected updateTemplate () {
+
+        const templateSlot = this.renderRoot.querySelector('slot[name=template]') as HTMLSlotElement;
+        const contentSlot = this.renderRoot.querySelector('slot[name=content]') as HTMLSlotElement;
+
+        const template = templateSlot.assignedNodes()[0] as HTMLTemplateElement;
+
+        if (!this.hidden) {
+
+            requestAnimationFrame(() => {
+
+                contentSlot.innerHTML = '';
+
+                contentSlot.appendChild(template.content.cloneNode(true));
+            });
+        }
     }
 }
