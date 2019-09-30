@@ -1,5 +1,6 @@
-import { AttributeConverter, AttributeConverterARIABoolean, AttributeConverterString, Component, component, css, property, Changes, listener } from "@partkit/component";
+import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
+import { ConnectedPositionManager, PositionManager } from '../position-manager';
 
 export interface HiddenChangeEvent extends CustomEvent {
     type: 'hidden-change';
@@ -57,6 +58,8 @@ export class Popover extends Component {
 
     protected triggerListener: EventListener | null = null;
 
+    protected positionManager!: PositionManager;
+
     connectedCallback () {
 
         if (this.parentElement !== document.body) {
@@ -67,6 +70,8 @@ export class Popover extends Component {
         }
 
         super.connectedCallback();
+
+        this.positionManager = new ConnectedPositionManager(this, document.getElementById(this.trigger)!);
 
         this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
 
@@ -144,27 +149,10 @@ export class Popover extends Component {
 
     reposition () {
 
+        if (this.positionManager) {
 
-
-        if (this.triggerElement) {
-
-            const triggerClientRect = this.triggerElement.getBoundingClientRect();
-
-            this.style.transform = `translate(${ triggerClientRect.left }px, ${ triggerClientRect.bottom }px)`;
-            // this.style.left = `${ triggerClientRect.left }px`;
+            this.positionManager.reposition();
         }
-    }
-
-    @listener({
-        event: 'scroll',
-        target: document,
-        options: {
-            capture: true,
-        },
-    })
-    protected handleScroll (event: Event) {
-
-        if (!this.hidden) this.reposition();
     }
 
     protected updateTrigger (triggerElement: HTMLElement) {
