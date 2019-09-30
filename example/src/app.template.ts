@@ -230,6 +230,15 @@ export const template = (element: App) => html`
                 </ui-accordion-panel>
 
             </ui-accordion>
+
+            <h2>Popover</h2>
+
+            <button id="popover">Show Popover</button>
+
+            <ui-popover trigger="popover">
+                <h3>Popover</h3>
+                <p>This is the content of the popover: ${ element.counter }</p>
+            </ui-popover>
         </div>
 
     </main>
