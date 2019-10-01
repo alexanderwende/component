@@ -7,122 +7,167 @@ interface Position {
     height: string;
     maxWidth: string;
     maxHeight: string;
+    offsetHorizontal: string;
+    offsetVertical: string;
 }
 
 export const DEFAULT_POSITION: Position = {
-    top: '0',
-    left: '0',
+    top: '',
+    left: '',
     bottom: '',
     right: '',
     width: 'auto',
     height: 'auto',
     maxWidth: 'auto',
     maxHeight: 'auto',
+    offsetHorizontal: '',
+    offsetVertical: '',
 }
 
-export abstract class PositionManager {
+export abstract class PositionStrategy {
 
-    protected isUpdating = false;
+    protected animationFrame: number | undefined;
 
-    protected lastPosition: Position = DEFAULT_POSITION;
+    protected currentPosition: Position = DEFAULT_POSITION;
 
-    constructor (public target: HTMLElement, public origin: HTMLElement = document.body) {
+    protected nextPosition: Position | undefined;
 
-        window.addEventListener('resize', (event) => {
+    constructor (public target: HTMLElement) { }
 
-            this.reposition();
+    updatePosition (position?: Partial<Position>) {
 
-        });
+        this.nextPosition = position ? { ...this.currentPosition, ...position } : undefined;
 
-        document.addEventListener('scroll', (event) => {
+        if (!this.animationFrame) {
 
-            this.reposition();
+            this.animationFrame = requestAnimationFrame(() => {
 
-        }, true);
-    }
+                const nextPosition = this.nextPosition || this.getPosition();
 
-    reposition () { }
+                if (!this.comparePositions(this.currentPosition, nextPosition)) {
 
-    protected apply (position: Position) {
+                    this.applyPosition(nextPosition);
 
-        this.target.style.top = this.lastPosition.top;
-        this.target.style.left = this.lastPosition.left;
-        this.target.style.bottom = this.lastPosition.bottom;
-        this.target.style.right = this.lastPosition.right;
-        this.target.style.width = this.lastPosition.width;
-        this.target.style.height = this.lastPosition.height;
-        this.target.style.maxWidth = this.lastPosition.maxWidth;
-        this.target.style.maxHeight = this.lastPosition.maxHeight;
-    }
+                    this.currentPosition = nextPosition;
+                }
 
-    protected update (position: Position) {
-
-        this.lastPosition = { ...DEFAULT_POSITION, ...position };
-
-        if (!this.isUpdating) {
-
-            requestAnimationFrame(() => {
-
-                this.apply(position);
-
-                this.isUpdating = false;
+                this.animationFrame = undefined;
             });
         }
+    }
 
-        this.isUpdating = true;
+    destroy () {
+
+        if (this.animationFrame) {
+
+            cancelAnimationFrame(this.animationFrame);
+
+            this.animationFrame = undefined;
+        }
+    }
+
+    protected getPosition (): Position {
+
+        return DEFAULT_POSITION;
+    }
+
+    protected applyPosition (position: Position) {
+
+        this.target.style.top = position.top;
+        this.target.style.left = position.left;
+        this.target.style.bottom = position.bottom;
+        this.target.style.right = position.right;
+        this.target.style.width = position.width;
+        this.target.style.height = position.height;
+        this.target.style.maxWidth = position.maxWidth;
+        this.target.style.maxHeight = position.maxHeight;
+    }
+
+    protected comparePositions (position: Position, otherPosition: Position): boolean {
+
+        const keys = Object.keys(position);
+
+        return !keys.find((key => position[key as keyof Position] !== otherPosition[key as keyof Position]));
     }
 }
 
-export class ConnectedPositionManager extends PositionManager {
+export class ConnectedPositionStrategy extends PositionStrategy {
+
+    protected updateListener!: EventListener;
 
     constructor (public target: HTMLElement, public origin: HTMLElement) {
 
-        super(target, origin);
+        super(target);
+
+        this.updateListener = () => this.updatePosition();
+
+        window.addEventListener('resize', this.updateListener);
+
+        document.addEventListener('scroll', this.updateListener, true);
     }
 
-    reposition () {
+    destroy () {
 
-        const position: Position = { ...DEFAULT_POSITION };
+        super.destroy();
+
+        window.removeEventListener('resize', this.updateListener);
+
+        document.removeEventListener('scroll', this.updateListener, true);
+    }
+
+    protected getPosition (): Position {
+
         const origin: ClientRect = this.origin.getBoundingClientRect();
 
-        position.top = `${ origin.bottom }px`;
-        position.left = `${ origin.left }px`;
-
-        this.update(position);
+        return {
+            ...DEFAULT_POSITION,
+            top: `${ origin.bottom }px`,
+            left: `${ origin.left }px`,
+        };
     }
 
-    protected apply (position: Position) {
+    protected applyPosition (position: Position) {
 
-        this.target.style.transform = `translate(${this.lastPosition.left}, ${this.lastPosition.top})`;
-        this.target.style.width = this.lastPosition.width;
-        this.target.style.height = this.lastPosition.height;
-        this.target.style.maxWidth = this.lastPosition.maxWidth;
-        this.target.style.maxHeight = this.lastPosition.maxHeight;
+        super.applyPosition({ ...position, top: '', left: '', bottom: '', right: '' });
+
+        this.target.style.transform = `translate(${ position.left }, ${ position.top })`;
     }
 }
 
-interface FixedPositionConfig {
-    top?: string;
-    left?: string;
-    bottom?: string;
-    right?: string;
-    offsetHorizontal?: string;
-    offsetVertical?: string;
-    width?: string;
-    height?: string;
-    maxWidth?: string;
-    maxHeight?: string;
-}
+export class FixedPositionStrategy extends PositionStrategy {
 
-export class FixedPositionManager extends PositionManager {
+    defaultPosition: Position = {
+        ...DEFAULT_POSITION,
+        top: '50vh',
+        left: '50vw',
+        offsetHorizontal: '-50%',
+        offsetVertical: '-50%'
+    };
 
-    constructor (public target: HTMLElement, public origin: HTMLElement, config: FixedPositionConfig) {
+    protected getPosition (): Position {
 
-        super(target, origin);
+        return this.defaultPosition;
     }
 
-    reposition () {
+    protected applyPosition (position: Position) {
 
+        super.applyPosition(position);
 
+        this.target.style.transform = `translate(${ position.offsetHorizontal, position.offsetVertical })`;
+    }
+}
+
+export class PositionManager {
+
+    constructor (public strategy: PositionStrategy) { }
+
+    updatePosition (position?: Partial<Position>) {
+
+        this.strategy.updatePosition(position);
+    }
+
+    destroy () {
+
+        this.strategy.destroy();
     }
 }

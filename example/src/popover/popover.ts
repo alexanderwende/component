@@ -1,6 +1,6 @@
 import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
-import { ConnectedPositionManager, PositionManager } from '../position-manager';
+import { ConnectedPositionStrategy, PositionManager } from "../position-manager";
 
 export interface HiddenChangeEvent extends CustomEvent {
     type: 'hidden-change';
@@ -27,7 +27,6 @@ export interface HiddenChangeEvent extends CustomEvent {
     }
     `],
     template: () => html`
-    <slot name="template"></slot>
     <slot name="content"></slot>
     `,
 })
@@ -52,8 +51,6 @@ export class Popover extends Component {
     })
     trigger!: string;
 
-    content!: DocumentFragment;
-
     protected triggerElement: HTMLElement | null = null;
 
     protected triggerListener: EventListener | null = null;
@@ -71,9 +68,20 @@ export class Popover extends Component {
 
         super.connectedCallback();
 
-        this.positionManager = new ConnectedPositionManager(this, document.getElementById(this.trigger)!);
+        this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
 
         this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
+
+        this.templateObserver.observe(
+            // we can't observe a template directly, but the DocumentFragment stored in its content property
+            (this.querySelector('template') as HTMLTemplateElement).content,
+            {
+                attributes: true,
+                characterData: true,
+                childList: true,
+                subtree: true,
+            }
+        );
 
         this.role = 'dialog';
 
@@ -82,32 +90,11 @@ export class Popover extends Component {
 
     disconnectedCallback () {
 
+        if (this.positionManager) this.positionManager.destroy();
         if (this.templateObserver) this.templateObserver.disconnect();
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
-
-        if (firstUpdate) {
-
-            // slotchange only emits, if distributed nodes in the slot change, we need to update on every change
-            // this.renderRoot.querySelector('slot[name=template]')!.addEventListener('slotchange', (event) => {
-
-            //     console.log(event);
-            //     this.updateTemplate();
-            // });
-
-            this.templateObserver.observe(
-                // we can't observe a template directly, but the DocumentFragment stored in its content property
-                // (this.querySelector('template[slot=template') as HTMLTemplateElement).content,
-                ((this.renderRoot.querySelector('slot[name=template]') as HTMLSlotElement).assignedNodes()[0] as HTMLTemplateElement).content,
-                {
-                    attributes: true,
-                    characterData: true,
-                    childList: true,
-                    subtree: true,
-                }
-            );
-        }
 
         if (changes.has('trigger')) {
 
@@ -124,6 +111,8 @@ export class Popover extends Component {
             this.updateTemplate();
 
             this.reposition();
+
+            this.triggerElement!.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -132,6 +121,8 @@ export class Popover extends Component {
         if (!this.hidden) {
 
             this.watch(() => this.hidden = true);
+
+            this.triggerElement!.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -151,7 +142,7 @@ export class Popover extends Component {
 
         if (this.positionManager) {
 
-            this.positionManager.reposition();
+            this.positionManager.updatePosition();
         }
     }
 
@@ -166,14 +157,16 @@ export class Popover extends Component {
         this.triggerListener = (event) => this.toggle();
 
         this.triggerElement.addEventListener('click', this.triggerListener);
+
+        this.triggerElement.setAttribute('aria-haspopup', 'dialog');
+        this.triggerElement.setAttribute('aria-expanded', this.hidden ? 'false' : 'true');
     }
 
     protected updateTemplate () {
 
-        const templateSlot = this.renderRoot.querySelector('slot[name=template]') as HTMLSlotElement;
         const contentSlot = this.renderRoot.querySelector('slot[name=content]') as HTMLSlotElement;
 
-        const template = templateSlot.assignedNodes()[0] as HTMLTemplateElement;
+        const template = this.querySelector('template') as HTMLTemplateElement;
 
         if (!this.hidden) {
 
