@@ -1,5 +1,7 @@
+import { Component } from '@partkit/component';
+import { html, render } from 'lit-html';
+import { TemplateFunction } from '../template-function';
 import { Overlay } from './overlay';
-import { TemplateResult, render } from 'lit-html';
 
 export interface OverlayConfig {
     position: 'fixed' | 'connected',
@@ -12,7 +14,7 @@ export class OverlayService {
 
     static instance: OverlayService | undefined;
 
-    protected overlays = new Map<Overlay, boolean>();
+    protected overlays = new Map<Overlay, () => void>();
 
     constructor () {
 
@@ -26,48 +28,74 @@ export class OverlayService {
 
     hasOpenOverlays () {
 
-        return [...this.overlays].find(([overlay, open]) => open);
+        return [...this.overlays].find(([overlay]) => !overlay.hidden);
     }
 
-    createOverlay (content: TemplateResult): Overlay {
+    createOverlay (template: TemplateFunction, context?: Component): Overlay {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
         document.body.appendChild(overlay);
 
-        render(content, overlay.renderRoot);
+        context = context || overlay;
+
+        this.renderOverlay(overlay, template, context);
+
+        // to keep a template up-to-date with it's context, we have to render the template
+        // everytime the context renders - that is, on every update which was triggered
+        const updateListener = () => {
+
+            // check the overlay hasn't been destroyed yet
+            if (this.overlays.has(overlay)) {
+
+                this.renderOverlay(overlay, template, context);
+            }
+        }
+
+        // we can use a component's 'update' event to re-render the template on every context update
+        // lit-html will take care of efficiently updating the DOM
+        context.addEventListener('update', updateListener);
+
+        this.overlays.set(overlay, () => context!.removeEventListener('update', updateListener));
 
         return overlay;
     }
 
     registerOverlay (overlay: Overlay) {
 
-        this.overlays.set(overlay, !overlay.hidden);
+        this.overlays.set(overlay, () => { });
     }
 
     openOverlay (overlay: Overlay) {
 
         overlay.open();
-
-        this.overlays.set(overlay, true);
     }
 
     closeOverlay (overlay: Overlay) {
 
         overlay.close();
-
-        this.overlays.set(overlay, false);
     }
 
-    destroyOverlay (overlay: Overlay) {
+    destroyOverlay (overlay: Overlay, disconnect: boolean = true) {
 
         this.closeOverlay(overlay);
 
-        // if (overlay.parentElement) {
+        const teardown = this.overlays.get(overlay);
 
-        //     overlay.parentElement.removeChild(overlay);
-        // }
+        if (teardown) teardown();
+
+        if (disconnect && overlay.parentElement) {
+
+            overlay.parentElement.removeChild(overlay);
+        }
 
         this.overlays.delete(overlay);
+    }
+
+    protected renderOverlay (overlay: Overlay, template: TemplateFunction, context?: Component) {
+
+        const result = template(context || overlay) || html``;
+
+        render(result, overlay, { eventContext: context || overlay });
     }
 }

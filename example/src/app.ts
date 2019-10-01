@@ -12,6 +12,8 @@ import './toggle';
 import './overlay/overlay';
 import { OverlayService } from './overlay/overlay-service';
 import { html } from 'lit-html';
+import { Overlay } from './overlay/overlay';
+import { ConnectedPositionStrategy } from './position-manager';
 
 @component({
     selector: 'demo-app',
@@ -23,12 +25,14 @@ export class App extends Component {
 
     protected overlayService = new OverlayService();
 
+    protected overlay?: Overlay;
+
+    protected timeout!: number;
+
     @property({
         attribute: false
     })
     counter = 0;
-
-    protected timeout!: number;
 
     connectedCallback () {
 
@@ -56,16 +60,33 @@ export class App extends Component {
 
     showOverlay () {
 
-        const content = html`
-        <h3>Programmatic Overlay</h3>
-        <p>This is the content of the popover: ${ this.counter }</p>
-        `;
+        if (!this.overlay) {
 
-        const overlay = this.overlayService.createOverlay(content);
+            // create a template function in the app component's context
+            const template = () => html`
+                <h3>Programmatic Overlay</h3>
+                <p>This is the content of the popover: ${ this.counter }</p>
+                <p><button @click=${ this.closeOverlay }>Got it</button></p>
+            `;
 
-        this.overlayService.openOverlay(overlay);
+            // pass the template function and a reference to the template's context (the app component)
+            // to the overlay service
+            this.overlay = this.overlayService.createOverlay(template, this);
+        }
 
-        console.log(this.overlayService);
+        this.overlayService.openOverlay(this.overlay);
+    }
+
+    closeOverlay () {
+
+        // if (this.overlay) this.overlayService.closeOverlay(this.overlay);
+
+        if (this.overlay) {
+
+            this.overlayService.destroyOverlay(this.overlay);
+
+            this.overlay = undefined;
+        }
     }
 
     protected count () {

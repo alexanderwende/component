@@ -1,6 +1,6 @@
 import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
-import { ConnectedPositionStrategy, PositionManager } from "../position-manager";
+import { ConnectedPositionStrategy, PositionManager, PositionStrategy, FixedPositionStrategy } from "../position-manager";
 import { OverlayService } from "./overlay-service";
 
 export interface HiddenChangeEvent extends CustomEvent {
@@ -28,7 +28,7 @@ export interface HiddenChangeEvent extends CustomEvent {
     }
     `],
     template: () => html`
-    <slot name="content"></slot>
+    <slot></slot>
     `,
 })
 export class Overlay extends Component {
@@ -56,6 +56,8 @@ export class Overlay extends Component {
     })
     trigger!: string;
 
+    positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
+
     protected triggerElement: HTMLElement | null = null;
 
     protected triggerListener: EventListener | null = null;
@@ -77,7 +79,8 @@ export class Overlay extends Component {
 
         this.hidden = true;
 
-        this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
+        // this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
+        this.positionManager = new PositionManager(this.positionStrategy);
 
         this.template = this.querySelector('template');
 
@@ -105,7 +108,7 @@ export class Overlay extends Component {
         if (this.positionManager) this.positionManager.destroy();
         if (this.templateObserver) this.templateObserver.disconnect();
 
-        this.overlayService.destroyOverlay(this);
+        this.overlayService.destroyOverlay(this, false);
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
