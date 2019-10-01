@@ -1,6 +1,7 @@
 import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
 import { ConnectedPositionStrategy, PositionManager } from "../position-manager";
+import { OverlayService } from "./overlay-service";
 
 export interface HiddenChangeEvent extends CustomEvent {
     type: 'hidden-change';
@@ -9,8 +10,8 @@ export interface HiddenChangeEvent extends CustomEvent {
     }
 }
 
-@component<Popover>({
-    selector: 'ui-popover',
+@component<Overlay>({
+    selector: 'ui-overlay',
     styles: [css`
     :host {
         display: block;
@@ -30,9 +31,13 @@ export interface HiddenChangeEvent extends CustomEvent {
     <slot name="content"></slot>
     `,
 })
-export class Popover extends Component {
+export class Overlay extends Component {
 
     protected templateObserver!: MutationObserver;
+
+    protected template: HTMLTemplateElement | null = null;
+
+    protected overlayService = new OverlayService();
 
     @property({
         converter: AttributeConverterString
@@ -68,30 +73,39 @@ export class Popover extends Component {
 
         super.connectedCallback();
 
-        this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
-
-        this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
-
-        this.templateObserver.observe(
-            // we can't observe a template directly, but the DocumentFragment stored in its content property
-            (this.querySelector('template') as HTMLTemplateElement).content,
-            {
-                attributes: true,
-                characterData: true,
-                childList: true,
-                subtree: true,
-            }
-        );
-
         this.role = 'dialog';
 
         this.hidden = true;
+
+        this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
+
+        this.template = this.querySelector('template');
+
+        if (this.template) {
+
+            this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
+
+            this.templateObserver.observe(
+                // we can't observe a template directly, but the DocumentFragment stored in its content property
+                this.template.content,
+                {
+                    attributes: true,
+                    characterData: true,
+                    childList: true,
+                    subtree: true,
+                }
+            );
+        }
+
+        this.overlayService.registerOverlay(this);
     }
 
     disconnectedCallback () {
 
         if (this.positionManager) this.positionManager.destroy();
         if (this.templateObserver) this.templateObserver.disconnect();
+
+        this.overlayService.destroyOverlay(this);
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -112,7 +126,7 @@ export class Popover extends Component {
 
             this.reposition();
 
-            this.triggerElement!.setAttribute('aria-expanded', 'true');
+            if (this.triggerElement) this.triggerElement!.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -122,7 +136,7 @@ export class Popover extends Component {
 
             this.watch(() => this.hidden = true);
 
-            this.triggerElement!.setAttribute('aria-expanded', 'false');
+            if (this.triggerElement) this.triggerElement!.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -164,17 +178,18 @@ export class Popover extends Component {
 
     protected updateTemplate () {
 
-        const contentSlot = this.renderRoot.querySelector('slot[name=content]') as HTMLSlotElement;
+        this.template = this.querySelector('template');
 
-        const template = this.querySelector('template') as HTMLTemplateElement;
+        if (this.template && !this.hidden) {
 
-        if (!this.hidden) {
+            const contentSlot = this.renderRoot.querySelector('slot') as HTMLSlotElement;
 
             requestAnimationFrame(() => {
 
                 contentSlot.innerHTML = '';
 
-                contentSlot.appendChild(template.content.cloneNode(true));
+                // contentSlot.appendChild(this.template!.content.cloneNode(true));
+                contentSlot.appendChild(document.importNode(this.template!.content, true));
             });
         }
     }

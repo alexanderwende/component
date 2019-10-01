@@ -1,5 +1,6 @@
 import { html } from 'lit-html';
 import { App } from './app';
+import { Overlay } from './overlay/overlay';
 
 export const template = (element: App) => html`
     <header>
@@ -235,12 +236,14 @@ export const template = (element: App) => html`
 
             <button id="popover">Show Popover</button>
 
-            <ui-popover trigger="popover">
+            <ui-overlay trigger="popover">
                 <template>
                     <h3>Popover</h3>
                     <p>This is the content of the popover: ${ element.counter }</p>
                 </template>
-            </ui-popover>
+            </ui-overlay>
+
+            <button id="overlay-programmatic" @click=${ element.showOverlay }>Show programmatic overlay</button>
         </div>
 
     </main>

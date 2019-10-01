@@ -9,7 +9,9 @@ import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';
 import './toggle';
-import './popover/popover';
+import './overlay/overlay';
+import { OverlayService } from './overlay/overlay-service';
+import { html } from 'lit-html';
 
 @component({
     selector: 'demo-app',
@@ -18,6 +20,8 @@ import './popover/popover';
     template: template
 })
 export class App extends Component {
+
+    protected overlayService = new OverlayService();
 
     @property({
         attribute: false
@@ -38,6 +42,30 @@ export class App extends Component {
         super.disconnectedCallback();
 
         this.stop();
+    }
+
+    confirm () {
+
+        alert(`You confirmed at ${ this.counter }.`);
+    }
+
+    cancel () {
+
+        alert(`You cancelled at ${ this.counter }.`);
+    }
+
+    showOverlay () {
+
+        const content = html`
+        <h3>Programmatic Overlay</h3>
+        <p>This is the content of the popover: ${ this.counter }</p>
+        `;
+
+        const overlay = this.overlayService.createOverlay(content);
+
+        this.overlayService.openOverlay(overlay);
+
+        console.log(this.overlayService);
     }
 
     protected count () {
