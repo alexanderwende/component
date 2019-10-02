@@ -22,17 +22,23 @@ export const DEFAULT_POSITION: Position = {
     maxHeight: 'auto',
     offsetHorizontal: '',
     offsetVertical: '',
-}
+};
 
 export abstract class PositionStrategy {
 
     protected animationFrame: number | undefined;
 
-    protected currentPosition: Position = DEFAULT_POSITION;
+    protected defaultPosition: Position;
+
+    protected currentPosition: Position;
 
     protected nextPosition: Position | undefined;
 
-    constructor (public target: HTMLElement) { }
+    constructor (public target: HTMLElement, defaultPosition: Position = DEFAULT_POSITION) {
+
+        this.defaultPosition = { ...DEFAULT_POSITION, ...defaultPosition };
+        this.currentPosition = this.defaultPosition;
+    }
 
     updatePosition (position?: Partial<Position>) {
 
@@ -68,7 +74,7 @@ export abstract class PositionStrategy {
 
     protected getPosition (): Position {
 
-        return DEFAULT_POSITION;
+        return this.defaultPosition;
     }
 
     protected applyPosition (position: Position) {
@@ -95,14 +101,13 @@ export class ConnectedPositionStrategy extends PositionStrategy {
 
     protected updateListener!: EventListener;
 
-    constructor (public target: HTMLElement, public origin: HTMLElement) {
+    constructor (public target: HTMLElement, public origin: HTMLElement, defaultPosition: Position = DEFAULT_POSITION) {
 
-        super(target);
+        super(target, defaultPosition);
 
         this.updateListener = () => this.updatePosition();
 
         window.addEventListener('resize', this.updateListener);
-
         document.addEventListener('scroll', this.updateListener, true);
     }
 
@@ -111,7 +116,6 @@ export class ConnectedPositionStrategy extends PositionStrategy {
         super.destroy();
 
         window.removeEventListener('resize', this.updateListener);
-
         document.removeEventListener('scroll', this.updateListener, true);
     }
 
@@ -120,7 +124,7 @@ export class ConnectedPositionStrategy extends PositionStrategy {
         const origin: ClientRect = this.origin.getBoundingClientRect();
 
         return {
-            ...DEFAULT_POSITION,
+            ...this.defaultPosition,
             top: `${ origin.bottom }px`,
             left: `${ origin.left }px`,
         };
@@ -134,15 +138,20 @@ export class ConnectedPositionStrategy extends PositionStrategy {
     }
 }
 
+export const DEFAULT_POSITION_FIXED: Position = {
+    ...DEFAULT_POSITION,
+    top: '50vh',
+    left: '50vw',
+    offsetHorizontal: '-50%',
+    offsetVertical: '-50%',
+};
+
 export class FixedPositionStrategy extends PositionStrategy {
 
-    defaultPosition: Position = {
-        ...DEFAULT_POSITION,
-        top: '50vh',
-        left: '50vw',
-        offsetHorizontal: '-50%',
-        offsetVertical: '-50%'
-    };
+    constructor (public target: HTMLElement, defaultPosition: Position = DEFAULT_POSITION_FIXED) {
+
+        super(target, defaultPosition);
+    }
 
     protected getPosition (): Position {
 
@@ -154,6 +163,28 @@ export class FixedPositionStrategy extends PositionStrategy {
         super.applyPosition(position);
 
         this.target.style.transform = `translate(${ position.offsetHorizontal, position.offsetVertical })`;
+    }
+}
+
+export const enum PositionStrategyType {
+    Fixed = 'fixed',
+    Connected = 'connected',
+}
+
+export class PositionStrategyFactory {
+
+    createPositionStrategy (type: PositionStrategyType, ...args: any[]): PositionStrategy {
+
+        switch (type) {
+
+            case PositionStrategyType.Connected:
+
+                return new ConnectedPositionStrategy(...args as [HTMLElement, HTMLElement]);
+
+            default:
+
+                return new FixedPositionStrategy(...args as [HTMLElement]);
+        }
     }
 }
 
