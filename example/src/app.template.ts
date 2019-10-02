@@ -236,7 +236,7 @@ export const template = (element: App) => html`
 
             <button id="popover">Show Popover</button>
 
-            <ui-overlay trigger="popover">
+            <ui-overlay trigger="popover" position-type="connected">
                 <!-- <template> -->
                     <h3>Popover</h3>
                     <p>This is the content of the popover: ${ element.counter }</p>

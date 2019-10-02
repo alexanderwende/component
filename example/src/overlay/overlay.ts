@@ -1,7 +1,8 @@
 import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
-import { ConnectedPositionStrategy, PositionManager, PositionStrategy, FixedPositionStrategy } from "../position-manager";
+import { FixedPositionStrategy, PositionManager, PositionStrategy } from "../position-manager";
 import { OverlayService } from "./overlay-service";
+import { OverlayTrigger } from "./overlay-trigger";
 
 export interface HiddenChangeEvent extends CustomEvent {
     type: 'hidden-change';
@@ -58,9 +59,9 @@ export class Overlay extends Component {
 
     positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
 
-    protected triggerElement: HTMLElement | null = null;
+    protected triggerInstance: OverlayTrigger | null = null;
 
-    protected triggerListener: EventListener | null = null;
+    protected triggerElement: HTMLElement | null = null;
 
     protected positionManager!: PositionManager;
 
@@ -128,8 +129,6 @@ export class Overlay extends Component {
             this.updateTemplate();
 
             this.reposition();
-
-            if (this.triggerElement) this.triggerElement!.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -138,8 +137,6 @@ export class Overlay extends Component {
         if (!this.hidden) {
 
             this.watch(() => this.hidden = true);
-
-            if (this.triggerElement) this.triggerElement!.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -165,18 +162,12 @@ export class Overlay extends Component {
 
     protected updateTrigger (triggerElement: HTMLElement) {
 
-        if (this.triggerElement && this.triggerListener) {
+        if (this.triggerInstance) {
 
-            if (this.triggerListener) this.triggerElement.removeEventListener('click', this.triggerListener);
+            this.triggerInstance.destroy();
         }
 
-        this.triggerElement = triggerElement;
-        this.triggerListener = (event) => this.toggle();
-
-        this.triggerElement.addEventListener('click', this.triggerListener);
-
-        this.triggerElement.setAttribute('aria-haspopup', 'dialog');
-        this.triggerElement.setAttribute('aria-expanded', this.hidden ? 'false' : 'true');
+        this.triggerInstance = new OverlayTrigger(triggerElement, this);
     }
 
     protected updateTemplate () {
