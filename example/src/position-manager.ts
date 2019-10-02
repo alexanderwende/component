@@ -1,14 +1,16 @@
+import { property } from "src/decorators";
+
 interface Position {
-    top: string;
-    right: string;
-    bottom: string;
-    left: string;
-    width: string;
-    height: string;
-    maxWidth: string;
-    maxHeight: string;
-    offsetHorizontal: string;
-    offsetVertical: string;
+    top: string | number;
+    right: string | number;
+    bottom: string | number;
+    left: string | number;
+    width: string | number;
+    height: string | number;
+    maxWidth: string | number;
+    maxHeight: string | number;
+    offsetHorizontal: string | number;
+    offsetVertical: string | number;
 }
 
 export const DEFAULT_POSITION: Position = {
@@ -23,6 +25,39 @@ export const DEFAULT_POSITION: Position = {
     offsetHorizontal: '',
     offsetVertical: '',
 };
+
+export const enum AxisAlignment {
+    Start = 'start',
+    Center = 'center',
+    End = 'end'
+}
+
+export interface AlignmentOffset {
+    horizontal: string;
+    vertical: string;
+}
+
+export interface Alignment {
+    horizontal: AxisAlignment;
+    vertical: AxisAlignment;
+}
+
+export interface AlignmentPair {
+    target: Alignment;
+    origin: Alignment;
+    offset?: AlignmentOffset;
+}
+
+export const DEFAULT_ALIGNMENT_PAIR: AlignmentPair = {
+    origin: {
+        horizontal: AxisAlignment.Start,
+        vertical: AxisAlignment.End
+    },
+    target: {
+        horizontal: AxisAlignment.Start,
+        vertical: AxisAlignment.Start
+    }
+}
 
 export abstract class PositionStrategy {
 
@@ -79,14 +114,19 @@ export abstract class PositionStrategy {
 
     protected applyPosition (position: Position) {
 
-        this.target.style.top = position.top;
-        this.target.style.left = position.left;
-        this.target.style.bottom = position.bottom;
-        this.target.style.right = position.right;
-        this.target.style.width = position.width;
-        this.target.style.height = position.height;
-        this.target.style.maxWidth = position.maxWidth;
-        this.target.style.maxHeight = position.maxHeight;
+        this.target.style.top = this.parseStyle(position.top);
+        this.target.style.left = this.parseStyle(position.left);
+        this.target.style.bottom = this.parseStyle(position.bottom);
+        this.target.style.right = this.parseStyle(position.right);
+        this.target.style.width = this.parseStyle(position.width);
+        this.target.style.height = this.parseStyle(position.height);
+        this.target.style.maxWidth = this.parseStyle(position.maxWidth);
+        this.target.style.maxHeight = this.parseStyle(position.maxHeight);
+    }
+
+    protected parseStyle (value: string | number | null): string | null {
+
+        return (typeof value === 'number') ? `${ value }px` : value;
     }
 
     protected comparePositions (position: Position, otherPosition: Position): boolean {
@@ -101,9 +141,13 @@ export class ConnectedPositionStrategy extends PositionStrategy {
 
     protected updateListener!: EventListener;
 
-    constructor (public target: HTMLElement, public origin: HTMLElement, defaultPosition: Position = DEFAULT_POSITION) {
+    protected alignment: AlignmentPair;
+
+    constructor (public target: HTMLElement, public origin: HTMLElement, defaultPosition: Position = DEFAULT_POSITION, alignment: AlignmentPair = DEFAULT_ALIGNMENT_PAIR) {
 
         super(target, defaultPosition);
+
+        this.alignment = alignment;
 
         this.updateListener = () => this.updatePosition();
 
@@ -122,12 +166,71 @@ export class ConnectedPositionStrategy extends PositionStrategy {
     protected getPosition (): Position {
 
         const origin: ClientRect = this.origin.getBoundingClientRect();
+        const target: ClientRect = this.target.getBoundingClientRect();
 
-        return {
-            ...this.defaultPosition,
-            top: `${ origin.bottom }px`,
-            left: `${ origin.left }px`,
-        };
+        const position = { ...this.defaultPosition };
+
+        switch (this.alignment.origin.horizontal) {
+
+            case AxisAlignment.Center:
+                position.left = origin.left + origin.width / 2;
+                break;
+
+            case AxisAlignment.Start:
+                position.left = origin.left;
+                break;
+
+            case AxisAlignment.End:
+                position.left = origin.right;
+                break;
+        }
+
+        switch (this.alignment.origin.vertical) {
+
+            case AxisAlignment.Center:
+                position.top = origin.top + origin.height / 2;
+                break;
+
+            case AxisAlignment.Start:
+                position.top = origin.top;
+                break;
+
+            case AxisAlignment.End:
+                position.top = origin.bottom;
+                break;
+        }
+
+        switch (this.alignment.target.horizontal) {
+
+            case AxisAlignment.Center:
+                position.left = (position.left as number) - target.width / 2;
+                break;
+
+            case AxisAlignment.End:
+                position.left = (position.left as number) - target.width;
+                break;
+
+            case AxisAlignment.Start:
+                break;
+        }
+
+        switch (this.alignment.target.vertical) {
+
+            case AxisAlignment.Center:
+                position.top = (position.top as number) - target.height / 2;
+                break;
+
+            case AxisAlignment.End:
+                position.top = (position.top as number) - target.height;
+                break;
+
+            case AxisAlignment.Start:
+                break;
+        }
+
+        // TODO: include offset
+
+        return position;
     }
 
     protected applyPosition (position: Position) {
@@ -171,20 +274,20 @@ export const enum PositionStrategyType {
     Connected = 'connected',
 }
 
+export const DEFAULT_POSITION_STRATEGIES = {
+    fixed: FixedPositionStrategy,
+    connected: ConnectedPositionStrategy,
+}
+
 export class PositionStrategyFactory {
 
-    createPositionStrategy (type: PositionStrategyType, ...args: any[]): PositionStrategy {
+    constructor (protected strategies: { [key: string]: { new(...args: any[]): PositionStrategy } } = DEFAULT_POSITION_STRATEGIES) {
 
-        switch (type) {
+    }
 
-            case PositionStrategyType.Connected:
+    createPositionStrategy (type: string, ...args: any[]): PositionStrategy {
 
-                return new ConnectedPositionStrategy(...args as [HTMLElement, HTMLElement]);
-
-            default:
-
-                return new FixedPositionStrategy(...args as [HTMLElement]);
-        }
+        return this.strategies[type] ? new this.strategies[type](...args) : new FixedPositionStrategy(...args as [HTMLElement, Position]);
     }
 }
 

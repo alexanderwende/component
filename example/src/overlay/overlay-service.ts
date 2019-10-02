@@ -2,6 +2,7 @@ import { Component } from '@partkit/component';
 import { html, render } from 'lit-html';
 import { TemplateFunction } from '../template-function';
 import { Overlay } from './overlay';
+import { PositionStrategy, PositionStrategyFactory } from '../position-manager';
 
 export interface OverlayConfig {
     position: 'fixed' | 'connected',
@@ -16,7 +17,7 @@ export class OverlayService {
 
     protected overlays = new Map<Overlay, () => void>();
 
-    constructor () {
+    constructor (protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory()) {
 
         if (!OverlayService.instance) {
 
@@ -31,9 +32,11 @@ export class OverlayService {
         return [...this.overlays].find(([overlay]) => !overlay.hidden);
     }
 
-    createOverlay (template: TemplateFunction, context?: Component): Overlay {
+    createOverlay (template: TemplateFunction, context?: Component, positionStrategy?: PositionStrategy): Overlay {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
+
+        overlay.positionStrategy = positionStrategy || this.positionStrategyFactory.createPositionStrategy('fixed', overlay);
 
         document.body.appendChild(overlay);
 
