@@ -913,7 +913,7 @@ export abstract class Component extends HTMLElement {
 
         const propertyDeclaration = this.getPropertyDeclaration(propertyKey)!;
 
-        const propertyValue = propertyDeclaration.converter.fromAttribute(newValue);
+        const propertyValue = propertyDeclaration.converter.fromAttribute.call(this, newValue);
 
         this[propertyKey as keyof this] = propertyValue;
     }
@@ -945,7 +945,7 @@ export abstract class Component extends HTMLElement {
         const attributeName = propertyDeclaration.attribute as string;
 
         // resolve the attribute value
-        const attributeValue = propertyDeclaration.converter.toAttribute(newValue);
+        const attributeValue = propertyDeclaration.converter.toAttribute.call(this, newValue);
 
         // undefined means don't change
         if (attributeValue === undefined) {

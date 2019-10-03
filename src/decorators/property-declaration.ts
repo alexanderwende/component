@@ -182,7 +182,7 @@ export interface PropertyDeclaration<Type extends Component = Component> {
      *
      * Default value: {@link AttributeConverterDefault}
      */
-    converter: AttributeConverter;
+    converter: AttributeConverter<Type>;
 
     /**
      * Should the associated attribute's value be automatically reflected to the property?
