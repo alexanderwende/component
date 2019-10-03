@@ -1,4 +1,4 @@
-import { Overlay, HiddenChangeEvent } from "./overlay";
+import { Overlay } from "./overlay";
 
 export class OverlayTrigger {
 

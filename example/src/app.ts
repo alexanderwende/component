@@ -13,7 +13,7 @@ import './overlay/overlay';
 import { OverlayService } from './overlay/overlay-service';
 import { html } from 'lit-html';
 import { Overlay } from './overlay/overlay';
-import { ConnectedPositionStrategy } from './position-manager';
+import { ConnectedPositionStrategy } from "./position/position-strategy";
 
 @component({
     selector: 'demo-app',

@@ -1,6 +1,7 @@
 import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
-import { FixedPositionStrategy, PositionManager, PositionStrategy } from "../position-manager";
+import { PositionManager } from "../position/position-manager";
+import { FixedPositionStrategy, PositionStrategy } from "../position/position-strategy";
 import { OverlayService } from "./overlay-service";
 import { OverlayTrigger } from "./overlay-trigger";
 

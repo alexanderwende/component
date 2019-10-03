@@ -2,7 +2,8 @@ import { Component } from '@partkit/component';
 import { html, render } from 'lit-html';
 import { TemplateFunction } from '../template-function';
 import { Overlay } from './overlay';
-import { PositionStrategy, PositionStrategyFactory } from '../position-manager';
+import { PositionStrategyFactory } from "../position/position-strategy-factory";
+import { PositionStrategy } from "../position/position-strategy";
 
 export interface OverlayConfig {
     position: 'fixed' | 'connected',
