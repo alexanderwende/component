@@ -1,5 +1,7 @@
 import { Position } from "./position";
-import { ConnectedPositionStrategy, FixedPositionStrategy, PositionStrategy } from "./position-strategy";
+import { PositionStrategy } from "./position-strategy";
+import { ConnectedPositionStrategy } from "./strategies/connected-position-strategy";
+import { FixedPositionStrategy } from "./strategies/fixed-position-strategy";
 
 export interface PositionStrategyMap {
     [key: string]: { new(...args: any[]): PositionStrategy };

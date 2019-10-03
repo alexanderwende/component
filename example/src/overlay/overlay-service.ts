@@ -4,6 +4,8 @@ import { TemplateFunction } from '../template-function';
 import { Overlay } from './overlay';
 import { PositionStrategyFactory } from "../position/position-strategy-factory";
 import { PositionStrategy } from "../position/position-strategy";
+import { OverlayTriggerFactory } from './overlay-trigger-factory';
+import { OverlayTrigger } from './overlay-trigger';
 
 export interface OverlayConfig {
     position: 'fixed' | 'connected',
@@ -18,7 +20,10 @@ export class OverlayService {
 
     protected overlays = new Map<Overlay, () => void>();
 
-    constructor (protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory()) {
+    constructor (
+        protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory(),
+        protected overlayTriggerFactory: OverlayTriggerFactory = new OverlayTriggerFactory()
+    ) {
 
         if (!OverlayService.instance) {
 
@@ -26,6 +31,16 @@ export class OverlayService {
         }
 
         return OverlayService.instance;
+    }
+
+    createPositionStrategy (type: string, ...args: any[]): PositionStrategy {
+
+        return this.positionStrategyFactory.createPositionStrategy(type, ...args);
+    }
+
+    createOverlayTrigger (type: string, ...args: any[]): OverlayTrigger {
+
+        return this.overlayTriggerFactory.createOverlayTrigger(type, ...args);
     }
 
     hasOpenOverlays () {

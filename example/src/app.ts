@@ -1,19 +1,18 @@
 import { Component, component, property } from '@partkit/component';
+import { html } from 'lit-html';
 import './accordion/accordion';
 import { styles } from './app.styles';
 import { template } from './app.template';
 import './card';
 import './checkbox';
 import './icon/icon';
+import './overlay/overlay';
+import { Overlay } from './overlay/overlay';
+import { OverlayService } from './overlay/overlay-service';
 import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';
 import './toggle';
-import './overlay/overlay';
-import { OverlayService } from './overlay/overlay-service';
-import { html } from 'lit-html';
-import { Overlay } from './overlay/overlay';
-import { ConnectedPositionStrategy } from "./position/position-strategy";
 
 @component({
     selector: 'demo-app',
