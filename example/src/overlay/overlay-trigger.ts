@@ -1,6 +1,9 @@
 import { Overlay } from "./overlay";
+import { OverlayService } from "./overlay-service";
 
 export class OverlayTrigger {
+
+    protected overlayService = new OverlayService();
 
     protected listeners: { target: EventTarget, type: string, listener: EventListener, options?: boolean | AddEventListenerOptions }[];
 

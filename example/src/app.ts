@@ -57,7 +57,7 @@ export class App extends Component {
         alert(`You cancelled at ${ this.counter }.`);
     }
 
-    showOverlay () {
+    showOverlay (event: Event) {
 
         if (!this.overlay) {
 
@@ -68,12 +68,14 @@ export class App extends Component {
                 <p><button @click=${ this.closeOverlay }>Got it</button></p>
             `;
 
+            const trigger = event.target as HTMLElement;
+
             // pass the template function and a reference to the template's context (the app component)
             // to the overlay service
             this.overlay = this.overlayService.createOverlay(template, this);
         }
 
-        this.overlayService.openOverlay(this.overlay);
+        this.overlayService.showOverlay(this.overlay);
     }
 
     closeOverlay () {

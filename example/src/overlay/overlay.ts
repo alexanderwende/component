@@ -6,13 +6,6 @@ import { FixedPositionStrategy } from "../position/strategies/fixed-position-str
 import { OverlayService } from "./overlay-service";
 import { OverlayTrigger } from "./overlay-trigger";
 
-export interface HiddenChangeEvent extends CustomEvent {
-    type: 'hidden-change';
-    detail: {
-        hidden: boolean;
-    }
-}
-
 @component<Overlay>({
     selector: 'ui-overlay',
     styles: [css`
@@ -69,12 +62,14 @@ export class Overlay extends Component {
 
     connectedCallback () {
 
-        if (this.parentElement !== document.body) {
+        // if (this.parentElement !== document.body) {
 
-            document.body.appendChild(this);
+        //     document.body.appendChild(this);
 
-            return;
-        }
+        //     return;
+        // }
+
+        if (this.overlayService.registerOverlay(this)) return;
 
         super.connectedCallback();
 
@@ -103,7 +98,7 @@ export class Overlay extends Component {
             );
         }
 
-        this.overlayService.registerOverlay(this);
+        // this.overlayService.registerOverlay(this);
     }
 
     disconnectedCallback () {
@@ -118,11 +113,11 @@ export class Overlay extends Component {
 
         if (changes.has('trigger')) {
 
-            this.updateTrigger(document.getElementById(this.trigger)!);
+            this.updateTrigger(document.querySelector(this.trigger)! as HTMLElement);
         }
     }
 
-    open () {
+    show () {
 
         if (this.hidden) {
 
@@ -131,14 +126,18 @@ export class Overlay extends Component {
             this.updateTemplate();
 
             this.reposition();
+
+            this.overlayService.onShowOverlay(this);
         }
     }
 
-    close () {
+    hide () {
 
         if (!this.hidden) {
 
             this.watch(() => this.hidden = true);
+
+            this.overlayService.onHideOverlay(this);
         }
     }
 
@@ -146,11 +145,11 @@ export class Overlay extends Component {
 
         if (this.hidden) {
 
-            this.open();
+            this.show();
 
         } else {
 
-            this.close();
+            this.hide();
         }
     }
 
@@ -184,7 +183,6 @@ export class Overlay extends Component {
 
                 contentSlot.innerHTML = '';
 
-                // contentSlot.appendChild(this.template!.content.cloneNode(true));
                 contentSlot.appendChild(document.importNode(this.template!.content, true));
             });
         }

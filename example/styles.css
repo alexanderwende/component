@@ -22,6 +22,7 @@
   --focus-shadow: 0 0 0 var(--focus-distance) var(--background-color), 0 0 0 var(--focus-width) var(--focus-color);
   --icon-color: currentColor;
   --icon-vertical-align: -0.1875em;
+  --overlay-backdrop-background: rgba(0, 0, 0, 0.125);
 }
 
 html {
@@ -37,7 +38,10 @@ body {
   height: 100vh;
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
   font: inherit;
   box-sizing: border-box;
 }
@@ -57,7 +61,7 @@ button {
 }
 
 button:hover {
-  background: rgba(0,0,0,.05);
+  background: rgba(0, 0, 0, .05);
 }
 
 *:focus {

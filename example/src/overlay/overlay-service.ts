@@ -6,6 +6,7 @@ import { PositionStrategyFactory } from "../position/position-strategy-factory";
 import { PositionStrategy } from "../position/position-strategy";
 import { OverlayTriggerFactory } from './overlay-trigger-factory';
 import { OverlayTrigger } from './overlay-trigger';
+import { OverlayBackdrop } from './overlay-backdrop';
 
 export interface OverlayConfig {
     position: 'fixed' | 'connected',
@@ -14,20 +15,30 @@ export interface OverlayConfig {
     closeOnBackdropClick: boolean;
 }
 
+export const insertAfter = <T extends Node> (newChild: T, refChild: Node): T => {
+
+    return refChild.parentNode!.insertBefore(newChild, refChild.nextSibling);
+}
+
 export class OverlayService {
 
     static instance: OverlayService | undefined;
 
     protected overlays = new Map<Overlay, () => void>();
 
+    protected backdrop!: OverlayBackdrop;
+
     constructor (
         protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory(),
-        protected overlayTriggerFactory: OverlayTriggerFactory = new OverlayTriggerFactory()
+        protected overlayTriggerFactory: OverlayTriggerFactory = new OverlayTriggerFactory(),
+        protected root: HTMLElement = document.body
     ) {
 
         if (!OverlayService.instance) {
 
             OverlayService.instance = this;
+
+            this.createBackdrop();
         }
 
         return OverlayService.instance;
@@ -48,17 +59,20 @@ export class OverlayService {
         return [...this.overlays].find(([overlay]) => !overlay.hidden);
     }
 
+    createBackdrop () {
+
+        this.backdrop = document.createElement(OverlayBackdrop.selector) as OverlayBackdrop;
+
+        this.root.appendChild(this.backdrop);
+    }
+
     createOverlay (template: TemplateFunction, context?: Component, positionStrategy?: PositionStrategy): Overlay {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
         overlay.positionStrategy = positionStrategy || this.positionStrategyFactory.createPositionStrategy('fixed', overlay);
 
-        document.body.appendChild(overlay);
-
         context = context || overlay;
-
-        this.renderOverlay(overlay, template, context);
 
         // to keep a template up-to-date with it's context, we have to render the template
         // everytime the context renders - that is, on every update which was triggered
@@ -77,27 +91,54 @@ export class OverlayService {
 
         this.overlays.set(overlay, () => context!.removeEventListener('update', updateListener));
 
+        this.attachOverlay(overlay);
+
+        this.renderOverlay(overlay, template, context);
+
         return overlay;
     }
 
-    registerOverlay (overlay: Overlay) {
+    registerOverlay (overlay: Overlay): boolean {
 
-        this.overlays.set(overlay, () => { });
+        console.log('registerOverlay...', this.overlays.has(overlay));
+
+        if (!this.overlays.has(overlay)) {
+
+            this.overlays.set(overlay, () => { });
+
+            this.attachOverlay(overlay);
+
+            return true;
+
+        } else {
+
+            return false;
+        }
     }
 
-    openOverlay (overlay: Overlay) {
+    showOverlay (overlay: Overlay) {
 
-        overlay.open();
+        overlay.show();
     }
 
-    closeOverlay (overlay: Overlay) {
+    onShowOverlay (overlay: Overlay) {
 
-        overlay.close();
+        this.backdrop.show();
+    }
+
+    hideOverlay (overlay: Overlay) {
+
+        overlay.hide();
+    }
+
+    onHideOverlay (overlay: Overlay) {
+
+        if (!this.hasOpenOverlays()) this.backdrop.hide();
     }
 
     destroyOverlay (overlay: Overlay, disconnect: boolean = true) {
 
-        this.closeOverlay(overlay);
+        this.hideOverlay(overlay);
 
         const teardown = this.overlays.get(overlay);
 
@@ -109,6 +150,27 @@ export class OverlayService {
         }
 
         this.overlays.delete(overlay);
+    }
+
+    /**
+     * Attach an overlay to the {@link OverlayService}'s root element
+     *
+     * All overlays are attached to the root element in order, after the {@link OverlayBackdrop}.
+     *
+     * @param overlay - The overlay instance to attach
+     */
+    protected attachOverlay (overlay: Overlay) {
+
+        if (overlay.parentElement === this.root) return;
+
+        let lastOverlay: HTMLElement = this.backdrop;
+
+        while (lastOverlay.nextSibling && lastOverlay.nextSibling instanceof Overlay) {
+
+            lastOverlay = lastOverlay.nextSibling;
+        }
+
+        insertAfter(overlay, lastOverlay);
     }
 
     protected renderOverlay (overlay: Overlay, template: TemplateFunction, context?: Component) {
