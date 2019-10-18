@@ -72,10 +72,10 @@ export class App extends Component {
 
             // pass the template function and a reference to the template's context (the app component)
             // to the overlay service
-            this.overlay = this.overlayService.createOverlay(template, this);
+            this.overlay = this.overlayService.createOverlay({ template: template, context: this });
         }
 
-        this.overlayService.showOverlay(this.overlay);
+        this.overlayService.openOverlay(this.overlay);
     }
 
     closeOverlay () {

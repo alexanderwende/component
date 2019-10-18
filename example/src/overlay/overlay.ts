@@ -1,10 +1,18 @@
-import { AttributeConverterARIABoolean, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
+import { AttributeConverterBoolean, AttributeConverterString, Changes, Component, component, css, property, AttributeConverterNumber } from "@partkit/component";
 import { html } from "lit-html";
 import { PositionManager } from "../position/position-manager";
 import { PositionStrategy } from "../position/position-strategy";
 import { FixedPositionStrategy } from "../position/strategies/fixed-position-strategy";
 import { OverlayService } from "./overlay-service";
 import { OverlayTrigger } from "./overlay-trigger";
+import { TemplateFunction } from "../template-function";
+
+let OVERLAY_COUNTER = 0;
+
+function nextOverlayId (): string {
+
+    return `partkit-overlay-${ OVERLAY_COUNTER++ }`;
+}
 
 @component<Overlay>({
     selector: 'ui-overlay',
@@ -31,34 +39,44 @@ export class Overlay extends Component {
 
     protected templateObserver!: MutationObserver;
 
-    protected template: HTMLTemplateElement | null = null;
-
     protected overlayService = new OverlayService();
-
-    @property({
-        converter: AttributeConverterString
-    })
-    role!: string;
-
-    @property({
-        attribute: 'aria-hidden',
-        converter: AttributeConverterARIABoolean,
-        reflectAttribute: false,
-    })
-    hidden!: boolean;
-
-    @property({
-        converter: AttributeConverterString
-    })
-    trigger!: string;
-
-    positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
 
     protected triggerInstance: OverlayTrigger | null = null;
 
     protected triggerElement: HTMLElement | null = null;
 
     protected positionManager!: PositionManager;
+
+    @property<Overlay>({
+        converter: AttributeConverterBoolean,
+        reflectProperty: 'reflectOpen'
+    })
+    open = false;
+
+    @property({
+        converter: AttributeConverterNumber
+    })
+    tabindex = -1;
+
+    @property({
+        converter: AttributeConverterString
+    })
+    role!: string;
+
+    template: TemplateFunction | undefined;
+
+    context: Component | undefined;
+
+    @property()
+    trigger!: string;
+
+    @property()
+    triggerType = '';
+
+    @property()
+    positionType = 'fixed';
+
+    positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
 
     connectedCallback () {
 
@@ -73,30 +91,14 @@ export class Overlay extends Component {
 
         super.connectedCallback();
 
-        this.role = 'dialog';
+        this.id = this.id || nextOverlayId();
 
-        this.hidden = true;
+        this.role = 'dialog';
 
         // this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
         this.positionManager = new PositionManager(this.positionStrategy);
 
-        this.template = this.querySelector('template');
-
-        if (this.template) {
-
-            this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
-
-            this.templateObserver.observe(
-                // we can't observe a template directly, but the DocumentFragment stored in its content property
-                this.template.content,
-                {
-                    attributes: true,
-                    characterData: true,
-                    childList: true,
-                    subtree: true,
-                }
-            );
-        }
+        // this.initTemplate();
 
         // this.overlayService.registerOverlay(this);
     }
@@ -117,33 +119,39 @@ export class Overlay extends Component {
         }
     }
 
+    hasFocus () {
+
+        // TODO: should query overlay service to check for descendants with focus
+
+    }
+
     show () {
 
-        if (this.hidden) {
+        if (!this.open) {
 
-            this.watch(() => this.hidden = false);
+            this.watch(() => this.open = true);
 
-            this.updateTemplate();
+            // this.updateTemplate();
 
             this.reposition();
 
-            this.overlayService.onShowOverlay(this);
+            // this.overlayService.onShowOverlay(this);
         }
     }
 
     hide () {
 
-        if (!this.hidden) {
+        if (this.open) {
 
-            this.watch(() => this.hidden = true);
+            this.watch(() => this.open = false);
 
-            this.overlayService.onHideOverlay(this);
+            // this.overlayService.onHideOverlay(this);
         }
     }
 
     toggle () {
 
-        if (this.hidden) {
+        if (!this.open) {
 
             this.show();
 
@@ -161,30 +169,66 @@ export class Overlay extends Component {
         }
     }
 
+    reflectOpen () {
+
+        if (this.open) {
+
+            this.setAttribute('open', '');
+            this.setAttribute('aria-hidden', 'false');
+
+        } else {
+
+            this.removeAttribute('open');
+            this.setAttribute('aria-hidden', 'true');
+        }
+    }
+
     protected updateTrigger (triggerElement: HTMLElement) {
 
         if (this.triggerInstance) {
 
-            this.triggerInstance.destroy();
+            this.triggerInstance.detach();
         }
 
-        this.triggerInstance = new OverlayTrigger(triggerElement, this);
+        this.triggerInstance = new OverlayTrigger(this);
+        this.triggerInstance.attach(triggerElement);
     }
 
-    protected updateTemplate () {
+    // protected initTemplate () {
 
-        this.template = this.querySelector('template');
+    //     this.template = this.querySelector('template');
 
-        if (this.template && !this.hidden) {
+    //     if (this.template) {
 
-            const contentSlot = this.renderRoot.querySelector('slot') as HTMLSlotElement;
+    //         this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
 
-            requestAnimationFrame(() => {
+    //         this.templateObserver.observe(
+    //             // we can't observe a template directly, but the DocumentFragment stored in its content property
+    //             this.template.content,
+    //             {
+    //                 attributes: true,
+    //                 characterData: true,
+    //                 childList: true,
+    //                 subtree: true,
+    //             }
+    //         );
+    //     }
+    // }
 
-                contentSlot.innerHTML = '';
+    // protected updateTemplate () {
 
-                contentSlot.appendChild(document.importNode(this.template!.content, true));
-            });
-        }
-    }
+    //     this.template = this.querySelector('template');
+
+    //     if (this.template && !this.hidden) {
+
+    //         const contentSlot = this.renderRoot.querySelector('slot') as HTMLSlotElement;
+
+    //         requestAnimationFrame(() => {
+
+    //             contentSlot.innerHTML = '';
+
+    //             contentSlot.appendChild(document.importNode(this.template!.content, true));
+    //         });
+    //     }
+    // }
 }

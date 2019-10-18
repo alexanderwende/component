@@ -15,6 +15,6 @@ export class OverlayTriggerFactory {
 
     createOverlayTrigger (type: string, ...args: any[]): OverlayTrigger {
 
-        return this.triggers[type] ? new this.triggers[type](...args) : new OverlayTrigger(...args as [HTMLElement, Overlay]);
+        return this.triggers[type] ? new this.triggers[type](...args) : new OverlayTrigger(...args as [Overlay]);
     }
 }
