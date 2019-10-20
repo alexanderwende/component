@@ -50,9 +50,23 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
 }
 
 /**
- * A type for property changes, as used in ${@link Component.updateCallback}
+ * A type for property changes, as used in {@link updateCallback}
  */
 export type Changes = Map<PropertyKey, any>;
+
+/**
+ * A type for property change event details, as used by {@link PropertyChangeEvent}
+ */
+export interface PropertyChangeEventDetail<T> {
+    property: string;
+    previous: T;
+    current: T;
+}
+
+/**
+ * A type for property change events, as dispatched by the {@link _notifyProperty} method
+ */
+export interface PropertyChangeEvent<T> extends CustomEvent<PropertyChangeEventDetail<T>> {}
 
 /**
  * The component base class
