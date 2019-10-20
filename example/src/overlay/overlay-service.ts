@@ -1,4 +1,4 @@
-import { Component } from '@partkit/component';
+import { Component, PropertyChangeEvent } from '@partkit/component';
 import { html, render } from 'lit-html';
 import { TemplateFunction } from '../template-function';
 import { Overlay } from './overlay';
@@ -9,6 +9,8 @@ import { OverlayTrigger } from './overlay-trigger';
 import { OverlayBackdrop } from './overlay-backdrop';
 import { insertAfter } from '../dom';
 
+const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overlay is not registered: ${ overlay.selector }`);
+
 export interface OverlayConfig {
     positionType: string;
     triggerType: string;
@@ -17,16 +19,19 @@ export interface OverlayConfig {
     backdrop: boolean;
     closeOnEscape: boolean;
     closeOnBackdropClick: boolean;
+    autoFocus: boolean;
+    trapFocus: boolean;
+    restoreFocus: boolean;
 }
 
-export interface OverlayState {
-    config: OverlayConfig;
-    positionStrategy: PositionStrategy;
-    overlayTrigger: OverlayTrigger;
-    template: TemplateFunction;
-    context: Component;
-    destroy: () => void;
-}
+// export interface OverlayState {
+//     config: OverlayConfig;
+//     positionStrategy: PositionStrategy;
+//     overlayTrigger: OverlayTrigger;
+//     template: TemplateFunction;
+//     context: Component;
+//     destroy: () => void;
+// }
 
 let OVERLAY_SERVICE_INSTANCE: OverlayService | undefined;
 
@@ -274,6 +279,8 @@ export interface OverlayDefinition {
     overlayTrigger: OverlayTrigger;
     template: TemplateFunction;
     context: Component;
+    updateListener: (event: CustomEvent) => void;
+    openChangeListener: (event: CustomEvent) => void;
     destroy: () => void;
 }
 
@@ -306,7 +313,14 @@ export class OverlayService {
         return this.activeOverlays.length > 0;
     }
 
+    hasOverlay (overlay: Overlay): boolean {
+
+        return this.registeredOverlays.has(overlay);
+    }
+
     isOverlayOpen (overlay: Overlay) {
+
+        this._throwUnregiseredOverlay(overlay);
 
         return this.activeOverlays.includes(overlay);
     }
@@ -315,6 +329,8 @@ export class OverlayService {
      * An overlay is considered focused, if either itself or any of its descendant nodes has focus.
      */
     isOverlayFocused (overlay: Overlay): boolean {
+
+        this._throwUnregiseredOverlay(overlay);
 
         const activeElement = document.activeElement;
 
@@ -325,6 +341,8 @@ export class OverlayService {
      * An overlay is considered active if it is either focused or has a descendant overlay which is focused.
      */
     isOverlayActive (overlay: Overlay): boolean {
+
+        this._throwUnregiseredOverlay(overlay);
 
         let isFound = false;
         let isActive = false;
@@ -359,17 +377,26 @@ export class OverlayService {
 
         if (definition.template) {
 
-            this.renderOverlay(overlay, definition.template, definition.context);
+            this.renderOverlay(overlay);
         }
 
         return overlay;
     }
 
+    /**
+     * Register on overlay with the overlay service
+     *
+     * @description
+     * Adds the overlay instance to the overlay service's registry, extracts the overlay's configuration and
+     * attaches the overlay to the overlay service's root location in the document body.
+     *
+     * @returns True if the overlay was registered successfully, false if the overlay has been registered already
+     */
     registerOverlay (overlay: Overlay, definition?: OverlayDefinition): boolean {
 
         console.log('registerOverlay...', this.registeredOverlays.has(overlay));
 
-        if (!this.registeredOverlays.has(overlay)) {
+        if (!this.hasOverlay(overlay)) {
 
             if (!definition) {
 
@@ -378,7 +405,7 @@ export class OverlayService {
                     triggerType: overlay.triggerType,
                     positionType: overlay.positionType,
                     template: overlay.template,
-                    context: overlay.context
+                    context: overlay.context || overlay
                 });
             }
 
@@ -395,6 +422,8 @@ export class OverlayService {
     }
 
     openOverlay (overlay: Overlay, event?: Event) {
+
+        this._throwUnregiseredOverlay(overlay);
 
         if (!overlay.open) {
 
@@ -430,6 +459,8 @@ export class OverlayService {
 
     closeOverlay (overlay: Overlay, event?: Event) {
 
+        this._throwUnregiseredOverlay(overlay);
+
         if (this.isOverlayOpen(overlay)) {
 
             let isFound = false;
@@ -461,6 +492,8 @@ export class OverlayService {
 
     destroyOverlay (overlay: Overlay, disconnect: boolean = true) {
 
+        this._throwUnregiseredOverlay(overlay);
+
         // TODO: we need to also destroy descendant overlays?
         this.closeOverlay(overlay);
 
@@ -477,6 +510,30 @@ export class OverlayService {
         }
 
         this.registeredOverlays.delete(overlay);
+    }
+
+    protected onOverlayOpen (overlay: Overlay) {
+
+        if (this.hasOverlay(overlay)) {
+
+            const { updateListener, context, positionStrategy } = this.registeredOverlays.get(overlay)!;
+
+            context.addEventListener('update', updateListener as EventListener);
+
+            this.renderOverlay(overlay);
+
+            positionStrategy.updatePosition();
+        }
+    }
+
+    protected onOverlayClose (overlay: Overlay) {
+
+        if (this.hasOverlay(overlay)) {
+
+            const { updateListener, context } = this.registeredOverlays.get(overlay)!;
+
+            context.removeEventListener('update', updateListener as EventListener);
+        }
     }
 
     protected configureOverlay (overlay: Overlay, config: Partial<OverlayConfig> = {}): OverlayDefinition {
@@ -498,33 +555,54 @@ export class OverlayService {
             overlayDefinition.overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(triggerType);
         }
 
+        const openChangeListener = ((event: PropertyChangeEvent<boolean>) => {
 
+            const open = event.detail.current;
 
-        const template = config.template || overlay.template;
+            if (open) {
 
-        if (template) {
+                this.onOverlayOpen(overlay);
 
-            const context = config.context || overlay.context || overlay;
+            } else {
 
-            // to keep a template up-to-date with it's context, we have to render the template
-            // everytime the context renders - that is, on every update which was triggered
-            const updateListener = () => {
-
-                // check the overlay hasn't been destroyed yet
-                if (this.registeredOverlays.has(overlay)) {
-
-                    this.renderOverlay(overlay, template, context);
-                }
+                this.onOverlayClose(overlay);
             }
+        }) as EventListener;
 
-            // we can use a component's 'update' event to re-render the template on every context update
-            // lit-html will take care of efficiently updating the DOM
-            context.addEventListener('update', updateListener);
+        overlay.addEventListener('open-changed', openChangeListener);
 
-            overlayDefinition.template = template;
-            overlayDefinition.context = context;
-            overlayDefinition.destroy = () => context!.removeEventListener('update', updateListener);
+        overlayDefinition.updateListener = () => {
+
+            this.renderOverlay(overlay);
         }
+
+
+        // const template = config.template || overlay.template;
+        const template = config.template;
+
+        // const context = config.context || overlay.context || overlay;
+        const context = config.context || overlay;
+
+
+
+
+        // to keep a template up-to-date with it's context, we have to render the template
+        // everytime the context renders - that is, on every update which was triggered
+
+
+        // we can use a component's 'update' event to re-render the template on every context update
+        // lit-html will take care of efficiently updating the DOM
+        // context.addEventListener('update', updateListener);
+
+        overlayDefinition.template = template;
+        overlayDefinition.context = context;
+
+
+        overlayDefinition.destroy = () => {
+
+            overlay.removeEventListener('open-changed', openChangeListener);
+            // context!.removeEventListener('update', updateListener);
+        };
 
         return overlayDefinition as OverlayDefinition;
     }
@@ -550,10 +628,28 @@ export class OverlayService {
         insertAfter(overlay, lastOverlay);
     }
 
-    protected renderOverlay (overlay: Overlay, template: TemplateFunction, context?: Component) {
+    protected renderOverlay (overlay: Overlay) {
 
-        const result = template(context || overlay) || html``;
+        if (this.hasOverlay(overlay)) {
 
-        render(result, overlay, { eventContext: context || overlay });
+            const { template, context } = this.registeredOverlays.get(overlay)!;
+
+            if (template) {
+
+                render(template(context), overlay, { eventContext: context });
+            }
+        }
+
+        // const result = template(context || overlay) || html``;
+
+        // render(result, overlay, { eventContext: context || overlay });
+    }
+
+    private _throwUnregiseredOverlay (overlay: Overlay) {
+
+        if (!this.hasOverlay(overlay)) {
+
+            throw OVERLAY_UNREGISTERED_ERROR(overlay.constructor as typeof Overlay);
+        }
     }
 }

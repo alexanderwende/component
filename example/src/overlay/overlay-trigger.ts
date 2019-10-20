@@ -48,13 +48,13 @@ export class OverlayTrigger extends Behavior {
 
             case Enter:
             case Space:
-                // this.overlayService.toggleOverlay(this.overlay, event);
+                this.overlayService.toggleOverlay(this.overlay, event);
                 event.preventDefault();
                 event.stopPropagation();
                 break;
 
             case Escape:
-                // this.overlayService.closeOverlay(this.overlay, event);
+                this.overlayService.closeOverlay(this.overlay, event);
                 event.preventDefault();
                 event.stopPropagation();
                 break;
@@ -63,7 +63,7 @@ export class OverlayTrigger extends Behavior {
 
     protected handleMousedown (event: MouseEvent) {
 
-        // this.overlayService.toggleOverlay(this.overlay, event);
+        this.overlayService.toggleOverlay(this.overlay, event);
     }
 }
 

@@ -1,4 +1,4 @@
-import { OverlayTrigger } from './overlay-trigger';
+import { OverlayTrigger, TooltipOverlayTrigger } from './overlay-trigger';
 import { Overlay } from './overlay';
 
 export interface OverlayTriggerMap {
@@ -6,7 +6,8 @@ export interface OverlayTriggerMap {
 }
 
 export const DEFAULT_OVERLAY_TRIGGERS: OverlayTriggerMap = {
-    click: OverlayTrigger
+    default: OverlayTrigger,
+    tooltip: TooltipOverlayTrigger,
 };
 
 export class OverlayTriggerFactory {

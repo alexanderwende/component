@@ -43,9 +43,9 @@ export class Overlay extends Component {
 
     protected triggerInstance: OverlayTrigger | null = null;
 
-    protected triggerElement: HTMLElement | null = null;
+    // protected triggerElement: HTMLElement | null = null;
 
-    protected positionManager!: PositionManager;
+    // protected positionManager!: PositionManager;
 
     @property<Overlay>({
         converter: AttributeConverterBoolean,
@@ -71,7 +71,7 @@ export class Overlay extends Component {
     trigger!: string;
 
     @property()
-    triggerType = '';
+    triggerType = 'default';
 
     @property()
     positionType = 'fixed';
@@ -80,14 +80,14 @@ export class Overlay extends Component {
 
     connectedCallback () {
 
-        // if (this.parentElement !== document.body) {
+        if (!this.overlayService.hasOverlay(this)) {
 
-        //     document.body.appendChild(this);
+            this.overlayService.registerOverlay(this);
 
-        //     return;
-        // }
+            return;
+        }
 
-        if (this.overlayService.registerOverlay(this)) return;
+        // if (this.overlayService.registerOverlay(this)) return;
 
         super.connectedCallback();
 
@@ -96,17 +96,15 @@ export class Overlay extends Component {
         this.role = 'dialog';
 
         // this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
-        this.positionManager = new PositionManager(this.positionStrategy);
+        // this.positionManager = new PositionManager(this.positionStrategy);
 
         // this.initTemplate();
-
-        // this.overlayService.registerOverlay(this);
     }
 
     disconnectedCallback () {
 
-        if (this.positionManager) this.positionManager.destroy();
-        if (this.templateObserver) this.templateObserver.disconnect();
+        // if (this.positionManager) this.positionManager.destroy();
+        // if (this.templateObserver) this.templateObserver.disconnect();
 
         this.overlayService.destroyOverlay(this, false);
     }
@@ -133,7 +131,7 @@ export class Overlay extends Component {
 
             // this.updateTemplate();
 
-            this.reposition();
+            // this.reposition();
 
             // this.overlayService.onShowOverlay(this);
         }
@@ -161,13 +159,13 @@ export class Overlay extends Component {
         }
     }
 
-    reposition () {
+    // reposition () {
 
-        if (this.positionManager) {
+    //     if (this.positionManager) {
 
-            this.positionManager.updatePosition();
-        }
-    }
+    //         this.positionManager.updatePosition();
+    //     }
+    // }
 
     reflectOpen () {
 
