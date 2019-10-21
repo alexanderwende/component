@@ -14,8 +14,8 @@ export class OverlayTriggerFactory {
 
     constructor (protected triggers: OverlayTriggerMap = DEFAULT_OVERLAY_TRIGGERS) { }
 
-    createOverlayTrigger (type: string, ...args: any[]): OverlayTrigger {
+    createOverlayTrigger (type: string, overlay: Overlay): OverlayTrigger {
 
-        return this.triggers[type] ? new this.triggers[type](...args) : new OverlayTrigger(...args as [Overlay]);
+        return this.triggers[type] ? new this.triggers[type](overlay) : new OverlayTrigger(overlay);
     }
 }

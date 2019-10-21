@@ -28,6 +28,8 @@ export class OverlayTrigger extends Behavior {
 
     detach () {
 
+        if (!this.hasAttached) return;
+
         this.element!.removeAttribute('aria-haspopup');
         this.element!.removeAttribute('aria-expanded');
 

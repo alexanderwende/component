@@ -1,13 +1,23 @@
-import { AttributeConverterBoolean, AttributeConverterString, Changes, Component, component, css, property, AttributeConverterNumber } from "@partkit/component";
+import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
-import { PositionManager } from "../position/position-manager";
-import { PositionStrategy } from "../position/position-strategy";
-import { FixedPositionStrategy } from "../position/strategies/fixed-position-strategy";
-import { OverlayService } from "./overlay-service";
-import { OverlayTrigger } from "./overlay-trigger";
 import { TemplateFunction } from "../template-function";
+import { OverlayService, OverlayConfig } from "./overlay-service";
 
 let OVERLAY_COUNTER = 0;
+
+const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
+    'positionType',
+    'trigger',
+    'triggerType',
+    'template',
+    'context',
+    'backdrop',
+    'closeOnEscape',
+    'closeOnBackdropClick',
+    'autoFocus',
+    'trapFocus',
+    'restoreFocus',
+];
 
 function nextOverlayId (): string {
 
@@ -37,11 +47,11 @@ function nextOverlayId (): string {
 })
 export class Overlay extends Component {
 
-    protected templateObserver!: MutationObserver;
+    // protected templateObserver!: MutationObserver;
 
     protected overlayService = new OverlayService();
 
-    protected triggerInstance: OverlayTrigger | null = null;
+    // protected triggerInstance: OverlayTrigger | null = null;
 
     // protected triggerElement: HTMLElement | null = null;
 
@@ -76,7 +86,7 @@ export class Overlay extends Component {
     @property()
     positionType = 'fixed';
 
-    positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
+    // positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
 
     connectedCallback () {
 
@@ -111,9 +121,18 @@ export class Overlay extends Component {
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
 
-        if (changes.has('trigger')) {
+        const config: Partial<OverlayConfig> = {};
 
-            this.updateTrigger(document.querySelector(this.trigger)! as HTMLElement);
+        OVERLAY_CONFIG_FIELDS.forEach(key => {
+
+            if (changes.has(key)) config[key] = (this as any)[key];
+        });
+
+        if (Object.keys(config).length > 0) {
+
+            changes.forEach((val, key) => console.log('updateCallback... change: ', key, (this as any)[key]));
+
+            this.overlayService.updateOverlayConfig(this, config);
         }
     }
 
@@ -181,16 +200,16 @@ export class Overlay extends Component {
         }
     }
 
-    protected updateTrigger (triggerElement: HTMLElement) {
+    // protected updateTrigger (triggerElement: HTMLElement) {
 
-        if (this.triggerInstance) {
+    //     if (this.triggerInstance) {
 
-            this.triggerInstance.detach();
-        }
+    //         this.triggerInstance.detach();
+    //     }
 
-        this.triggerInstance = new OverlayTrigger(this);
-        this.triggerInstance.attach(triggerElement);
-    }
+    //     this.triggerInstance = new OverlayTrigger(this);
+    //     this.triggerInstance.attach(triggerElement);
+    // }
 
     // protected initTemplate () {
 

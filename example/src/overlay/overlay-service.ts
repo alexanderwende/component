@@ -13,15 +13,30 @@ const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overl
 
 export interface OverlayConfig {
     positionType: string;
-    triggerType: string;
-    template: TemplateFunction;
-    context: Component;
+    trigger?: string;
+    triggerType?: string;
+    template?: TemplateFunction;
+    context?: Component;
     backdrop: boolean;
     closeOnEscape: boolean;
     closeOnBackdropClick: boolean;
     autoFocus: boolean;
     trapFocus: boolean;
     restoreFocus: boolean;
+}
+
+export const DEAFULT_OVERLAY_CONFIG: OverlayConfig = {
+    positionType: 'fixed',
+    trigger: undefined,
+    triggerType: undefined,
+    template: undefined,
+    context: undefined,
+    backdrop: true,
+    closeOnEscape: true,
+    closeOnBackdropClick: true,
+    autoFocus: true,
+    trapFocus: true,
+    restoreFocus: true,
 }
 
 // export interface OverlayState {
@@ -276,7 +291,7 @@ let OVERLAY_SERVICE_INSTANCE: OverlayService | undefined;
 export interface OverlayDefinition {
     config: OverlayConfig;
     positionStrategy: PositionStrategy;
-    overlayTrigger: OverlayTrigger;
+    overlayTrigger?: OverlayTrigger;
     template: TemplateFunction;
     context: Component;
     updateListener: (event: CustomEvent) => void;
@@ -394,7 +409,7 @@ export class OverlayService {
      */
     registerOverlay (overlay: Overlay, definition?: OverlayDefinition): boolean {
 
-        console.log('registerOverlay...', this.registeredOverlays.has(overlay));
+        console.log('registerOverlay...', definition);
 
         if (!this.hasOverlay(overlay)) {
 
@@ -407,6 +422,8 @@ export class OverlayService {
                     template: overlay.template,
                     context: overlay.context || overlay
                 });
+
+                console.log('registerOverlay...', definition);
             }
 
             this.registeredOverlays.set(overlay, definition);
@@ -538,21 +555,18 @@ export class OverlayService {
 
     protected configureOverlay (overlay: Overlay, config: Partial<OverlayConfig> = {}): OverlayDefinition {
 
+        const overlayConfig = { ...DEAFULT_OVERLAY_CONFIG, ...config };
         const overlayDefinition = { ...this.registeredOverlays.get(overlay) } || {} as Partial<OverlayDefinition>;
 
 
 
-        const positionType = config.positionType || 'fixed';
-
-        overlayDefinition.positionStrategy = this.positionStrategyFactory.createPositionStrategy(positionType, overlay);
+        overlayDefinition.positionStrategy = this.positionStrategyFactory.createPositionStrategy(overlayConfig.positionType, overlay);
 
 
 
-        const triggerType = config.triggerType;
+        if (overlayConfig.triggerType) {
 
-        if (triggerType) {
-
-            overlayDefinition.overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(triggerType);
+            overlayDefinition.overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(overlayConfig.triggerType, overlay);
         }
 
         const openChangeListener = ((event: PropertyChangeEvent<boolean>) => {
@@ -577,13 +591,6 @@ export class OverlayService {
         }
 
 
-        // const template = config.template || overlay.template;
-        const template = config.template;
-
-        // const context = config.context || overlay.context || overlay;
-        const context = config.context || overlay;
-
-
 
 
         // to keep a template up-to-date with it's context, we have to render the template
@@ -594,8 +601,8 @@ export class OverlayService {
         // lit-html will take care of efficiently updating the DOM
         // context.addEventListener('update', updateListener);
 
-        overlayDefinition.template = template;
-        overlayDefinition.context = context;
+        overlayDefinition.template = overlayConfig.template;
+        overlayDefinition.context = overlayConfig.context || overlay;
 
 
         overlayDefinition.destroy = () => {
@@ -604,7 +611,66 @@ export class OverlayService {
             // context!.removeEventListener('update', updateListener);
         };
 
+        overlayDefinition.config = overlayConfig;
+
         return overlayDefinition as OverlayDefinition;
+    }
+
+    updateOverlayConfig (overlay: Overlay, config: Partial<OverlayConfig> = {}) {
+
+        this._throwUnregiseredOverlay(overlay);
+
+        const overlayDefinition = this.registeredOverlays.get(overlay)!;
+
+        const overlayConfig: OverlayConfig = { ...overlayDefinition.config, ...config };
+
+        this.updateOverlayTrigger(overlay, overlayConfig);
+
+        // finally store the updated config in the OverlayDefinition
+        overlayDefinition.config = overlayConfig;
+    }
+
+    /**
+     * Updates the trigger element and trigger type of an Overlay
+     *
+     * If the trigger element changed, the OverlayTrigger instance will be detached from the old trigger element
+     * and re-attached to the new trigger element. If the trigger type changed, the old OverlayTrigger will be detached,
+     * a new one will be created and attached to the trigger element.
+     */
+    protected updateOverlayTrigger (overlay: Overlay, config: OverlayConfig) {
+
+        console.log('updateOverlayTrigger... ', config);
+
+        const definition = this.registeredOverlays.get(overlay)!;
+
+        const hasTriggerChanged = config.trigger !== definition.config.trigger;
+        const hasTriggerTypeChanged = config.triggerType !== definition.config.triggerType;
+
+        // if the trigger element or trigger type have changed, we need to detach an existing OverlayTrigger
+        if (hasTriggerChanged || hasTriggerTypeChanged) {
+
+            if (definition.overlayTrigger) {
+
+                definition.overlayTrigger.detach();
+            }
+        }
+
+        // if we have a new trigger type, we create a new OverlayTrigger
+        if (hasTriggerTypeChanged) {
+
+            definition.overlayTrigger = config.triggerType
+                ? this.overlayTriggerFactory.createOverlayTrigger(config.triggerType, overlay)
+                : undefined;
+        }
+
+        // if the trigger element or trigger type have changed, we need to re-attach the OverlayTrigger to the trigger element
+        if (hasTriggerChanged || hasTriggerTypeChanged) {
+
+            if (config.trigger && definition.overlayTrigger) {
+
+                definition.overlayTrigger.attach(document.querySelector(config.trigger) as HTMLElement);
+            }
+        }
     }
 
     /**
