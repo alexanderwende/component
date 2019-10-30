@@ -1,23 +1,10 @@
-import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from "@partkit/component";
-import { html } from "lit-html";
-import { TemplateFunction } from "../template-function";
-import { OverlayService, OverlayConfig } from "./overlay-service";
+import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from '@partkit/component';
+import { html } from 'lit-html';
+import { TemplateFunction } from '../template-function';
+import { DEFAULT_OVERLAY_CONFIG, OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
+import { OverlayService } from './overlay-service';
 
 let OVERLAY_COUNTER = 0;
-
-const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
-    'positionType',
-    'trigger',
-    'triggerType',
-    'template',
-    'context',
-    'backdrop',
-    'closeOnEscape',
-    'closeOnBackdropClick',
-    'autoFocus',
-    'trapFocus',
-    'restoreFocus',
-];
 
 function nextOverlayId (): string {
 
@@ -47,15 +34,11 @@ function nextOverlayId (): string {
 })
 export class Overlay extends Component {
 
-    // protected templateObserver!: MutationObserver;
+    private _config: Partial<OverlayConfig> = {};
+
+    protected isRegistered = false;
 
     protected overlayService = new OverlayService();
-
-    // protected triggerInstance: OverlayTrigger | null = null;
-
-    // protected triggerElement: HTMLElement | null = null;
-
-    // protected positionManager!: PositionManager;
 
     @property<Overlay>({
         converter: AttributeConverterBoolean,
@@ -84,39 +67,59 @@ export class Overlay extends Component {
     triggerType = 'default';
 
     @property()
-    positionType = 'fixed';
+    positionType = 'default';
 
-    // positionStrategy: PositionStrategy = new FixedPositionStrategy(this);
+    @property()
+    origin = 'viewport';
+
+    set config (config: Partial<OverlayConfig>) {
+
+        this._config = { ...this._config, ...config };
+    }
+
+    get config (): Partial<OverlayConfig> {
+
+        const config: Partial<OverlayConfig> = { ...this._config };
+
+        OVERLAY_CONFIG_FIELDS.forEach(key => {
+
+            if (this[key as keyof Overlay] !== undefined) {
+
+                config[key] = this[key as keyof Overlay] as any;
+            }
+        });
+
+        return config;
+    }
 
     connectedCallback () {
 
         if (!this.overlayService.hasOverlay(this)) {
 
-            this.overlayService.registerOverlay(this);
+            this.isRegistered = this.overlayService.registerOverlay(this, this.config);
 
             return;
         }
-
-        // if (this.overlayService.registerOverlay(this)) return;
-
-        super.connectedCallback();
 
         this.id = this.id || nextOverlayId();
 
         this.role = 'dialog';
 
-        // this.positionManager = new PositionManager(new ConnectedPositionStrategy(this, document.getElementById(this.trigger)!));
-        // this.positionManager = new PositionManager(this.positionStrategy);
-
-        // this.initTemplate();
+        super.connectedCallback();
     }
 
     disconnectedCallback () {
 
-        // if (this.positionManager) this.positionManager.destroy();
-        // if (this.templateObserver) this.templateObserver.disconnect();
+        // we remove the overlay from the overlay service when the overlay gets disconnected
+        // however, during registration, the overlay will be moved to the document body, which
+        // essentially removes and reattaches the overlay; during this time the overlay won't
+        // be registered yet and we don't remove the overlay from the overlay service
+        if (this.isRegistered) {
 
-        this.overlayService.destroyOverlay(this, false);
+            this.overlayService.destroyOverlay(this, false);
+        }
+
+        super.disconnectedCallback();
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -130,16 +133,14 @@ export class Overlay extends Component {
 
         if (Object.keys(config).length > 0) {
 
-            changes.forEach((val, key) => console.log('updateCallback... change: ', key, (this as any)[key]));
-
-            this.overlayService.updateOverlayConfig(this, config);
+            // TODO: when overlay gets created via overlay service, the config from outside should override overlay's defaults
+            // this.overlayService.updateOverlayConfig(this, config);
         }
     }
 
     hasFocus () {
 
         // TODO: should query overlay service to check for descendants with focus
-
     }
 
     show () {
@@ -147,12 +148,6 @@ export class Overlay extends Component {
         if (!this.open) {
 
             this.watch(() => this.open = true);
-
-            // this.updateTemplate();
-
-            // this.reposition();
-
-            // this.overlayService.onShowOverlay(this);
         }
     }
 
@@ -161,8 +156,6 @@ export class Overlay extends Component {
         if (this.open) {
 
             this.watch(() => this.open = false);
-
-            // this.overlayService.onHideOverlay(this);
         }
     }
 
@@ -178,14 +171,6 @@ export class Overlay extends Component {
         }
     }
 
-    // reposition () {
-
-    //     if (this.positionManager) {
-
-    //         this.positionManager.updatePosition();
-    //     }
-    // }
-
     reflectOpen () {
 
         if (this.open) {
@@ -199,53 +184,4 @@ export class Overlay extends Component {
             this.setAttribute('aria-hidden', 'true');
         }
     }
-
-    // protected updateTrigger (triggerElement: HTMLElement) {
-
-    //     if (this.triggerInstance) {
-
-    //         this.triggerInstance.detach();
-    //     }
-
-    //     this.triggerInstance = new OverlayTrigger(this);
-    //     this.triggerInstance.attach(triggerElement);
-    // }
-
-    // protected initTemplate () {
-
-    //     this.template = this.querySelector('template');
-
-    //     if (this.template) {
-
-    //         this.templateObserver = new MutationObserver((mutations: MutationRecord[], observer: MutationObserver) => this.updateTemplate());
-
-    //         this.templateObserver.observe(
-    //             // we can't observe a template directly, but the DocumentFragment stored in its content property
-    //             this.template.content,
-    //             {
-    //                 attributes: true,
-    //                 characterData: true,
-    //                 childList: true,
-    //                 subtree: true,
-    //             }
-    //         );
-    //     }
-    // }
-
-    // protected updateTemplate () {
-
-    //     this.template = this.querySelector('template');
-
-    //     if (this.template && !this.hidden) {
-
-    //         const contentSlot = this.renderRoot.querySelector('slot') as HTMLSlotElement;
-
-    //         requestAnimationFrame(() => {
-
-    //             contentSlot.innerHTML = '';
-
-    //             contentSlot.appendChild(document.importNode(this.template!.content, true));
-    //         });
-    //     }
-    // }
 }

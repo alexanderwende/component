@@ -1,11 +1,21 @@
 import { Behavior } from '../behavior';
-import { Overlay } from "./overlay";
-import { OverlayService } from "./overlay-service";
-import { Enter, Space, Escape } from '../keys';
+import { Enter, Escape, Space, Tab } from '../keys';
+import { Overlay } from './overlay';
+import { OverlayService } from './overlay-service';
+import { FocusTrap } from './focus-trap';
 
-export class OverlayTrigger extends Behavior {
+export interface OverlayTrigger extends Behavior {
+
+    update (): void;
+}
+
+// TODO: add NoElementOverlayTrigger
+
+export class DefaultOverlayTrigger extends Behavior implements OverlayTrigger {
 
     protected overlayService = new OverlayService();
+
+    protected focusTrap = new FocusTrap();
 
     constructor (public overlay: Overlay) {
 
@@ -22,6 +32,7 @@ export class OverlayTrigger extends Behavior {
         this.eventManager.listen(this.element!, 'mousedown', (event: Event) => this.handleMousedown(event as MouseEvent));
 
         this.eventManager.listen(this.overlay, 'open-changed', () => this.update());
+        this.eventManager.listen(this.overlay, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
 
         this.update();
     }
@@ -38,9 +49,17 @@ export class OverlayTrigger extends Behavior {
 
     update () {
 
-        if (this.hasAttached) {
+        if (!this.hasAttached) return;
 
-            this.element!.setAttribute('aria-expanded', this.overlay.open ? 'true' : 'false');
+        this.element!.setAttribute('aria-expanded', this.overlay.open ? 'true' : 'false');
+
+        if (this.overlay.open) {
+
+            this.focusTrap.attach(this.overlay);
+
+        } else {
+
+            this.focusTrap.detach();
         }
     }
 
@@ -50,35 +69,45 @@ export class OverlayTrigger extends Behavior {
 
             case Enter:
             case Space:
+
+                if (event.target !== this.element) return;
+
                 this.overlayService.toggleOverlay(this.overlay, event);
                 event.preventDefault();
                 event.stopPropagation();
                 break;
 
             case Escape:
-                this.overlayService.closeOverlay(this.overlay, event);
-                event.preventDefault();
-                event.stopPropagation();
+
+                if (this.overlayService.isOverlayOpen(this.overlay)) {
+
+                    this.overlayService.closeOverlay(this.overlay, event);
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
                 break;
         }
     }
 
     protected handleMousedown (event: MouseEvent) {
 
+        console.log('overlay-trigger.handleMousedown()...');
+
         this.overlayService.toggleOverlay(this.overlay, event);
     }
 }
 
-export class TooltipOverlayTrigger extends OverlayTrigger {
+export class TooltipOverlayTrigger extends Behavior implements OverlayTrigger {
+
+    protected overlayService = new OverlayService();
 
     constructor (public overlay: Overlay) {
 
-        super(overlay);
+        super();
     }
 
     attach (element: HTMLElement) {
 
-        // TODO: this will run the OverlayTrigger's attach method and add all default event handlers... we don't want that!
         super.attach(element);
 
         this.overlay.role = 'tooltip';
@@ -86,14 +115,16 @@ export class TooltipOverlayTrigger extends OverlayTrigger {
         this.element!.setAttribute('tabindex', '0');
         this.element!.setAttribute('aria-describedby', this.overlay.id);
 
-        this.eventManager.listen(this.element!, 'mouseenter', () => this.openTooltip());
-        this.eventManager.listen(this.element!, 'mouseleave', () => this.closeTooltip());
+        this.eventManager.listen(this.element!, 'mouseenter', (event) => this.openTooltip(event));
+        this.eventManager.listen(this.element!, 'mouseleave', (event) => this.closeTooltip(event));
 
-        this.eventManager.listen(this.element!, 'focus', () => this.openTooltip());
-        this.eventManager.listen(this.element!, 'blur', () => this.closeTooltip());
+        this.eventManager.listen(this.element!, 'focus', (event) => this.openTooltip(event));
+        this.eventManager.listen(this.element!, 'blur', (event) => this.closeTooltip(event));
     }
 
     detach () {
+
+        if (!this.hasAttached) return;
 
         this.element!.removeAttribute('tabindex');
         this.element!.removeAttribute('aria-describedby');
@@ -103,16 +134,28 @@ export class TooltipOverlayTrigger extends OverlayTrigger {
 
     update () { }
 
-    protected openTooltip () { }
+    protected openTooltip (event: Event) {
 
-    protected closeTooltip () { }
+        this.overlayService.openOverlay(this.overlay, event);
+
+        // event.preventDefault();
+        // event.stopPropagation();
+    }
+
+    protected closeTooltip (event: Event) {
+
+        this.overlayService.closeOverlay(this.overlay, event);
+
+        // event.preventDefault();
+        // event.stopPropagation();
+    }
 }
 
 export class MenuOverlayTrigger { }
 
 export class ListboxOverlayTrigger { }
 
-export class DialogOverlayTrigger extends OverlayTrigger { }
+// export class DialogOverlayTrigger extends Behavior implements OverlayTrigger { }
 
 // export class TreeOverlayTrigger { }
 

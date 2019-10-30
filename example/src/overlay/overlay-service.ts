@@ -1,299 +1,23 @@
-import { Component, PropertyChangeEvent } from '@partkit/component';
-import { html, render } from 'lit-html';
-import { TemplateFunction } from '../template-function';
-import { Overlay } from './overlay';
-import { PositionStrategyFactory } from "../position/position-strategy-factory";
-import { PositionStrategy } from "../position/position-strategy";
-import { OverlayTriggerFactory } from './overlay-trigger-factory';
-import { OverlayTrigger } from './overlay-trigger';
-import { OverlayBackdrop } from './overlay-backdrop';
+import { PropertyChangeEvent } from '@partkit/component';
+import { render } from 'lit-html';
 import { insertAfter } from '../dom';
+import { Overlay } from './overlay';
+import { OverlayBackdrop } from './overlay-backdrop';
+import { OverlayConfig } from './overlay-config';
+import { OverlayTrigger } from './overlay-trigger';
+import { OverlayTriggerFactory } from './overlay-trigger-factory';
+import { hasPositionConfigChanged, PositionConfig, POSITION_CONFIG_FIELDS } from './position/position-config';
+import { PositionStrategy } from './position/position-strategy';
+import { PositionStrategyFactory } from './position/position-strategy-factory';
 
 const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overlay is not registered: ${ overlay.selector }`);
 
-export interface OverlayConfig {
-    positionType: string;
-    trigger?: string;
-    triggerType?: string;
-    template?: TemplateFunction;
-    context?: Component;
-    backdrop: boolean;
-    closeOnEscape: boolean;
-    closeOnBackdropClick: boolean;
-    autoFocus: boolean;
-    trapFocus: boolean;
-    restoreFocus: boolean;
-}
-
-export const DEAFULT_OVERLAY_CONFIG: OverlayConfig = {
-    positionType: 'fixed',
-    trigger: undefined,
-    triggerType: undefined,
-    template: undefined,
-    context: undefined,
-    backdrop: true,
-    closeOnEscape: true,
-    closeOnBackdropClick: true,
-    autoFocus: true,
-    trapFocus: true,
-    restoreFocus: true,
-}
-
-// export interface OverlayState {
-//     config: OverlayConfig;
-//     positionStrategy: PositionStrategy;
-//     overlayTrigger: OverlayTrigger;
-//     template: TemplateFunction;
-//     context: Component;
-//     destroy: () => void;
-// }
-
 let OVERLAY_SERVICE_INSTANCE: OverlayService | undefined;
 
-// export class OverlayServiceOld {
-
-//     protected _overlays = new Map<Overlay, OverlayState>();
-
-//     // a stack of currently active overlays
-//     protected _activeOverlays: Overlay[] = [];
-
-//     protected overlays = new Map<Overlay, () => void>();
-
-//     protected backdrop!: OverlayBackdrop;
-
-//     constructor (
-//         protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory(),
-//         protected overlayTriggerFactory: OverlayTriggerFactory = new OverlayTriggerFactory(),
-//         protected root: HTMLElement = document.body
-//     ) {
-
-//         if (!OVERLAY_SERVICE_INSTANCE) {
-
-//             OVERLAY_SERVICE_INSTANCE = this;
-
-//             this.createBackdrop();
-//         }
-
-//         return OVERLAY_SERVICE_INSTANCE;
-//     }
-
-//     // createPositionStrategy (type: string, ...args: any[]): PositionStrategy {
-
-//     //     return this.positionStrategyFactory.createPositionStrategy(type, ...args);
-//     // }
-
-//     // createOverlayTrigger (type: string, ...args: any[]): OverlayTrigger {
-
-//     //     return this.overlayTriggerFactory.createOverlayTrigger(type, ...args);
-//     // }
-
-//     hasOpenOverlays () {
-
-//         return this._activeOverlays.length > 0;
-//     }
-
-//     isOverlayOpen (overlay: Overlay) {
-
-//         return this._activeOverlays.includes(overlay);
-//     }
-
-//     createBackdrop () {
-
-//         this.backdrop = document.createElement(OverlayBackdrop.selector) as OverlayBackdrop;
-
-//         this.root.appendChild(this.backdrop);
-//     }
-
-//     createOverlay (template: TemplateFunction, context?: Component, positionStrategy?: PositionStrategy): Overlay {
-
-//         const overlay = document.createElement(Overlay.selector) as Overlay;
-
-//         overlay.positionStrategy = positionStrategy || this.positionStrategyFactory.createPositionStrategy('fixed', overlay);
-
-//         context = context || overlay;
-
-//         // to keep a template up-to-date with it's context, we have to render the template
-//         // everytime the context renders - that is, on every update which was triggered
-//         const updateListener = () => {
-
-//             // check the overlay hasn't been destroyed yet
-//             if (this.overlays.has(overlay)) {
-
-//                 this.renderOverlay(overlay, template, context);
-//             }
-//         }
-
-//         // we can use a component's 'update' event to re-render the template on every context update
-//         // lit-html will take care of efficiently updating the DOM
-//         context.addEventListener('update', updateListener);
-
-//         this.overlays.set(overlay, () => context!.removeEventListener('update', updateListener));
-
-//         this.attachOverlay(overlay);
-
-//         this.renderOverlay(overlay, template, context);
-
-//         return overlay;
-//     }
-
-//     registerOverlay (overlay: Overlay): boolean {
-
-//         console.log('registerOverlay...', this.overlays.has(overlay));
-
-//         if (!this.overlays.has(overlay)) {
-
-//             this.overlays.set(overlay, () => { });
-
-//             this.attachOverlay(overlay);
-
-//             return true;
-
-//         } else {
-
-//             return false;
-//         }
-//     }
-
-//     openOverlay (overlay: Overlay, event?: Event) {
-
-//         if (!this.isOverlayOpen(overlay)) {
-
-//             overlay.show();
-
-//             this._activeOverlays.push(overlay);
-//         }
-//     }
-
-//     onShowOverlay (overlay: Overlay) {
-
-//         this.backdrop.show();
-//     }
-
-//     closeOverlay (overlay: Overlay) {
-
-//         if (this.isOverlayOpen(overlay)) {
-
-//             // close all descendant overlays by emptying the stack until we reach the current overlay
-//             let descandant = this._activeOverlays.pop()!;
-
-//             while (descandant !== overlay) {
-
-//                 descandant.hide();
-
-//                 descandant = this._activeOverlays.pop()!;
-//             }
-
-//             overlay.hide();
-//         }
-//     }
-
-//     onHideOverlay (overlay: Overlay) {
-
-//         if (!this.hasOpenOverlays()) this.backdrop.hide();
-//     }
-
-//     destroyOverlay (overlay: Overlay, disconnect: boolean = true) {
-
-//         // TODO: we need to also destroy descendant overlays
-//         this.closeOverlay(overlay);
-
-//         const teardown = this.overlays.get(overlay);
-
-//         if (teardown) teardown();
-
-//         if (disconnect && overlay.parentElement) {
-
-//             overlay.parentElement.removeChild(overlay);
-//         }
-
-//         this.overlays.delete(overlay);
-//     }
-
-//     protected configureOverlay (overlay: Overlay, config: Partial<OverlayConfig> = {}, context?: Component): OverlayState {
-
-//         const overlayState = { ...this._overlays.get(overlay) } || {} as Partial<OverlayState>;
-
-
-
-//         const positionType = config.positionType || 'fixed';
-
-//         overlayState.positionStrategy = this.positionStrategyFactory.createPositionStrategy(positionType, overlay);
-
-
-
-//         const triggerType = config.triggerType;
-
-//         if (triggerType) {
-
-//             overlayState.overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(triggerType);
-//         }
-
-
-
-//         const template = config.template || overlay.template;
-
-//         if (template) {
-
-//             context = context || overlay.context || overlay;
-
-//             // to keep a template up-to-date with it's context, we have to render the template
-//             // everytime the context renders - that is, on every update which was triggered
-//             const updateListener = () => {
-
-//                 // check the overlay hasn't been destroyed yet
-//                 if (this.overlays.has(overlay)) {
-
-//                     this.renderOverlay(overlay, template, context);
-//                 }
-//             }
-
-//             // we can use a component's 'update' event to re-render the template on every context update
-//             // lit-html will take care of efficiently updating the DOM
-//             context.addEventListener('update', updateListener);
-
-//             overlayState.template = template;
-//             overlayState.context = context;
-//             overlayState.destroy = () => context!.removeEventListener('update', updateListener);
-//         }
-
-//         return overlayState as OverlayState;
-//     }
-
-//     /**
-//      * Attach an overlay to the {@link OverlayService}'s root element
-//      *
-//      * All overlays are attached to the root element in order, after the {@link OverlayBackdrop}.
-//      *
-//      * @param overlay - The overlay instance to attach
-//      */
-//     protected attachOverlay (overlay: Overlay) {
-
-//         if (overlay.parentElement === this.root) return;
-
-//         let lastOverlay: HTMLElement = this.backdrop;
-
-//         while (lastOverlay.nextSibling && lastOverlay.nextSibling instanceof Overlay) {
-
-//             lastOverlay = lastOverlay.nextSibling;
-//         }
-
-//         insertAfter(overlay, lastOverlay);
-//     }
-
-//     protected renderOverlay (overlay: Overlay, template: TemplateFunction, context?: Component) {
-
-//         const result = template(context || overlay) || html``;
-
-//         render(result, overlay, { eventContext: context || overlay });
-//     }
-// }
-
 export interface OverlayDefinition {
-    config: OverlayConfig;
-    positionStrategy: PositionStrategy;
+    config: Partial<OverlayConfig>;
+    positionStrategy?: PositionStrategy;
     overlayTrigger?: OverlayTrigger;
-    template: TemplateFunction;
-    context: Component;
     updateListener: (event: CustomEvent) => void;
     openChangeListener: (event: CustomEvent) => void;
     destroy: () => void;
@@ -368,7 +92,7 @@ export class OverlayService {
 
             if (isFound) {
 
-                isActive = this.isOverlayActive(this.activeOverlays[index]);
+                isActive = this.isOverlayFocused(this.activeOverlays[index]);
             }
         }
 
@@ -386,14 +110,8 @@ export class OverlayService {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
-        const definition = this.configureOverlay(overlay, config);
-
-        this.registerOverlay(overlay, definition);
-
-        if (definition.template) {
-
-            this.renderOverlay(overlay);
-        }
+        // TODO: add a no-element overlay trigger for overlays which have no triggerType and trigger
+        this.registerOverlay(overlay, config);
 
         return overlay;
     }
@@ -407,35 +125,17 @@ export class OverlayService {
      *
      * @returns True if the overlay was registered successfully, false if the overlay has been registered already
      */
-    registerOverlay (overlay: Overlay, definition?: OverlayDefinition): boolean {
+    registerOverlay (overlay: Overlay, config: Partial<OverlayConfig> = {}): boolean {
 
-        console.log('registerOverlay...', definition);
+        if (this.hasOverlay(overlay)) return false;
 
-        if (!this.hasOverlay(overlay)) {
+        this.registeredOverlays.set(overlay, this.configureOverlay(overlay, config));
 
-            if (!definition) {
+        this.attachOverlay(overlay);
 
-                // if no definition is provided with the register call, we extract it from the overlay properties
-                definition = this.configureOverlay(overlay, {
-                    triggerType: overlay.triggerType,
-                    positionType: overlay.positionType,
-                    template: overlay.template,
-                    context: overlay.context || overlay
-                });
+        this.renderOverlay(overlay);
 
-                console.log('registerOverlay...', definition);
-            }
-
-            this.registeredOverlays.set(overlay, definition);
-
-            this.attachOverlay(overlay);
-
-            return true;
-
-        } else {
-
-            return false;
-        }
+        return true;
     }
 
     openOverlay (overlay: Overlay, event?: Event) {
@@ -533,87 +233,87 @@ export class OverlayService {
 
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, context, positionStrategy } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, positionStrategy, config } = this.registeredOverlays.get(overlay)!;
 
-            context.addEventListener('update', updateListener as EventListener);
+            if (config.template && config.context) {
 
-            this.renderOverlay(overlay);
+                // to keep a template up-to-date with it's context, we have to render the template
+                // everytime the context renders - that is, on every update which was triggered
+                config.context.addEventListener('update', updateListener as EventListener);
 
-            positionStrategy.updatePosition();
+                this.renderOverlay(overlay);
+            }
+
+            if (positionStrategy) {
+
+                positionStrategy.update();
+            }
+
+            // TODO: manage backdrop
+
+            // if (config.backdrop) {
+
+            //     this.backdrop.show();
+            // }
         }
     }
 
     protected onOverlayClose (overlay: Overlay) {
 
+        // TODO: this doesn't get called when programmatic overlays close...
+        // the issue is the open-changed event being triggered in the overlay's update cycle
+        // which is after the overlay was destroyed already...
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, context } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, config } = this.registeredOverlays.get(overlay)!;
 
-            context.removeEventListener('update', updateListener as EventListener);
+            if (config.template && config.context) {
+
+                config.context.removeEventListener('update', updateListener as EventListener);
+            }
+
+            // this.backdrop.hide();
         }
     }
 
     protected configureOverlay (overlay: Overlay, config: Partial<OverlayConfig> = {}): OverlayDefinition {
 
-        const overlayConfig = { ...DEAFULT_OVERLAY_CONFIG, ...config };
-        const overlayDefinition = { ...this.registeredOverlays.get(overlay) } || {} as Partial<OverlayDefinition>;
+        console.log('configureOverlay()... ', overlay, config);
 
+        const definition: OverlayDefinition = {
+            config: config,
+            positionStrategy: this.createPositionStrategy(overlay, config),
+            overlayTrigger: this.createOverlayTrigger(overlay, config),
+            openChangeListener: (event: PropertyChangeEvent<boolean>) => {
 
+                const open = event.detail.current;
 
-        overlayDefinition.positionStrategy = this.positionStrategyFactory.createPositionStrategy(overlayConfig.positionType, overlay);
+                if (open) {
 
+                    this.onOverlayOpen(overlay);
 
+                } else {
 
-        if (overlayConfig.triggerType) {
+                    this.onOverlayClose(overlay);
+                }
+            },
+            updateListener: () => {
 
-            overlayDefinition.overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(overlayConfig.triggerType, overlay);
-        }
+                this.renderOverlay(overlay);
+            },
+            destroy: () => {
 
-        const openChangeListener = ((event: PropertyChangeEvent<boolean>) => {
+                overlay.removeEventListener('open-changed', definition.openChangeListener as EventListener);
 
-            const open = event.detail.current;
-
-            if (open) {
-
-                this.onOverlayOpen(overlay);
-
-            } else {
-
-                this.onOverlayClose(overlay);
+                this.disposePositionStrategy(overlay);
+                this.disposeOverlayTrigger(overlay);
             }
-        }) as EventListener;
 
-        overlay.addEventListener('open-changed', openChangeListener);
+        } as OverlayDefinition;
 
-        overlayDefinition.updateListener = () => {
+        overlay.addEventListener('open-changed', definition.openChangeListener as EventListener);
 
-            this.renderOverlay(overlay);
-        }
-
-
-
-
-        // to keep a template up-to-date with it's context, we have to render the template
-        // everytime the context renders - that is, on every update which was triggered
-
-
-        // we can use a component's 'update' event to re-render the template on every context update
-        // lit-html will take care of efficiently updating the DOM
-        // context.addEventListener('update', updateListener);
-
-        overlayDefinition.template = overlayConfig.template;
-        overlayDefinition.context = overlayConfig.context || overlay;
-
-
-        overlayDefinition.destroy = () => {
-
-            overlay.removeEventListener('open-changed', openChangeListener);
-            // context!.removeEventListener('update', updateListener);
-        };
-
-        overlayDefinition.config = overlayConfig;
-
-        return overlayDefinition as OverlayDefinition;
+        return definition;
     }
 
     updateOverlayConfig (overlay: Overlay, config: Partial<OverlayConfig> = {}) {
@@ -622,12 +322,60 @@ export class OverlayService {
 
         const overlayDefinition = this.registeredOverlays.get(overlay)!;
 
-        const overlayConfig: OverlayConfig = { ...overlayDefinition.config, ...config };
+        const overlayConfig: Partial<OverlayConfig> = { ...overlayDefinition.config, ...config };
+
+        this.updatePositionStrategy(overlay, overlayConfig);
 
         this.updateOverlayTrigger(overlay, overlayConfig);
 
         // finally store the updated config in the OverlayDefinition
         overlayDefinition.config = overlayConfig;
+    }
+
+    protected updatePositionStrategy (overlay: Overlay, config: Partial<OverlayConfig>) {
+
+        const definition = this.registeredOverlays.get(overlay)!;
+
+        const hasTypeChanged = definition.config.positionType !== config.positionType;
+        const hasConfigChanged = hasPositionConfigChanged(definition.config, config);
+
+        console.log('updatePositionStrategy... type changed: %s, config changed: %s', hasTypeChanged, hasConfigChanged);
+
+        if (hasTypeChanged || hasConfigChanged) {
+
+            this.disposePositionStrategy(overlay);
+
+            definition.positionStrategy = this.createPositionStrategy(overlay, config);
+        }
+    }
+
+    protected createPositionStrategy (overlay: Overlay, config: Partial<OverlayConfig>): PositionStrategy | undefined {
+
+        if (config.positionType) {
+
+            const positionStrategy = this.positionStrategyFactory.createPositionStrategy(
+                config.positionType,
+                overlay,
+                this._extractPositionConfig(config));
+
+            // the position strategy builds its own config based on the positionType setting, we need to reflect this back
+            // TODO: this seems a tad hacky...
+            Object.assign(config, positionStrategy.config);
+
+            return positionStrategy;
+        }
+    }
+
+    protected disposePositionStrategy (overlay: Overlay) {
+
+        const definition = this.registeredOverlays.get(overlay)!;
+
+        if (definition.positionStrategy) {
+
+            definition.positionStrategy.destroy();
+
+            definition.positionStrategy = undefined;
+        }
     }
 
     /**
@@ -637,39 +385,44 @@ export class OverlayService {
      * and re-attached to the new trigger element. If the trigger type changed, the old OverlayTrigger will be detached,
      * a new one will be created and attached to the trigger element.
      */
-    protected updateOverlayTrigger (overlay: Overlay, config: OverlayConfig) {
-
-        console.log('updateOverlayTrigger... ', config);
+    protected updateOverlayTrigger (overlay: Overlay, config: Partial<OverlayConfig>) {
 
         const definition = this.registeredOverlays.get(overlay)!;
 
+        const hasTypeChanged = config.triggerType !== definition.config.triggerType;
         const hasTriggerChanged = config.trigger !== definition.config.trigger;
-        const hasTriggerTypeChanged = config.triggerType !== definition.config.triggerType;
 
-        // if the trigger element or trigger type have changed, we need to detach an existing OverlayTrigger
-        if (hasTriggerChanged || hasTriggerTypeChanged) {
+        console.log('updateOverlayTrigger... type changed: %s, trigger changed: %s', hasTypeChanged, hasTriggerChanged);
 
-            if (definition.overlayTrigger) {
+        if (hasTriggerChanged || hasTypeChanged) {
 
-                definition.overlayTrigger.detach();
-            }
+            this.disposeOverlayTrigger(overlay);
+
+            definition.overlayTrigger = this.createOverlayTrigger(overlay, config);
         }
+    }
 
-        // if we have a new trigger type, we create a new OverlayTrigger
-        if (hasTriggerTypeChanged) {
+    protected createOverlayTrigger (overlay: Overlay, config: Partial<OverlayConfig>): OverlayTrigger | undefined {
 
-            definition.overlayTrigger = config.triggerType
-                ? this.overlayTriggerFactory.createOverlayTrigger(config.triggerType, overlay)
-                : undefined;
+        if (config.trigger && config.triggerType) {
+
+            const overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(config.triggerType, overlay);
+
+            overlayTrigger.attach(document.querySelector(config.trigger) as HTMLElement);
+
+            return overlayTrigger;
         }
+    }
 
-        // if the trigger element or trigger type have changed, we need to re-attach the OverlayTrigger to the trigger element
-        if (hasTriggerChanged || hasTriggerTypeChanged) {
+    protected disposeOverlayTrigger (overlay: Overlay) {
 
-            if (config.trigger && definition.overlayTrigger) {
+        const definition = this.registeredOverlays.get(overlay)!;
 
-                definition.overlayTrigger.attach(document.querySelector(config.trigger) as HTMLElement);
-            }
+        if (definition.overlayTrigger) {
+
+            definition.overlayTrigger.detach();
+
+            definition.overlayTrigger = undefined;
         }
     }
 
@@ -698,17 +451,30 @@ export class OverlayService {
 
         if (this.hasOverlay(overlay)) {
 
-            const { template, context } = this.registeredOverlays.get(overlay)!;
+            // TODO: use template and context from definition.config
+            const { template, context } = this.registeredOverlays.get(overlay)!.config;
 
             if (template) {
 
-                render(template(context), overlay, { eventContext: context });
+                // TODO: check if context is always available, otherwise use overlay as fallback-context
+                render(template(context || overlay), overlay, { eventContext: context || overlay });
             }
         }
+    }
 
-        // const result = template(context || overlay) || html``;
+    private _extractPositionConfig (overlayConfig: Partial<OverlayConfig>): Partial<PositionConfig> {
 
-        // render(result, overlay, { eventContext: context || overlay });
+        const positionConfig: Partial<PositionConfig> = {};
+
+        POSITION_CONFIG_FIELDS.forEach(key => {
+
+            if (overlayConfig[key] !== undefined) {
+
+                positionConfig[key] = overlayConfig[key] as any;
+            }
+        });
+
+        return positionConfig;
     }
 
     private _throwUnregiseredOverlay (overlay: Overlay) {

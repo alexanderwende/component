@@ -1,12 +1,12 @@
-import { OverlayTrigger, TooltipOverlayTrigger } from './overlay-trigger';
 import { Overlay } from './overlay';
+import { OverlayTrigger, TooltipOverlayTrigger, DefaultOverlayTrigger } from './overlay-trigger';
 
 export interface OverlayTriggerMap {
-    [key: string]: { new(...args: any[]): OverlayTrigger };
+    [key: string]: { new(overlay: Overlay): OverlayTrigger };
 }
 
 export const DEFAULT_OVERLAY_TRIGGERS: OverlayTriggerMap = {
-    default: OverlayTrigger,
+    default: DefaultOverlayTrigger,
     tooltip: TooltipOverlayTrigger,
 };
 
@@ -16,6 +16,8 @@ export class OverlayTriggerFactory {
 
     createOverlayTrigger (type: string, overlay: Overlay): OverlayTrigger {
 
-        return this.triggers[type] ? new this.triggers[type](overlay) : new OverlayTrigger(overlay);
+        return this.triggers[type]
+            ? new this.triggers[type](overlay)
+            : new DefaultOverlayTrigger(overlay);
     }
 }

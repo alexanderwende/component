@@ -233,16 +233,7 @@ export const template = (element: App) => html`
 
             <h2>Popover</h2>
 
-            <button id="popover">Show Popover</button>
-
-            <ui-overlay trigger="#popover" position-type="connected">
-                <!-- <template> -->
-                    <h3>Popover</h3>
-                    <p>This is the content of the popover: ${ element.counter }</p>
-                <!-- </template> -->
-            </ui-overlay>
-
-            <button id="overlay-programmatic" @click=${ element.showOverlay }>Show programmatic overlay</button>
+            <overlay-demo></overlay-demo>
         </div>
 
     </main>
