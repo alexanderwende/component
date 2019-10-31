@@ -1,6 +1,6 @@
-import { Behavior } from '../behavior';
-import { Tab } from '../keys';
 import { CSSSelector } from '../dom';
+import { Tab } from '../keys';
+import { FocusMonitor } from './focus-monitor';
 
 export const TABBABLES = [
     'a[href]:not([disabled]):not([tabindex^="-"])',
@@ -15,21 +15,21 @@ export const TABBABLES = [
 ];
 
 export interface FocusTrapConfig {
-    selector: CSSSelector;
-    wrap: boolean;
+    tabbableSelector: CSSSelector;
+    wrapFocus: boolean;
     autoFocus: boolean;
     restoreFocus: boolean;
     initialFocus?: CSSSelector;
 }
 
 export const DEFAULT_FOCUS_TRAP_CONFIG: FocusTrapConfig = {
-    selector: TABBABLES.join(','),
-    wrap: true,
+    tabbableSelector: TABBABLES.join(','),
+    wrapFocus: true,
     autoFocus: true,
     restoreFocus: true,
 };
 
-export class FocusTrap extends Behavior {
+export class FocusTrap extends FocusMonitor {
 
     protected tabbables!: NodeListOf<HTMLElement>;
 
@@ -112,7 +112,7 @@ export class FocusTrap extends Behavior {
 
         if (!this.hasAttached) return;
 
-        this.tabbables = this.element!.querySelectorAll(this.config.selector);
+        this.tabbables = this.element!.querySelectorAll(this.config.tabbableSelector);
 
         const length = this.tabbables.length;
 
@@ -133,13 +133,13 @@ export class FocusTrap extends Behavior {
                 console.log('FocusTrap.handleKeyDown...', event);
                 if (event.shiftKey && event.target === this.start) {
                     event.preventDefault();
-                    if (this.config.wrap) {
+                    if (this.config.wrapFocus) {
                         this.focusLast();
                     }
                 }
                 else if (!event.shiftKey && event.target === this.end) {
                     event.preventDefault();
-                    if (this.config.wrap) {
+                    if (this.config.wrapFocus) {
                         this.focusFirst();
                     }
                 }

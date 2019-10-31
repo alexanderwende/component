@@ -1,8 +1,9 @@
 import { Component } from '@partkit/component';
 import { TemplateFunction } from '../template-function';
+import { DEFAULT_FOCUS_TRAP_CONFIG, FocusTrapConfig } from './focus-trap';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position/position-config';
 
-export interface OverlayConfig extends PositionConfig {
+export type OverlayConfig = PositionConfig & FocusTrapConfig & {
     // TODO: maybe introduce a const for the 'viewport' value?
     positionType: string;
     trigger?: string;
@@ -10,11 +11,9 @@ export interface OverlayConfig extends PositionConfig {
     template?: TemplateFunction;
     context?: Component;
     backdrop: boolean;
+    trapFocus: boolean;
     closeOnEscape: boolean;
     closeOnBackdropClick: boolean;
-    autoFocus: boolean;
-    trapFocus: boolean;
-    restoreFocus: boolean;
 }
 
 export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
@@ -32,22 +31,24 @@ export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
     'backdrop',
     'closeOnEscape',
     'closeOnBackdropClick',
-    'autoFocus',
     'trapFocus',
+    'autoFocus',
+    'initialFocus',
     'restoreFocus',
+    'wrapFocus',
+    'tabbableSelector'
 ];
 
 export const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
     ...DEFAULT_POSITION_CONFIG,
+    ...DEFAULT_FOCUS_TRAP_CONFIG,
     positionType: 'fixed',
     trigger: undefined,
     triggerType: undefined,
     template: undefined,
     context: undefined,
     backdrop: true,
+    trapFocus: true,
     closeOnEscape: true,
     closeOnBackdropClick: true,
-    autoFocus: true,
-    trapFocus: true,
-    restoreFocus: true,
 };

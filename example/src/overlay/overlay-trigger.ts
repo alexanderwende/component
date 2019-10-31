@@ -1,21 +1,16 @@
 import { Behavior } from '../behavior';
-import { Enter, Escape, Space, Tab } from '../keys';
+import { Enter, Escape, Space } from '../keys';
 import { Overlay } from './overlay';
 import { OverlayService } from './overlay-service';
-import { FocusTrap } from './focus-trap';
 
 export interface OverlayTrigger extends Behavior {
 
     update (): void;
 }
 
-// TODO: add NoElementOverlayTrigger
-
 export class DefaultOverlayTrigger extends Behavior implements OverlayTrigger {
 
     protected overlayService = new OverlayService();
-
-    protected focusTrap = new FocusTrap();
 
     constructor (public overlay: Overlay) {
 
@@ -28,11 +23,11 @@ export class DefaultOverlayTrigger extends Behavior implements OverlayTrigger {
 
         this.element!.setAttribute('aria-haspopup', 'dialog');
 
-        this.eventManager.listen(this.element!, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
-        this.eventManager.listen(this.element!, 'mousedown', (event: Event) => this.handleMousedown(event as MouseEvent));
+        this.listen(this.element!, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
+        this.listen(this.element!, 'mousedown', (event: Event) => this.handleMousedown(event as MouseEvent));
 
-        this.eventManager.listen(this.overlay, 'open-changed', () => this.update());
-        this.eventManager.listen(this.overlay, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
+        this.listen(this.overlay, 'open-changed', () => this.update());
+        this.listen(this.overlay, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
 
         this.update();
     }
@@ -52,15 +47,6 @@ export class DefaultOverlayTrigger extends Behavior implements OverlayTrigger {
         if (!this.hasAttached) return;
 
         this.element!.setAttribute('aria-expanded', this.overlay.open ? 'true' : 'false');
-
-        if (this.overlay.open) {
-
-            this.focusTrap.attach(this.overlay);
-
-        } else {
-
-            this.focusTrap.detach();
-        }
     }
 
     protected handleKeydown (event: KeyboardEvent) {
@@ -115,11 +101,11 @@ export class TooltipOverlayTrigger extends Behavior implements OverlayTrigger {
         this.element!.setAttribute('tabindex', '0');
         this.element!.setAttribute('aria-describedby', this.overlay.id);
 
-        this.eventManager.listen(this.element!, 'mouseenter', (event) => this.openTooltip(event));
-        this.eventManager.listen(this.element!, 'mouseleave', (event) => this.closeTooltip(event));
+        this.listen(this.element!, 'mouseenter', (event) => this.openTooltip(event));
+        this.listen(this.element!, 'mouseleave', (event) => this.closeTooltip(event));
 
-        this.eventManager.listen(this.element!, 'focus', (event) => this.openTooltip(event));
-        this.eventManager.listen(this.element!, 'blur', (event) => this.closeTooltip(event));
+        this.listen(this.element!, 'focus', (event) => this.openTooltip(event));
+        this.listen(this.element!, 'blur', (event) => this.closeTooltip(event));
     }
 
     detach () {

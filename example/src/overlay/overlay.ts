@@ -1,7 +1,8 @@
 import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from '@partkit/component';
 import { html } from 'lit-html';
 import { TemplateFunction } from '../template-function';
-import { DEFAULT_OVERLAY_CONFIG, OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
+import { DEFAULT_FOCUS_TRAP_CONFIG } from './focus-trap';
+import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
 import { OverlayService } from './overlay-service';
 
 let OVERLAY_COUNTER = 0;
@@ -34,7 +35,8 @@ function nextOverlayId (): string {
 })
 export class Overlay extends Component {
 
-    private _config: Partial<OverlayConfig> = {};
+    // TODO: clean this up
+    private _config: Partial<OverlayConfig> = { ...DEFAULT_FOCUS_TRAP_CONFIG, trapFocus: true };
 
     protected isRegistered = false;
 

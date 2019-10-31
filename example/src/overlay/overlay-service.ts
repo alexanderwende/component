@@ -1,6 +1,7 @@
 import { PropertyChangeEvent } from '@partkit/component';
 import { render } from 'lit-html';
 import { insertAfter } from '../dom';
+import { FocusTrap, FocusTrapConfig } from './focus-trap';
 import { Overlay } from './overlay';
 import { OverlayBackdrop } from './overlay-backdrop';
 import { OverlayConfig } from './overlay-config';
@@ -9,6 +10,7 @@ import { OverlayTriggerFactory } from './overlay-trigger-factory';
 import { hasPositionConfigChanged, PositionConfig, POSITION_CONFIG_FIELDS } from './position/position-config';
 import { PositionStrategy } from './position/position-strategy';
 import { PositionStrategyFactory } from './position/position-strategy-factory';
+import { FocusChangeEvent } from './focus-monitor';
 
 const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overlay is not registered: ${ overlay.selector }`);
 
@@ -18,8 +20,10 @@ export interface OverlayDefinition {
     config: Partial<OverlayConfig>;
     positionStrategy?: PositionStrategy;
     overlayTrigger?: OverlayTrigger;
+    focusTrap?: FocusTrap;
     updateListener: (event: CustomEvent) => void;
     openChangeListener: (event: CustomEvent) => void;
+    focusChangeListener: (event: FocusChangeEvent) => void;
     destroy: () => void;
 }
 
@@ -110,7 +114,6 @@ export class OverlayService {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
-        // TODO: add a no-element overlay trigger for overlays which have no triggerType and trigger
         this.registerOverlay(overlay, config);
 
         return overlay;
@@ -233,7 +236,7 @@ export class OverlayService {
 
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, positionStrategy, config } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, positionStrategy, focusTrap, config } = this.registeredOverlays.get(overlay)!;
 
             if (config.template && config.context) {
 
@@ -247,6 +250,11 @@ export class OverlayService {
             if (positionStrategy) {
 
                 positionStrategy.update();
+            }
+
+            if (focusTrap) {
+
+                focusTrap.attach(overlay);
             }
 
             // TODO: manage backdrop
@@ -265,11 +273,16 @@ export class OverlayService {
         // which is after the overlay was destroyed already...
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, config } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, focusTrap, config } = this.registeredOverlays.get(overlay)!;
 
             if (config.template && config.context) {
 
                 config.context.removeEventListener('update', updateListener as EventListener);
+            }
+
+            if (focusTrap) {
+
+                focusTrap.detach();
             }
 
             // this.backdrop.hide();
@@ -284,34 +297,24 @@ export class OverlayService {
             config: config,
             positionStrategy: this.createPositionStrategy(overlay, config),
             overlayTrigger: this.createOverlayTrigger(overlay, config),
-            openChangeListener: (event: PropertyChangeEvent<boolean>) => {
-
-                const open = event.detail.current;
-
-                if (open) {
-
-                    this.onOverlayOpen(overlay);
-
-                } else {
-
-                    this.onOverlayClose(overlay);
-                }
-            },
-            updateListener: () => {
-
-                this.renderOverlay(overlay);
-            },
+            focusTrap: this.createFocusTrap(overlay, config),
+            updateListener: () => this.renderOverlay(overlay),
+            openChangeListener: (event: PropertyChangeEvent<boolean>) => this.handleOpenChange(overlay, event),
+            focusChangeListener: (event: FocusChangeEvent) => this.handleFocusChange(overlay, event),
             destroy: () => {
 
                 overlay.removeEventListener('open-changed', definition.openChangeListener as EventListener);
+                overlay.removeEventListener('focus-changed', definition.focusChangeListener as EventListener);
 
                 this.disposePositionStrategy(overlay);
                 this.disposeOverlayTrigger(overlay);
+                this.disposeFocusTrap(overlay);
             }
 
         } as OverlayDefinition;
 
         overlay.addEventListener('open-changed', definition.openChangeListener as EventListener);
+        overlay.addEventListener('focus-changed', definition.focusChangeListener as EventListener);
 
         return definition;
     }
@@ -426,6 +429,41 @@ export class OverlayService {
         }
     }
 
+    protected updateFocusTrap () { }
+
+    protected createFocusTrap (overlay: Overlay, config: Partial<OverlayConfig>): FocusTrap | undefined {
+
+        if (config.trapFocus) {
+
+            const focusTrapConfig = ['autoFocus', 'initialFocus', 'restoreFocus', 'wrapFocus'].reduce(
+                (previous, current) => {
+
+                    if (config[current as keyof FocusTrapConfig] !== undefined) {
+
+                        previous[current as keyof FocusTrapConfig] = config[current as keyof FocusTrapConfig] as any;
+                    }
+
+                    return previous;
+                },
+                {} as Partial<FocusTrapConfig>
+            )
+
+            return new FocusTrap(focusTrapConfig);
+        }
+    }
+
+    protected disposeFocusTrap (overlay: Overlay) {
+
+        const definition = this.registeredOverlays.get(overlay)!;
+
+        if (definition.focusTrap) {
+
+            definition.focusTrap.detach();
+
+            definition.focusTrap = undefined;
+        }
+    }
+
     /**
      * Attach an overlay to the {@link OverlayService}'s root element
      *
@@ -460,6 +498,25 @@ export class OverlayService {
                 render(template(context || overlay), overlay, { eventContext: context || overlay });
             }
         }
+    }
+
+    protected handleOpenChange (overlay: Overlay, event: PropertyChangeEvent<boolean>) {
+
+        const open = event.detail.current;
+
+        if (open) {
+
+            this.onOverlayOpen(overlay);
+
+        } else {
+
+            this.onOverlayClose(overlay);
+        }
+    }
+
+    protected handleFocusChange (overlay: Overlay, event: FocusChangeEvent) {
+
+        console.log('OverlayService.handleFocusChange()... ', event.detail.type, event.detail.event);
     }
 
     private _extractPositionConfig (overlayConfig: Partial<OverlayConfig>): Partial<PositionConfig> {

@@ -24,7 +24,7 @@ const customOverlayConfig: Partial<OverlayConfig> = {
 
 const tooltipOverlayConfig: Partial<OverlayConfig> = {
     backdrop: false,
-    autoFocus: false,
+    trapFocus: false,
     alignment: {
         origin: {
             horizontal: 'center',
