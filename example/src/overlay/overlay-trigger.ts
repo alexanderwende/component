@@ -65,19 +65,16 @@ export class DefaultOverlayTrigger extends Behavior implements OverlayTrigger {
 
             case Escape:
 
-                if (this.overlayService.isOverlayOpen(this.overlay)) {
+                if (!this.overlayService.isOverlayOpen(this.overlay)) return;
 
-                    this.overlayService.closeOverlay(this.overlay, event);
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
+                this.overlayService.closeOverlay(this.overlay, event);
+                event.preventDefault();
+                event.stopPropagation();
                 break;
         }
     }
 
     protected handleMousedown (event: MouseEvent) {
-
-        console.log('overlay-trigger.handleMousedown()...');
 
         this.overlayService.toggleOverlay(this.overlay, event);
     }
@@ -123,17 +120,11 @@ export class TooltipOverlayTrigger extends Behavior implements OverlayTrigger {
     protected openTooltip (event: Event) {
 
         this.overlayService.openOverlay(this.overlay, event);
-
-        // event.preventDefault();
-        // event.stopPropagation();
     }
 
     protected closeTooltip (event: Event) {
 
         this.overlayService.closeOverlay(this.overlay, event);
-
-        // event.preventDefault();
-        // event.stopPropagation();
     }
 }
 

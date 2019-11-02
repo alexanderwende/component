@@ -110,6 +110,12 @@ export class OverlayService {
         this.root.appendChild(this.backdrop);
     }
 
+    /**
+     * Create a new overlay
+     *
+     * @description
+     * Creates a new overlay instances and registers it with the service.
+     */
     createOverlay (config: Partial<OverlayConfig>): Overlay {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
@@ -120,7 +126,7 @@ export class OverlayService {
     }
 
     /**
-     * Register on overlay with the overlay service
+     * Register an overlay with the overlay service
      *
      * @description
      * Adds the overlay instance to the overlay service's registry, extracts the overlay's configuration and
@@ -145,62 +151,60 @@ export class OverlayService {
 
         this._throwUnregiseredOverlay(overlay);
 
-        if (!overlay.open) {
+        if (this.isOverlayOpen(overlay)) return;
 
-            // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
-            let length = this.activeOverlays.length,
-                index = length - 1;
+        // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
+        let length = this.activeOverlays.length,
+            index = length - 1;
 
-            if (event && length && event.target instanceof Node) {
+        if (event && length && event.target instanceof Node) {
 
-                for (index; index >= 0; index--) {
+            for (index; index >= 0; index--) {
 
-                    let activeOverlay = this.activeOverlays[index];
+                let activeOverlay = this.activeOverlays[index];
 
-                    if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
+                if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
 
-                        // we found the active overlay that caused the event, we keep the stack up to this overlay
-                        break;
+                    // we found the active overlay that caused the event, we keep the stack up to this overlay
+                    break;
 
-                    } else {
+                } else {
 
-                        // the active overlay didn't cause the event, so it should be closed and discarded from the stack
-                        this.closeOverlay(overlay);
-                    }
+                    // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+                    this.closeOverlay(overlay);
                 }
             }
-
-            // push overlay on the stack to mark it as currently active overlay
-            this.activeOverlays.push(overlay);
-
-            overlay.show();
         }
+
+        // push overlay on the stack to mark it as currently active overlay
+        this.activeOverlays.push(overlay);
+
+        overlay.show();
     }
 
     closeOverlay (overlay: Overlay, event?: Event) {
 
         this._throwUnregiseredOverlay(overlay);
 
-        if (this.isOverlayOpen(overlay)) {
+        if (!this.isOverlayOpen(overlay)) return;
 
-            let isFound = false;
+        let isFound = false;
 
-            while (!isFound) {
+        while (!isFound) {
 
-                // activeOverlay is either a descendant of overlay or overlay itself
-                let activeOverlay = this.activeOverlays.pop()!;
+            // activeOverlay is either a descendant of overlay or overlay itself
+            let activeOverlay = this.activeOverlays.pop()!;
 
-                // if we arrived at the overlay, we stop closing
-                isFound = activeOverlay === overlay;
+            // if we arrived at the overlay, we stop closing
+            isFound = activeOverlay === overlay;
 
-                activeOverlay.hide();
-            }
+            activeOverlay.hide();
         }
     }
 
     toggleOverlay (overlay: Overlay, event?: Event) {
 
-        if (overlay.open) {
+        if (this.isOverlayOpen(overlay)) {
 
             this.closeOverlay(overlay, event);
 
@@ -516,7 +520,17 @@ export class OverlayService {
 
     protected handleFocusChange (overlay: Overlay, event: FocusChangeEvent) {
 
-        console.log('OverlayService.handleFocusChange()... ', event.detail.type, event.detail.event);
+        const hasFocus = event.detail.type === 'focusin';
+
+        if (!hasFocus) {
+
+            // when loosing focus, we wait for potential focusin events on child overlays by delaying the active check with a promise
+            Promise.resolve().then(() => {
+
+                // then we check if the overlay is active and if not, we close it
+                if (!this.isOverlayActive(overlay)) this.closeOverlay(overlay, event);
+            })
+        }
     }
 
     private _extractPositionConfig (overlayConfig: Partial<OverlayConfig>): Partial<PositionConfig> {

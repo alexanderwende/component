@@ -98,13 +98,11 @@ export class FocusTrap extends FocusMonitor {
 
     focusFirst () {
 
-        console.log('focusFirst()... ', this.start);
         this.start.focus();
     }
 
     focusLast () {
 
-        console.log('focusLast()... ', this.end);
         this.end.focus();
     }
 
@@ -130,7 +128,7 @@ export class FocusTrap extends FocusMonitor {
         switch (event.key) {
 
             case Tab:
-                console.log('FocusTrap.handleKeyDown...', event);
+
                 if (event.shiftKey && event.target === this.start) {
                     event.preventDefault();
                     if (this.config.wrapFocus) {
