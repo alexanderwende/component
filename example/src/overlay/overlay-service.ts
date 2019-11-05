@@ -147,59 +147,112 @@ export class OverlayService {
         return true;
     }
 
-    openOverlay (overlay: Overlay, event?: Event) {
+    // openOverlay (overlay: Overlay, event?: Event) {
+
+    //     this._throwUnregiseredOverlay(overlay);
+
+    //     if (this.isOverlayOpen(overlay)) return;
+
+    //     // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
+    //     let length = this.activeOverlays.length,
+    //         index = length - 1;
+
+    //     if (event && length && event.target instanceof Node) {
+
+    //         for (index; index >= 0; index--) {
+
+    //             let activeOverlay = this.activeOverlays[index];
+
+    //             if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
+
+    //                 // we found the active overlay that caused the event, we keep the stack up to this overlay
+    //                 break;
+
+    //             } else {
+
+    //                 // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+    //                 this.closeOverlay(overlay);
+    //             }
+    //         }
+    //     }
+
+    //     // push overlay on the stack to mark it as currently active overlay
+    //     this.activeOverlays.push(overlay);
+
+    //     overlay.show();
+    // }
+
+    async openOverlay (overlay: Overlay, event?: Event): Promise<boolean> {
 
         this._throwUnregiseredOverlay(overlay);
 
-        if (this.isOverlayOpen(overlay)) return;
+        return new Promise((resolve, reject) => {
 
-        // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
-        let length = this.activeOverlays.length,
-            index = length - 1;
+            if (this.isOverlayOpen(overlay)) {
 
-        if (event && length && event.target instanceof Node) {
+                reject(false);
+                return;
+            }
 
-            for (index; index >= 0; index--) {
+            overlay.addEventListener('open-changed', (event) => resolve(true), { once: true });
 
-                let activeOverlay = this.activeOverlays[index];
+            // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
+            let length = this.activeOverlays.length,
+                index = length - 1;
 
-                if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
+            if (event && length && event.target instanceof Node) {
 
-                    // we found the active overlay that caused the event, we keep the stack up to this overlay
-                    break;
+                for (index; index >= 0; index--) {
 
-                } else {
+                    let activeOverlay = this.activeOverlays[index];
 
-                    // the active overlay didn't cause the event, so it should be closed and discarded from the stack
-                    this.closeOverlay(overlay);
+                    if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
+
+                        // we found the active overlay that caused the event, we keep the stack up to this overlay
+                        break;
+
+                    } else {
+
+                        // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+                        this.closeOverlay(overlay);
+                    }
                 }
             }
-        }
 
-        // push overlay on the stack to mark it as currently active overlay
-        this.activeOverlays.push(overlay);
+            // push overlay on the stack to mark it as currently active overlay
+            this.activeOverlays.push(overlay);
 
-        overlay.show();
+            overlay.show();
+        });
     }
 
-    closeOverlay (overlay: Overlay, event?: Event) {
+    async closeOverlay (overlay: Overlay, event?: Event): Promise<boolean> {
 
         this._throwUnregiseredOverlay(overlay);
 
-        if (!this.isOverlayOpen(overlay)) return;
+        return new Promise((resolve, reject) => {
 
-        let isFound = false;
+            if (!this.isOverlayOpen(overlay)) {
 
-        while (!isFound) {
+                reject(false);
+                return;
+            }
 
-            // activeOverlay is either a descendant of overlay or overlay itself
-            let activeOverlay = this.activeOverlays.pop()!;
+            overlay.addEventListener('open-changed', (event) => resolve(true), { once: true });
 
-            // if we arrived at the overlay, we stop closing
-            isFound = activeOverlay === overlay;
+            let isFound = false;
 
-            activeOverlay.hide();
-        }
+            while (!isFound) {
+
+                // activeOverlay is either a descendant of overlay or overlay itself
+                let activeOverlay = this.activeOverlays.pop()!;
+
+                // if we arrived at the overlay, we stop closing
+                isFound = activeOverlay === overlay;
+
+                activeOverlay.hide();
+            }
+        });
     }
 
     toggleOverlay (overlay: Overlay, event?: Event) {

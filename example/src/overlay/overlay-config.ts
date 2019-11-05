@@ -42,7 +42,7 @@ export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
 export const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
     ...DEFAULT_POSITION_CONFIG,
     ...DEFAULT_FOCUS_TRAP_CONFIG,
-    positionType: 'fixed',
+    positionType: 'default',
     trigger: undefined,
     triggerType: undefined,
     template: undefined,
