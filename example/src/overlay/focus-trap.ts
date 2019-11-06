@@ -39,8 +39,6 @@ export class FocusTrap extends FocusMonitor {
 
     protected config: FocusTrapConfig;
 
-    protected previousFocus!: HTMLElement;
-
     constructor (config?: Partial<FocusTrapConfig>) {
 
         super();
@@ -51,8 +49,6 @@ export class FocusTrap extends FocusMonitor {
     attach (element: HTMLElement) {
 
         super.attach(element);
-
-        this.previousFocus = document.activeElement as HTMLElement;
 
         this.listen(this.element!, 'keydown', ((event: KeyboardEvent) => this.handleKeyDown(event)) as EventListener);
 
@@ -67,11 +63,6 @@ export class FocusTrap extends FocusMonitor {
     detach () {
 
         if (!this.hasAttached) return;
-
-        if (this.config.restoreFocus) {
-
-            this.previousFocus.focus();
-        }
 
         super.detach();
     }
@@ -130,13 +121,17 @@ export class FocusTrap extends FocusMonitor {
             case Tab:
 
                 if (event.shiftKey && event.target === this.start) {
+
                     event.preventDefault();
+
                     if (this.config.wrapFocus) {
                         this.focusLast();
                     }
-                }
-                else if (!event.shiftKey && event.target === this.end) {
+
+                } else if (!event.shiftKey && event.target === this.end) {
+
                     event.preventDefault();
+
                     if (this.config.wrapFocus) {
                         this.focusFirst();
                     }
