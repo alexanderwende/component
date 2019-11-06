@@ -140,11 +140,6 @@ export class Overlay extends Component {
         }
     }
 
-    hasFocus () {
-
-        // TODO: should query overlay service to check for descendants with focus
-    }
-
     show () {
 
         if (!this.open) {

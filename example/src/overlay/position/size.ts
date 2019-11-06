@@ -1,8 +1,8 @@
 export interface Size {
-    width: string | number;
-    height: string | number;
-    maxWidth: string | number;
-    maxHeight: string | number;
+    width: number | string;
+    height: number | string;
+    maxWidth: number | string;
+    maxHeight: number | string;
 }
 
 export function hasSizeChanged (size?: Partial<Size>, other?: Partial<Size>): boolean {

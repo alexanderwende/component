@@ -3,10 +3,19 @@ import { AlignmentPair, hasAlignmentPairChanged } from './alignment';
 import { Position } from './position';
 import { hasSizeChanged, Size } from './size';
 
+export const VIEWPORT = 'viewport';
+
+export const ORIGIN = 'origin';
+
 /**
  * A PositionConfig contains the size and alignment of an Element and may include an origin, which references an origin Element
  */
 export interface PositionConfig extends Size {
+    // TODO: handle 'origin' case in PositionStrategy
+    width: number | string | 'origin';
+    height: number | string | 'origin';
+    maxWidth: number | string | 'origin';
+    maxHeight: number | string | 'origin';
     origin: Position | HTMLElement | CSSSelector | 'viewport';
     alignment: AlignmentPair;
 }
@@ -26,8 +35,6 @@ export const DEFAULT_POSITION_CONFIG: PositionConfig = {
     height: 'auto',
     maxHeight: '100vh',
     origin: 'viewport',
-    // TODO: add option to match width of origin element
-    // matchOriginWidth: false,
     alignment: {
         origin: {
             horizontal: 'center',

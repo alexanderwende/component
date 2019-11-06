@@ -1,10 +1,11 @@
+import { PropertyChangeEvent } from 'src/component';
 import { Behavior } from '../behavior';
+import { Enter, Escape, Space } from '../keys';
+import { FocusChangeEvent } from './focus-monitor';
 import { FocusTrap } from './focus-trap';
 import { Overlay } from './overlay';
 import { OverlayConfig } from './overlay-config';
 import { OverlayService } from './overlay-service';
-import { FocusChangeEvent } from './focus-monitor';
-import { Escape, Space, Enter } from '../keys';
 
 export class OverlayController extends Behavior {
 
@@ -18,8 +19,9 @@ export class OverlayController extends Behavior {
 
         super();
 
-        this.listen(this.overlay, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
-        this.listen(this.overlay, 'open-changed', () => this.update());
+        // TODO: these listeners will get detached when the controller gets detached, but not reattached on attach...
+        this.listen(this.overlay, 'keydown', event => this.handleKeydown(event as KeyboardEvent));
+        this.listen(this.overlay, 'open-changed', event => this.handleOpenChange(event as PropertyChangeEvent<boolean>));
 
         if (this.config.trapFocus) {
 
@@ -98,25 +100,9 @@ export class OverlayController extends Behavior {
         }
     }
 
-    protected saveFocus () {
+    protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
-        this.previousFocus = document.activeElement as HTMLElement || undefined;
-    }
-
-    protected restoreFocus (event?: Event) {
-
-        // we only restore the focus if the overlay is closed pressing Escape or programmatically
-        const restoreFocus = this.config.restoreFocus
-            && this.previousFocus
-            && (this.isEscape(event) || !event);
-
-        if (restoreFocus) {
-
-            console.log('OverlayController.restoreFocus...', event);
-            this.previousFocus!.focus();
-        }
-
-        this.previousFocus = undefined;
+        this.update();
     }
 
     protected handleFocusChange (event: FocusChangeEvent) {
@@ -162,6 +148,27 @@ export class OverlayController extends Behavior {
     protected handleMousedown (event: MouseEvent) {
 
         this.toggle(event);
+    }
+
+    protected saveFocus () {
+
+        this.previousFocus = document.activeElement as HTMLElement || undefined;
+    }
+
+    protected restoreFocus (event?: Event) {
+
+        // we only restore the focus if the overlay is closed pressing Escape or programmatically
+        const restoreFocus = this.config.restoreFocus
+            && this.previousFocus
+            && (this.isEscape(event) || !event);
+
+        if (restoreFocus) {
+
+            console.log('OverlayController.restoreFocus...', event);
+            this.previousFocus!.focus();
+        }
+
+        this.previousFocus = undefined;
     }
 
     protected isEscape (event?: Event): boolean {
