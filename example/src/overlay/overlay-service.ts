@@ -148,6 +148,27 @@ export class OverlayService {
         return true;
     }
 
+    getParentOverlay (overlay: Overlay): Overlay | undefined {
+
+        if (this.isOverlayOpen(overlay)) {
+
+            const index = this.activeOverlays.findIndex(current => current === overlay);
+
+            if (index > 0) {
+
+                return this.activeOverlays[index - 1];
+            }
+        }
+    }
+
+    getOverlayController (overlay: Overlay): OverlayController {
+
+        this._throwUnregiseredOverlay(overlay);
+
+        // TODO: fix typings once we switch fully to overlay-controller
+        return this.registeredOverlays.get(overlay)!.overlayTrigger as OverlayController;
+    }
+
     // openOverlay (overlay: Overlay, event?: Event) {
 
     //     this._throwUnregiseredOverlay(overlay);
@@ -227,6 +248,15 @@ export class OverlayService {
         });
     }
 
+    /**
+     * Close an overlay
+     *
+     * @description
+     * When closing an overlay, all its open descendant overlays have to be closed as well.
+     *
+     * @param overlay - The overlay to close
+     * @param event - An optional event that was responsible for closing the overlay
+     */
     async closeOverlay (overlay: Overlay, event?: Event): Promise<boolean> {
 
         this._throwUnregiseredOverlay(overlay);

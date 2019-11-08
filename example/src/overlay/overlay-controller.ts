@@ -111,6 +111,13 @@ export class OverlayController extends Behavior {
 
         if (!hasFocus) {
 
+            // TODO: the overlay-controller handles focus-loss and also creates the focus-trap in the first place
+            // maybe the overlay-controller could dispatch the focus-loss event to its parent overlay, so the parent
+            // overlay's controller could decide how to handle focus-loss and it doesn't have to be controlled in the
+            // overlay-service
+            // this would allow us to have modal overlays which don't close on focus-loss, but child overlays which do
+            // in fact, a modal-overlay-controller could even restore the focus in case it wasn't lost to a child overlay
+
             // when loosing focus, we wait for potential focusin events on child overlays by delaying the active check with a promise
             Promise.resolve().then(() => {
 
