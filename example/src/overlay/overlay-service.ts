@@ -1,17 +1,14 @@
 import { PropertyChangeEvent } from '@partkit/component';
 import { render } from 'lit-html';
 import { insertAfter } from '../dom';
-import { FocusTrap, FocusTrapConfig } from './focus-trap';
-import { Overlay } from './overlay';
-import { OverlayBackdrop } from './overlay-backdrop';
-import { OverlayConfig } from './overlay-config';
-import { OverlayTrigger } from './overlay-trigger';
-import { OverlayTriggerFactory } from './overlay-trigger-factory';
+import { OverlayController } from './controller/overlay-controller';
+import { OverlayControllerFactory } from './controller/overlay-controller-factory';
+import { FocusChangeEvent } from './focus-monitor';
+import { FocusTrap } from './focus-trap';
+import { Overlay, OverlayBackdrop, OverlayConfig } from './index';
 import { hasPositionConfigChanged, PositionConfig, POSITION_CONFIG_FIELDS } from './position/position-config';
 import { PositionStrategy } from './position/position-strategy';
 import { PositionStrategyFactory } from './position/position-strategy-factory';
-import { FocusChangeEvent } from './focus-monitor';
-import { OverlayController } from './overlay-controller';
 
 const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overlay is not registered: ${ overlay.selector }`);
 
@@ -20,7 +17,7 @@ let OVERLAY_SERVICE_INSTANCE: OverlayService | undefined;
 export interface OverlayDefinition {
     config: Partial<OverlayConfig>;
     positionStrategy?: PositionStrategy;
-    overlayTrigger?: OverlayTrigger;
+    overlayController?: OverlayController;
     focusTrap?: FocusTrap;
     updateListener: (event: CustomEvent) => void;
     openChangeListener: (event: CustomEvent) => void;
@@ -38,20 +35,47 @@ export class OverlayService {
 
     constructor (
         protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory(),
-        protected overlayTriggerFactory: OverlayTriggerFactory = new OverlayTriggerFactory(),
+        protected overlayControllerFactory: OverlayControllerFactory = new OverlayControllerFactory(),
         protected root: HTMLElement = document.body
     ) {
 
         if (!OVERLAY_SERVICE_INSTANCE) {
 
+            console.log('OverlayService.constructor()...');
+
             OVERLAY_SERVICE_INSTANCE = this;
 
             this.createBackdrop();
+
+            document.body.addEventListener('connected', event => {
+
+                if (event.target instanceof Overlay) {
+
+                    console.log(event);
+
+                    if (this.hasOverlay(event.target)) return;
+
+                    this.registerOverlay(event.target, event.target.config);
+                }
+            });
+
+            document.body.addEventListener('disconnected', event => {
+
+                if (event.target instanceof Overlay) {
+
+                    console.log(event);
+
+                    if (!this.hasOverlay(event.target)) return;
+
+                    this.destroyOverlay(event.target, false);
+                }
+            });
         }
 
         return OVERLAY_SERVICE_INSTANCE;
     }
 
+    // TODO: maybe not needed? if needed, it's wrong as we can have unstacked open overlays
     hasOpenOverlays () {
 
         return this.activeOverlays.length > 0;
@@ -66,7 +90,10 @@ export class OverlayService {
 
         this._throwUnregiseredOverlay(overlay);
 
-        return this.activeOverlays.includes(overlay);
+        return overlay.open;
+
+        // TODO: this no longer works with unstacked overlays
+        // return this.activeOverlays.includes(overlay);
     }
 
     /**
@@ -102,6 +129,19 @@ export class OverlayService {
         }
 
         return isActive;
+    }
+
+    getParentOverlay (overlay: Overlay): Overlay | undefined {
+
+        if (this.isOverlayOpen(overlay)) {
+
+            const index = this.activeOverlays.findIndex(current => current === overlay);
+
+            if (index > 0) {
+
+                return this.activeOverlays[index - 1];
+            }
+        }
     }
 
     createBackdrop () {
@@ -148,62 +188,6 @@ export class OverlayService {
         return true;
     }
 
-    getParentOverlay (overlay: Overlay): Overlay | undefined {
-
-        if (this.isOverlayOpen(overlay)) {
-
-            const index = this.activeOverlays.findIndex(current => current === overlay);
-
-            if (index > 0) {
-
-                return this.activeOverlays[index - 1];
-            }
-        }
-    }
-
-    getOverlayController (overlay: Overlay): OverlayController {
-
-        this._throwUnregiseredOverlay(overlay);
-
-        // TODO: fix typings once we switch fully to overlay-controller
-        return this.registeredOverlays.get(overlay)!.overlayTrigger as OverlayController;
-    }
-
-    // openOverlay (overlay: Overlay, event?: Event) {
-
-    //     this._throwUnregiseredOverlay(overlay);
-
-    //     if (this.isOverlayOpen(overlay)) return;
-
-    //     // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
-    //     let length = this.activeOverlays.length,
-    //         index = length - 1;
-
-    //     if (event && length && event.target instanceof Node) {
-
-    //         for (index; index >= 0; index--) {
-
-    //             let activeOverlay = this.activeOverlays[index];
-
-    //             if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
-
-    //                 // we found the active overlay that caused the event, we keep the stack up to this overlay
-    //                 break;
-
-    //             } else {
-
-    //                 // the active overlay didn't cause the event, so it should be closed and discarded from the stack
-    //                 this.closeOverlay(overlay);
-    //             }
-    //         }
-    //     }
-
-    //     // push overlay on the stack to mark it as currently active overlay
-    //     this.activeOverlays.push(overlay);
-
-    //     overlay.show();
-    // }
-
     async openOverlay (overlay: Overlay, event?: Event): Promise<boolean> {
 
         this._throwUnregiseredOverlay(overlay);
@@ -218,33 +202,41 @@ export class OverlayService {
 
             overlay.addEventListener('open-changed', (event) => resolve(true), { once: true });
 
-            // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
-            let length = this.activeOverlays.length,
-                index = length - 1;
+            const config = this.registeredOverlays.get(overlay)!.config;
 
-            if (event && length && event.target instanceof Node) {
+            if (config.stacked) {
 
-                for (index; index >= 0; index--) {
+                // we need to check if an event caused the overlay to open and if it originates from any active overlay in the stack
+                let length = this.activeOverlays.length,
+                    index = length - 1;
 
-                    let activeOverlay = this.activeOverlays[index];
+                if (event && length && event.target instanceof Node) {
 
-                    if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
+                    for (index; index >= 0; index--) {
 
-                        // we found the active overlay that caused the event, we keep the stack up to this overlay
-                        break;
+                        let activeOverlay = this.activeOverlays[index];
 
-                    } else {
+                        if (activeOverlay === event.target || activeOverlay.contains(event.target)) {
 
-                        // the active overlay didn't cause the event, so it should be closed and discarded from the stack
-                        this.closeOverlay(overlay);
+                            // we found the active overlay that caused the event, we keep the stack up to this overlay
+                            break;
+
+                        } else {
+
+                            // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+                            this.closeOverlay(overlay);
+                        }
                     }
                 }
+
+                // push overlay on the stack to mark it as currently active overlay
+                this.activeOverlays.push(overlay);
             }
 
-            // push overlay on the stack to mark it as currently active overlay
-            this.activeOverlays.push(overlay);
+            // overlay.show();
+            overlay.open = true;
 
-            overlay.show();
+            console.log(this.activeOverlays);
         });
     }
 
@@ -271,17 +263,28 @@ export class OverlayService {
 
             overlay.addEventListener('open-changed', (event) => resolve(true), { once: true });
 
-            let isFound = false;
+            const config = this.registeredOverlays.get(overlay)!.config;
 
-            while (!isFound) {
+            if (config.stacked) {
 
-                // activeOverlay is either a descendant of overlay or overlay itself
-                let activeOverlay = this.activeOverlays.pop()!;
+                let isFound = false;
 
-                // if we arrived at the overlay, we stop closing
-                isFound = activeOverlay === overlay;
+                while (!isFound) {
 
-                activeOverlay.hide();
+                    // activeOverlay is either a descendant of overlay or overlay itself
+                    let activeOverlay = this.activeOverlays.pop()!;
+
+                    // if we arrived at the overlay, we stop closing
+                    isFound = activeOverlay === overlay || activeOverlay === undefined;
+
+                    // activeOverlay.hide();
+                    overlay.open = false;
+                }
+
+            } else {
+
+                // overlay.hide();
+                overlay.open = false;
             }
         });
     }
@@ -324,7 +327,7 @@ export class OverlayService {
 
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, positionStrategy, focusTrap, config } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, positionStrategy, config } = this.registeredOverlays.get(overlay)!;
 
             if (config.template && config.context) {
 
@@ -339,11 +342,6 @@ export class OverlayService {
 
                 positionStrategy.update();
             }
-
-            // if (focusTrap) {
-
-            //     focusTrap.attach(overlay);
-            // }
 
             // TODO: manage backdrop
 
@@ -361,17 +359,12 @@ export class OverlayService {
         // which is after the overlay was destroyed already...
         if (this.hasOverlay(overlay)) {
 
-            const { updateListener, focusTrap, config } = this.registeredOverlays.get(overlay)!;
+            const { updateListener, config } = this.registeredOverlays.get(overlay)!;
 
             if (config.template && config.context) {
 
                 config.context.removeEventListener('update', updateListener as EventListener);
             }
-
-            // if (focusTrap) {
-
-            //     focusTrap.detach();
-            // }
 
             // this.backdrop.hide();
         }
@@ -384,25 +377,21 @@ export class OverlayService {
         const definition: OverlayDefinition = {
             config: config,
             positionStrategy: this.createPositionStrategy(overlay, config),
-            overlayTrigger: this.createOverlayTrigger(overlay, config),
-            // focusTrap: this.createFocusTrap(overlay, config),
+            overlayController: this.createOverlayController(overlay, config),
             updateListener: () => this.renderOverlay(overlay),
             openChangeListener: (event: PropertyChangeEvent<boolean>) => this.handleOpenChange(overlay, event),
             focusChangeListener: (event: FocusChangeEvent) => this.handleFocusChange(overlay, event),
             destroy: () => {
 
                 overlay.removeEventListener('open-changed', definition.openChangeListener as EventListener);
-                // overlay.removeEventListener('focus-changed', definition.focusChangeListener as EventListener);
 
                 this.disposePositionStrategy(overlay);
-                this.disposeOverlayTrigger(overlay);
-                // this.disposeFocusTrap(overlay);
+                this.disposeOverlayController(overlay);
             }
 
         } as OverlayDefinition;
 
         overlay.addEventListener('open-changed', definition.openChangeListener as EventListener);
-        // overlay.addEventListener('focus-changed', definition.focusChangeListener as EventListener);
 
         return definition;
     }
@@ -417,7 +406,7 @@ export class OverlayService {
 
         this.updatePositionStrategy(overlay, overlayConfig);
 
-        this.updateOverlayTrigger(overlay, overlayConfig);
+        this.updateOverlayController(overlay, overlayConfig);
 
         // finally store the updated config in the OverlayDefinition
         overlayDefinition.config = overlayConfig;
@@ -476,80 +465,45 @@ export class OverlayService {
      * and re-attached to the new trigger element. If the trigger type changed, the old OverlayTrigger will be detached,
      * a new one will be created and attached to the trigger element.
      */
-    protected updateOverlayTrigger (overlay: Overlay, config: Partial<OverlayConfig>) {
+    protected updateOverlayController (overlay: Overlay, config: Partial<OverlayConfig>) {
 
         const definition = this.registeredOverlays.get(overlay)!;
 
-        const hasTypeChanged = config.triggerType !== definition.config.triggerType;
-        const hasTriggerChanged = config.trigger !== definition.config.trigger;
+        const hasTypeChanged = config.controllerType !== definition.config.controllerType;
+        const hasTriggerChanged = config.controller !== definition.config.controller;
 
         console.log('updateOverlayTrigger... type changed: %s, trigger changed: %s', hasTypeChanged, hasTriggerChanged);
 
         if (hasTriggerChanged || hasTypeChanged) {
 
-            this.disposeOverlayTrigger(overlay);
+            this.disposeOverlayController(overlay);
 
-            definition.overlayTrigger = this.createOverlayTrigger(overlay, config);
+            definition.overlayController = this.createOverlayController(overlay, config);
         }
     }
 
-    protected createOverlayTrigger (overlay: Overlay, config: Partial<OverlayConfig>): OverlayTrigger | undefined {
+    protected createOverlayController (overlay: Overlay, config: Partial<OverlayConfig>): OverlayController | undefined {
 
-        if (config.trigger && config.triggerType) {
+        if (config.controllerType) {
 
-            // const overlayTrigger = this.overlayTriggerFactory.createOverlayTrigger(config.triggerType, overlay);
-            const overlayTrigger = new OverlayController(overlay, config);
+            const overlayController = this.overlayControllerFactory.createOverlayController(config.controllerType, overlay, this, config);
+            const controllerElement = config.controller ? document.querySelector(config.controller) as HTMLElement || undefined : undefined;
 
-            overlayTrigger.attach(document.querySelector(config.trigger) as HTMLElement);
+            overlayController.attach(controllerElement);
 
-            return overlayTrigger;
+            return overlayController;
         }
     }
 
-    protected disposeOverlayTrigger (overlay: Overlay) {
+    protected disposeOverlayController (overlay: Overlay) {
 
         const definition = this.registeredOverlays.get(overlay)!;
 
-        if (definition.overlayTrigger) {
+        if (definition.overlayController) {
 
-            definition.overlayTrigger.detach();
+            definition.overlayController.detach();
 
-            definition.overlayTrigger = undefined;
-        }
-    }
-
-    protected updateFocusTrap () { }
-
-    protected createFocusTrap (overlay: Overlay, config: Partial<OverlayConfig>): FocusTrap | undefined {
-
-        if (config.trapFocus) {
-
-            const focusTrapConfig = ['autoFocus', 'initialFocus', 'restoreFocus', 'wrapFocus'].reduce(
-                (previous, current) => {
-
-                    if (config[current as keyof FocusTrapConfig] !== undefined) {
-
-                        previous[current as keyof FocusTrapConfig] = config[current as keyof FocusTrapConfig] as any;
-                    }
-
-                    return previous;
-                },
-                {} as Partial<FocusTrapConfig>
-            )
-
-            return new FocusTrap(focusTrapConfig);
-        }
-    }
-
-    protected disposeFocusTrap (overlay: Overlay) {
-
-        const definition = this.registeredOverlays.get(overlay)!;
-
-        if (definition.focusTrap) {
-
-            definition.focusTrap.detach();
-
-            definition.focusTrap = undefined;
+            definition.overlayController = undefined;
         }
     }
 

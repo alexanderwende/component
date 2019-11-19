@@ -25,6 +25,7 @@ const customOverlayConfig: Partial<OverlayConfig> = {
 const tooltipOverlayConfig: Partial<OverlayConfig> = {
     backdrop: false,
     trapFocus: false,
+    stacked: false,
     alignment: {
         origin: {
             horizontal: 'center',
@@ -47,7 +48,7 @@ const tooltipOverlayConfig: Partial<OverlayConfig> = {
     template: (element) => html`
     <button id="overlay">Show Overlay</button>
 
-    <ui-overlay trigger="#overlay" position-type="connected" origin="#overlay" .config=${ customOverlayConfig }>
+    <ui-overlay controller="#overlay" controller-type="dialog" position-type="connected" origin="#overlay" .config=${ customOverlayConfig }>
         <h3>Overlay</h3>
         <p>This is the content of the overlay: ${ element.counter }</p>
         <p>
@@ -60,7 +61,7 @@ const tooltipOverlayConfig: Partial<OverlayConfig> = {
         </p>
     </ui-overlay>
 
-    <ui-overlay trigger="#another-overlay" position-type="connected" origin="#another-overlay">
+    <ui-overlay controller="#another-overlay" controller-type="dialog" position-type="connected" origin="#another-overlay">
         <h3>Another Overlay</h3>
         <p>Just some static content...</p>
     </ui-overlay>
@@ -69,8 +70,12 @@ const tooltipOverlayConfig: Partial<OverlayConfig> = {
 
     <p>We have <a href="#" id="tooltip">tooltips</a> too...</p>
 
-    <ui-overlay trigger="#tooltip" trigger-type="tooltip" position-type="connected" origin="#tooltip" .config=${ tooltipOverlayConfig }>
+    <ui-overlay controller="#tooltip" controller-type="tooltip" position-type="connected" origin="#tooltip" .config=${ tooltipOverlayConfig }>
         <p>I am the tooltip content.</p>
+    </ui-overlay>
+
+    <ui-overlay controller="#tooltip" controller-type="dialog" position-type="connected" origin="#tooltip">
+        <p>I'm another overlay on the tooltip trigger.</p>
     </ui-overlay>
     `
 })
@@ -126,7 +131,7 @@ export class OverlayDemoComponent extends Component {
 
             // pass the template function and a reference to the template's context (the app component)
             // to the overlay service
-            this.overlay = this.overlayService.createOverlay({ positionType: 'centered', template: template, context: this });
+            this.overlay = this.overlayService.createOverlay({ positionType: 'centered', controllerType: 'default', template: template, context: this, stacked: true, trapFocus: true, autoFocus: true });
         }
 
         this.overlayService.openOverlay(this.overlay);

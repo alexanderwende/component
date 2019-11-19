@@ -50,14 +50,14 @@ export class FocusTrap extends FocusMonitor {
 
         super.attach(element);
 
-        this.listen(this.element!, 'keydown', ((event: KeyboardEvent) => this.handleKeyDown(event)) as EventListener);
-
         this.update();
 
         if (this.config.autoFocus) {
 
             this.focusInitial();
         }
+
+        this.listen(this.element!, 'keydown', ((event: KeyboardEvent) => this.handleKeyDown(event)) as EventListener);
     }
 
     detach () {

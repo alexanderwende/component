@@ -2,8 +2,7 @@ import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverter
 import { html } from 'lit-html';
 import { TemplateFunction } from '../template-function';
 import { DEFAULT_FOCUS_TRAP_CONFIG } from './focus-trap';
-import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
-import { OverlayService } from './overlay-service';
+import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './index';
 
 let OVERLAY_COUNTER = 0;
 
@@ -38,15 +37,30 @@ export class Overlay extends Component {
     // TODO: clean this up
     private _config: Partial<OverlayConfig> = { ...DEFAULT_FOCUS_TRAP_CONFIG, trapFocus: true };
 
-    protected isRegistered = false;
+    protected _open = false;
 
-    protected overlayService = new OverlayService();
+    // protected isRegistered = false;
+
+    // protected overlayService = new OverlayService();
 
     @property<Overlay>({
         converter: AttributeConverterBoolean,
-        reflectProperty: 'reflectOpen'
+        reflectProperty: 'reflectOpen',
     })
-    open = false;
+    get open (): boolean {
+
+        return this._open;
+    }
+
+    set open (open: boolean) {
+
+        if (open !== this._open) {
+
+            this._open = open;
+
+            this.notifyProperty('open', !open, open);
+        }
+    }
 
     @property({
         converter: AttributeConverterNumber
@@ -63,10 +77,10 @@ export class Overlay extends Component {
     context: Component | undefined;
 
     @property()
-    trigger!: string;
+    controller!: string;
 
     @property()
-    triggerType = 'default';
+    controllerType = 'default';
 
     @property()
     positionType = 'default';
@@ -96,16 +110,18 @@ export class Overlay extends Component {
 
     connectedCallback () {
 
-        if (!this.overlayService.hasOverlay(this)) {
-
-            this.isRegistered = this.overlayService.registerOverlay(this, this.config);
-
-            return;
-        }
-
         this.id = this.id || nextOverlayId();
 
         this.role = 'dialog';
+
+        this.reflectOpen();
+
+        // if (!this.overlayService.hasOverlay(this)) {
+
+        //     this.isRegistered = this.overlayService.registerOverlay(this, this.config);
+
+        //     return;
+        // }
 
         super.connectedCallback();
     }
@@ -116,10 +132,10 @@ export class Overlay extends Component {
         // however, during registration, the overlay will be moved to the document body, which
         // essentially removes and reattaches the overlay; during this time the overlay won't
         // be registered yet and we don't remove the overlay from the overlay service
-        if (this.isRegistered) {
+        // if (this.isRegistered) {
 
-            this.overlayService.destroyOverlay(this, false);
-        }
+        //     this.overlayService.destroyOverlay(this, false);
+        // }
 
         super.disconnectedCallback();
     }
@@ -142,18 +158,20 @@ export class Overlay extends Component {
 
     show () {
 
-        if (!this.open) {
+        // if (!this.open) {
 
-            this.watch(() => this.open = true);
-        }
+            // this.watch(() => this.open = true);
+            this.open = true;
+        // }
     }
 
     hide () {
 
-        if (this.open) {
+        // if (this.open) {
 
-            this.watch(() => this.open = false);
-        }
+            // this.watch(() => this.open = false);
+            this.open = false;
+        // }
     }
 
     toggle () {
