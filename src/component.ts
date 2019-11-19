@@ -1015,7 +1015,9 @@ export abstract class Component extends HTMLElement {
     private _notifyLifecycle (lifecycle: 'adopted' | 'connected' | 'disconnected' | 'update', detail?: object) {
 
         this.dispatchEvent(new CustomEvent(lifecycle, {
+            bubbles: true,
             composed: true,
+            cancelable: true,
             ...(detail ? { detail: detail } : {})
         }));
     }
