@@ -17,7 +17,9 @@
 ### Templates
 
 * Defining a template
-* Injecting helpers into a template
+  * Inline
+  * Importing template from template module (ts file which exports template function)
+* Injecting helpers into a template (see accordion-panel.ts)
 * lit-html documentation link
 
 ### Styles
@@ -27,6 +29,7 @@
   * Inline styles
   * Importing styles from css modules
 * Inheriting component styles
+* Creating css mixins and functions through css-in-js
 
 ### Attributes and Properties
 
