@@ -2,5 +2,11 @@
   "defaultSeverity": "error",
   "extends": [
     "tslint-clean-code"
-  ]
+  ],
+  "rules": {
+    "quotemark": [
+      true,
+      "single"
+    ]
+  }
 }
