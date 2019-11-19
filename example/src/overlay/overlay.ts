@@ -1,15 +1,11 @@
 import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from '@partkit/component';
 import { html } from 'lit-html';
+import { IDGenerator } from '../id-generator';
 import { TemplateFunction } from '../template-function';
 import { DEFAULT_FOCUS_TRAP_CONFIG } from './focus-trap';
 import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './index';
 
-let OVERLAY_COUNTER = 0;
-
-function nextOverlayId (): string {
-
-    return `partkit-overlay-${ OVERLAY_COUNTER++ }`;
-}
+const ID_GENERATOR = new IDGenerator('partkit-overlay-');
 
 @component<Overlay>({
     selector: 'ui-overlay',
@@ -110,7 +106,7 @@ export class Overlay extends Component {
 
     connectedCallback () {
 
-        this.id = this.id || nextOverlayId();
+        this.id = this.id || ID_GENERATOR.getNextID();
 
         this.role = 'dialog';
 
@@ -160,8 +156,8 @@ export class Overlay extends Component {
 
         // if (!this.open) {
 
-            // this.watch(() => this.open = true);
-            this.open = true;
+        // this.watch(() => this.open = true);
+        this.open = true;
         // }
     }
 
@@ -169,8 +165,8 @@ export class Overlay extends Component {
 
         // if (this.open) {
 
-            // this.watch(() => this.open = false);
-            this.open = false;
+        // this.watch(() => this.open = false);
+        this.open = false;
         // }
     }
 
