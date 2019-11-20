@@ -1,9 +1,10 @@
-import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, property } from '@partkit/component';
+import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, listener, property } from '@partkit/component';
 import { html } from 'lit-html';
+import { dispatch } from '../event-manager';
 import { IDGenerator } from '../id-generator';
 import { TemplateFunction } from '../template-function';
 import { DEFAULT_FOCUS_TRAP_CONFIG } from './focus-trap';
-import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './index';
+import { OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
 
 const ID_GENERATOR = new IDGenerator('partkit-overlay-');
 
@@ -35,13 +36,9 @@ export class Overlay extends Component {
 
     protected _open = false;
 
-    // protected isRegistered = false;
-
-    // protected overlayService = new OverlayService();
-
     @property<Overlay>({
         converter: AttributeConverterBoolean,
-        reflectProperty: 'reflectOpen',
+        reflectProperty: 'reflectOpen'
     })
     get open (): boolean {
 
@@ -50,12 +47,18 @@ export class Overlay extends Component {
 
     set open (open: boolean) {
 
-        if (open !== this._open) {
+        if (open === this.open) return;
 
-            this._open = open;
-
-            this.notifyProperty('open', !open, open);
-        }
+        // setting the open property of the overlay doesn't actually set anything, therefore requestUpdate won't see any changes
+        // instead, we dispatch an event which acts as a command to open or close the overlay
+        // we do this to allow the OverlayService and OverlayControllers to listen to these events and run their appropriate logic
+        // in the same way, the OverlayService and OverlayController can dispatch this event and the overlay will behave as if its
+        // open property would have been set, without re-emitting the same event
+        // we will handle the actual property change in the handlers below and also call requestUpdate from there
+        dispatch(this, open ? 'command-open' : 'command-close', {
+            target: this,
+            source: undefined,
+        });
     }
 
     @property({
@@ -107,33 +110,11 @@ export class Overlay extends Component {
     connectedCallback () {
 
         this.id = this.id || ID_GENERATOR.getNextID();
-
-        this.role = 'dialog';
+        this.role = this.getAttribute('role') || 'dialog';
 
         this.reflectOpen();
 
-        // if (!this.overlayService.hasOverlay(this)) {
-
-        //     this.isRegistered = this.overlayService.registerOverlay(this, this.config);
-
-        //     return;
-        // }
-
         super.connectedCallback();
-    }
-
-    disconnectedCallback () {
-
-        // we remove the overlay from the overlay service when the overlay gets disconnected
-        // however, during registration, the overlay will be moved to the document body, which
-        // essentially removes and reattaches the overlay; during this time the overlay won't
-        // be registered yet and we don't remove the overlay from the overlay service
-        // if (this.isRegistered) {
-
-        //     this.overlayService.destroyOverlay(this, false);
-        // }
-
-        super.disconnectedCallback();
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
@@ -152,36 +133,6 @@ export class Overlay extends Component {
         }
     }
 
-    show () {
-
-        // if (!this.open) {
-
-        // this.watch(() => this.open = true);
-        this.open = true;
-        // }
-    }
-
-    hide () {
-
-        // if (this.open) {
-
-        // this.watch(() => this.open = false);
-        this.open = false;
-        // }
-    }
-
-    toggle () {
-
-        if (!this.open) {
-
-            this.show();
-
-        } else {
-
-            this.hide();
-        }
-    }
-
     reflectOpen () {
 
         if (this.open) {
@@ -193,6 +144,52 @@ export class Overlay extends Component {
 
             this.removeAttribute('open');
             this.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    @listener({
+        event: 'command-open',
+        options: { capture: true },
+    })
+    protected handleOpen (event: CustomEvent) {
+
+        if (!this.open) {
+
+            this._open = true;
+
+            // TODO: we need to also make the property reflect!
+            this.requestUpdate('open', false, true);
+        }
+    }
+
+    @listener({
+        event: 'command-close',
+        options: { capture: true },
+    })
+    protected handleClose (event: CustomEvent) {
+
+        if (this.open) {
+
+            this._open = false;
+
+            this.requestUpdate('open', true, false);
+        }
+    }
+
+    // TODO: see if we actually need this...
+    @listener({
+        event: 'command-toggle',
+        options: { capture: true },
+    })
+    protected handleToggle (event: CustomEvent) {
+
+        if (this.open) {
+
+            this.handleClose(event);
+
+        } else {
+
+            this.handleOpen(event);
         }
     }
 }
