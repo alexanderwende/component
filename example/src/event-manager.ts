@@ -15,6 +15,20 @@ export function isEventBinding (binding: any): binding is EventBinding {
 }
 
 /**
+ * Dispatches a CustomEvent on the target
+ */
+export function dispatch<T = any> (target: EventTarget, type: string, detail?: T, eventInit?: Partial<EventInit>): boolean {
+
+    return target.dispatchEvent(new CustomEvent(type, {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        ...eventInit,
+        detail
+    }));
+}
+
+/**
  * A class for managing event listeners
  *
  * @description
