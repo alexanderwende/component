@@ -331,7 +331,55 @@ export class OverlayService {
         const overlay = event.detail.target;
         const source = event.detail.source;
 
-        this.activeOverlays.add(overlay);
+        const { config, events, positionStrategy } = this.registeredOverlays.get(overlay)!;
+
+        if (config.stacked) {
+
+            if (source && source.target instanceof Node && this.activeOverlays.size) {
+
+                const activeOverlays = [...this.activeOverlays];
+
+                for (let index = activeOverlays.length - 1; index >= 0; index--) {
+
+                    const lastOverlay = activeOverlays[index];
+
+                    if (lastOverlay === source.target || lastOverlay.contains(source.target)) {
+
+                        // we found the active overlay that caused the event, we keep the stack up to this overlay
+                        break;
+
+                    } else {
+
+                        // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+                        this.closeOverlay(overlay);
+                    }
+                }
+            }
+
+            this.activeOverlays.add(overlay);
+        }
+
+        if (config.template && config.context) {
+
+            // to keep a template up-to-date with it's context, we have to render the template
+            // everytime the context renders - that is, on every update which was triggered
+
+            // config.context.addEventListener('update', updateListener as EventListener);
+
+            this.renderOverlay(overlay);
+        }
+
+        if (positionStrategy) {
+
+            positionStrategy.update();
+        }
+
+        // TODO: manage backdrop
+
+        // if (config.backdrop) {
+
+        //     this.backdrop.show();
+        // }
     }
 
     handleCommandClose (event: CustomEvent) {
