@@ -46,9 +46,9 @@ export class FocusTrap extends FocusMonitor {
         this.config = { ...DEFAULT_FOCUS_TRAP_CONFIG, ...config };
     }
 
-    attach (element: HTMLElement) {
+    attach (element: HTMLElement): boolean {
 
-        super.attach(element);
+        if (!super.attach(element)) return false;
 
         this.update();
 
@@ -58,13 +58,13 @@ export class FocusTrap extends FocusMonitor {
         }
 
         this.listen(this.element!, 'keydown', ((event: KeyboardEvent) => this.handleKeyDown(event)) as EventListener);
+
+        return true;
     }
 
     detach () {
 
-        if (!this.hasAttached) return;
-
-        super.detach();
+        return super.detach();
     }
 
     focusInitial () {

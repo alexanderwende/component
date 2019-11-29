@@ -11,12 +11,14 @@ export class FocusMonitor extends Behavior {
 
     hasFocus = false;
 
-    attach (element: HTMLElement) {
+    attach (element: HTMLElement): boolean {
 
-        super.attach(element);
+        if (!super.attach(element)) return false;
 
         this.listen(this.element!, 'focusin', event => this.handleFocusIn(event as FocusEvent));
         this.listen(this.element!, 'focusout', event => this.handleFocusOut(event as FocusEvent));
+
+        return true;
     }
 
     protected handleFocusIn (event: FocusEvent) {

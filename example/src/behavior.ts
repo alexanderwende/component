@@ -13,25 +13,40 @@ export abstract class Behavior {
         return this._attached;
     }
 
+    /**
+     * The element that the behavior is attached to
+     *
+     * @description
+     * We only expose a getter for the element, so it can't be set directly, but has to be set via
+     * the behavior's attach method.
+     */
     get element (): HTMLElement | undefined {
 
         return this._element;
     }
 
-    attach (element?: HTMLElement, ...args: any[]) {
+    attach (element?: HTMLElement, ...args: any[]): boolean {
+
+        if (this.hasAttached) return false;
 
         this._element = element;
 
         this._attached = true;
+
+        return true;
     }
 
-    detach (...args: any[]) {
+    detach (...args: any[]): boolean {
+
+        if (!this.hasAttached) return false;
 
         this.eventManager.unlistenAll();
 
         this._element = undefined;
 
         this._attached = false;
+
+        return true;
     }
 
     listen (target: EventTarget, type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): EventBinding | undefined {
