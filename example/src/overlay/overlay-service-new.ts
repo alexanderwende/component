@@ -184,19 +184,12 @@ export class OverlayService {
 
     toggleOverlay (overlay: Overlay, event?: Event, open?: boolean) {
 
-        if (typeof open === 'boolean') {
+        open = (typeof open === 'boolean') ? open : !overlay.open;
 
-            if (open) {
-                this.openOverlay(overlay, event);
-            } else {
-                this.closeOverlay(overlay, event);
-            }
+        if (open) {
+            this.openOverlay(overlay, event);
         } else {
-            if (overlay.open) {
-                this.closeOverlay(overlay, event);
-            } else {
-                this.openOverlay(overlay, event);
-            }
+            this.closeOverlay(overlay, event);
         }
     }
 
@@ -364,6 +357,7 @@ export class OverlayService {
             // to keep a template up-to-date with it's context, we have to render the template
             // everytime the context renders - that is, on every update which was triggered
 
+            // TODO: fix context's update listener
             // config.context.addEventListener('update', updateListener as EventListener);
 
             this.renderOverlay(overlay);
@@ -387,7 +381,45 @@ export class OverlayService {
         const overlay = event.detail.target;
         const source = event.detail.source;
 
-        this.activeOverlays.delete(overlay);
+        const config = this.registeredOverlays.get(overlay)!.config;
+
+        if (config.stacked) {
+
+            if (this.activeOverlays.size) {
+
+                const activeOverlays = [...this.activeOverlays];
+
+                for (let index = activeOverlays.length - 1; index >= 0; index--) {
+
+                    const lastOverlay = activeOverlays[index];
+
+                    if (lastOverlay === overlay) {
+
+                        // we found the active overlay that caused the event, we keep the stack up to this overlay
+                        break;
+
+                    } else {
+
+                        // the active overlay is a descendant of the one that's closed, so it should be closed and discarded from the stack
+                        this.closeOverlay(lastOverlay);
+                    }
+                }
+            }
+
+            this.activeOverlays.delete(overlay);
+        }
+
+        if (config.template && config.context) {
+
+            // config.context.removeEventListener('update', updateListener as EventListener);ƒ
+        }
+
+        // TODO: manage backdrop
+
+        // if (config.backdrop) {
+
+        //     this.backdrop.hide();
+        // }
     }
 
     handleCommandToggle (event: CustomEvent) {
