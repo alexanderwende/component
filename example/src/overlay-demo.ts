@@ -1,9 +1,7 @@
 import { Component, component, property } from '@partkit/component';
 import { html } from 'lit-html';
+import { Overlay, OverlayConfig, OverlayService } from './overlay';
 import './overlay/overlay';
-import { Overlay } from './overlay/overlay';
-import { OverlayConfig } from './overlay/overlay-config';
-import { OverlayService } from './overlay/overlay-service';
 
 const customOverlayConfig: Partial<OverlayConfig> = {
     alignment: {
@@ -134,6 +132,8 @@ export class OverlayDemoComponent extends Component {
             this.overlay = this.overlayService.createOverlay({ positionType: 'centered', controllerType: 'default', template: template, context: this, stacked: true, trapFocus: true, autoFocus: true });
         }
 
+        // TODO: this will fail the first time, as createOverlay is intrinsically async - it creates the overlay and reattaches it, which will
+        // cause a second connected callback which we actually have to wait for before opening the overlay...
         this.overlayService.openOverlay(this.overlay);
     }
 

@@ -28,6 +28,10 @@
     "example/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "example/src/overlay/overlay-trigger.ts",
+    "example/src/overlay/overlay-trigger-factory.ts",
+    "example/src/overlay/overlay-service.ts",
+    "example/src/overlay/controller/default-overlay-controller.ts",
   ]
 }

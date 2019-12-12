@@ -1,6 +1,6 @@
 import { Overlay } from '../overlay';
-import { OverlayService } from '../overlay-service';
-import { DefaultOverlayController } from './default-overlay-controller';
+import { OverlayService } from '../overlay-service-new';
+import { DefaultOverlayController } from './default-overlay-controller-new';
 import { DialogOverlayController, DIALOG_OVERLAY_CONTROLLER_CONFIG } from './dialog-overlay-controller';
 import { OverlayController } from './overlay-controller';
 import { DEFAULT_OVERLAY_CONTROLLER_CONFIG, OverlayControllerConfig } from './overlay-controller-config';

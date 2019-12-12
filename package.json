@@ -60,9 +60,9 @@
     "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-typescript2": "^0.24.3",
     "standard-version": "^7.0.0",
-    "tslint": "^5.20.0",
+    "tslint": "^5.20.1",
     "tslint-clean-code": "^0.2.10",
-    "typescript": "^3.6.3"
+    "typescript": "^3.7.3"
   },
   "peerDependencies": {
     "lit-html": "^1.1.1"

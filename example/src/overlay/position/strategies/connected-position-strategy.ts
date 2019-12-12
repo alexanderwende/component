@@ -1,4 +1,4 @@
-import { PositionStrategy } from '../position-strategy';
+import { PositionStrategy, PositionController } from '../position-strategy';
 import { PositionConfig, DEFAULT_POSITION_CONFIG } from '../position-config';
 import { Position } from '../position';
 
@@ -55,5 +55,35 @@ export class ConnectedPositionStrategy extends PositionStrategy {
         this.target.style.bottom = '';
 
         this.target.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
+    }
+}
+
+export class ConnectedPositionController extends PositionController {
+
+    attach (element: HTMLElement): boolean {
+
+        if (!super.attach(element)) return false;
+
+        this.listen(window, 'resize', () => this.update(), true);
+        this.listen(document, 'scroll', () => this.update(), true);
+
+        return true;
+    }
+
+    /**
+     * We override the applyPosition method, so we can use a CSS transform to position the element.
+     *
+     * This can result in better performance.
+     */
+    protected applyPosition (position: Position) {
+
+        if (!this.hasAttached) return;
+
+        this.element!.style.top = '';
+        this.element!.style.left = '';
+        this.element!.style.right = '';
+        this.element!.style.bottom = '';
+
+        this.element!.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
     }
 }

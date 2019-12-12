@@ -5,8 +5,11 @@ import { OverlayController, OverlayControllerFactory } from './controller';
 import { Overlay } from './overlay';
 import { OverlayBackdrop } from './overlay-backdrop';
 import { OverlayConfig } from './overlay-config';
-import { PositionStrategy } from './position/position-strategy';
-import { PositionStrategyFactory } from './position/position-strategy-factory';
+import { PositionStrategy, PositionController } from './position/position-strategy';
+import { PositionStrategyFactory, PositionControllerFactory } from './position/position-strategy-factory';
+
+// TODO: overlay.selector is probably not very useful in context of this error...
+const OVERLAY_UNREGISTERED_ERROR = (overlay: typeof Overlay) => new Error(`Overlay is not registered: ${ overlay.selector }`);
 
 let OVERLAY_SERVICE_INSTANCE: OverlayService | undefined;
 
@@ -14,6 +17,7 @@ export interface OverlaySettings {
     events: EventManager;
     config: Partial<OverlayConfig>;
     positionStrategy?: PositionStrategy;
+    positionController?: PositionController;
     overlayController?: OverlayController;
 }
 
@@ -25,8 +29,11 @@ export class OverlayService {
 
     protected backdrop!: OverlayBackdrop;
 
+    protected registeringOverlay?: Overlay;
+
     constructor (
         protected positionStrategyFactory: PositionStrategyFactory = new PositionStrategyFactory(),
+        protected positionControllerFactory: PositionControllerFactory = new PositionControllerFactory(),
         protected overlayControllerFactory: OverlayControllerFactory = new OverlayControllerFactory(),
         protected root: HTMLElement = document.body
     ) {
@@ -63,7 +70,7 @@ export class OverlayService {
      */
     isOverlayFocused (overlay: Overlay): boolean {
 
-        // this._throwUnregiseredOverlay(overlay);
+        this._throwUnregiseredOverlay(overlay);
 
         const activeElement = document.activeElement;
 
@@ -75,21 +82,60 @@ export class OverlayService {
      */
     isOverlayActive (overlay: Overlay): boolean {
 
-        // this._throwUnregiseredOverlay(overlay);
+        this._throwUnregiseredOverlay(overlay);
+
+        const { config } = this.registeredOverlays.get(overlay)!;
 
         let isFound = false;
         let isActive = false;
 
-        for (let activeOverlay of this.activeOverlays) {
+        if (config.stacked && overlay.open) {
 
-            isFound = isFound || activeOverlay === overlay;
+            for (let current of this.activeOverlays) {
 
-            isActive = isFound && this.isOverlayFocused(activeOverlay);
+                isFound = isFound || current === overlay;
 
-            if (isActive) break;
+                isActive = isFound && this.isOverlayFocused(current);
+
+                if (isActive) break;
+            }
         }
 
         return isActive;
+    }
+
+    /**
+     * Get the parent overlay of an active overlay
+     *
+     * @description
+     * If an overlay is stacked, its parent overlay is the one from which it was opened.
+     * This parent overlay will be in the activeOverlays stack just before this one.
+     */
+    getParentOverlay (overlay: Overlay): Overlay | undefined {
+
+        this._throwUnregiseredOverlay(overlay);
+
+        const { config } = this.registeredOverlays.get(overlay)!;
+
+        if (config.stacked && overlay.open) {
+
+            // we start with parent being undefined
+            // if the first active overlay in the set matches the specified overlay
+            // then indeed the overlay has no parent (the first active overlay is the root)
+            let parent: Overlay | undefined = undefined;
+
+            // go through the active overlays
+            for (let current of this.activeOverlays) {
+
+                // if we have reached the specified active overlay
+                // we can return the parent of that overlay (it's the active overlay in the set just before this one)
+                if (current === overlay) return parent;
+
+                // if we haven't found the specified overlay yet, we set
+                // the current overlay as potential parent and move on
+                parent = current;
+            }
+        }
     }
 
     createBackdrop () {
@@ -138,7 +184,7 @@ export class OverlayService {
 
     destroyOverlay (overlay: Overlay, disconnect: boolean = true) {
 
-        // this._throwUnregiseredOverlay(overlay);
+        this._throwUnregiseredOverlay(overlay);
 
         // TODO: we need to also destroy descendant overlays?
         this.closeOverlay(overlay);
@@ -148,6 +194,7 @@ export class OverlayService {
         definition.events.unlistenAll();
 
         this.disposePositionStrategy(overlay);
+        this.disposePositionController(overlay);
         this.disposeOverlayController(overlay);
 
         if (disconnect && overlay.parentElement) {
@@ -218,6 +265,8 @@ export class OverlayService {
 
     protected renderOverlay (overlay: Overlay) {
 
+        console.log('renderOverlay()...');
+
         if (this.hasOverlay(overlay)) {
 
             const { template, context } = this.registeredOverlays.get(overlay)!.config;
@@ -237,14 +286,14 @@ export class OverlayService {
         const settings: OverlaySettings = {
             config: config,
             events: new EventManager(),
-            positionStrategy: this.createPositionStrategy(overlay, config),
+            // positionStrategy: this.createPositionStrategy(overlay, config),
+            positionController: this.createPositionController(overlay, config),
             overlayController: this.createOverlayController(overlay, config),
         };
 
-        settings.events.listen(overlay, 'open-changed', event => this.handleOverlayOpenChanged(event as CustomEvent), { capture: true });
-        settings.events.listen(overlay, 'command-open', event => this.handleCommandOpen(event as CustomEvent), { capture: true });
-        settings.events.listen(overlay, 'command-close', event => this.handleCommandClose(event as CustomEvent), { capture: true });
-        settings.events.listen(overlay, 'command-toggle', event => this.handleCommandToggle(event as CustomEvent), { capture: true });
+        settings.events.listen(overlay, 'open-changed', event => this.handleOverlayOpenChanged(event as CustomEvent));
+        settings.events.listen(overlay, 'command-open', event => this.handleCommandOpen(event as CustomEvent));
+        settings.events.listen(overlay, 'command-close', event => this.handleCommandClose(event as CustomEvent));
 
         return settings;
     }
@@ -275,6 +324,28 @@ export class OverlayService {
         }
     }
 
+    protected createPositionController (overlay: Overlay, config: Partial<OverlayConfig>): PositionController | undefined {
+
+        if (config.positionType) {
+
+            const positionController = this.positionControllerFactory.createPositionController(config.positionType, config);
+
+            return positionController;
+        }
+    }
+
+    protected disposePositionController (overlay: Overlay) {
+
+        const definition = this.registeredOverlays.get(overlay)!;
+
+        if (definition.positionController) {
+
+            definition.positionController.detach();
+
+            definition.positionController = undefined;
+        }
+    }
+
     protected createOverlayController (overlay: Overlay, config: Partial<OverlayConfig>): OverlayController | undefined {
 
         if (config.controllerType) {
@@ -300,26 +371,62 @@ export class OverlayService {
         }
     }
 
-    handleOverlayConnected (event: CustomEvent<Overlay>) {
+    protected handleOverlayConnected (event: CustomEvent) {
 
-        const overlay = event.detail;
+        const overlay = event.target as Overlay;
+
+        if (this.registeringOverlay === overlay) return;
+
+        this.registeringOverlay = overlay;
+
+        console.log('OverlayService.handleOverlayConnected()...', event);
 
         this.registerOverlay(overlay, overlay.config);
+
+        this.registeringOverlay = undefined;
     }
 
-    handleOverlayDisconnected (event: CustomEvent<Overlay>) {
+    protected handleOverlayDisconnected (event: CustomEvent) {
 
-        const overlay = event.detail;
+        const overlay = event.target as Overlay;
+
+        if (this.registeringOverlay === overlay) return;
+
+        console.log('OverlayService.handleOverlayDisconnected()...', event);
 
         this.destroyOverlay(overlay, false);
     }
 
-    handleOverlayOpenChanged (event: CustomEvent) {
+    protected handleOverlayOpenChanged (event: CustomEvent) {
 
         console.log('overlay open-changed...', event);
+
+        const overlay = event.target as Overlay;
+
+        const { positionStrategy, positionController } = this.registeredOverlays.get(overlay)!;
+
+        if (overlay.open) {
+
+            if (positionStrategy) {
+
+                positionStrategy.update();
+            }
+
+            if (positionController) {
+
+                positionController.attach(overlay);
+            }
+
+        } else {
+
+            if (positionController) {
+
+                positionController.detach();
+            }
+        }
     }
 
-    handleCommandOpen (event: CustomEvent) {
+    protected handleCommandOpen (event: CustomEvent) {
 
         const overlay = event.detail.target;
         const source = event.detail.source;
@@ -363,10 +470,10 @@ export class OverlayService {
             this.renderOverlay(overlay);
         }
 
-        if (positionStrategy) {
+        // if (positionStrategy) {
 
-            positionStrategy.update();
-        }
+        //     positionStrategy.update();
+        // }
 
         // TODO: manage backdrop
 
@@ -376,7 +483,7 @@ export class OverlayService {
         // }
     }
 
-    handleCommandClose (event: CustomEvent) {
+    protected handleCommandClose (event: CustomEvent) {
 
         const overlay = event.detail.target;
         const source = event.detail.source;
@@ -422,18 +529,11 @@ export class OverlayService {
         // }
     }
 
-    handleCommandToggle (event: CustomEvent) {
+    private _throwUnregiseredOverlay (overlay: Overlay) {
 
-        const overlay = event.detail.target;
-        const source = event.detail.source;
+        if (!this.hasOverlay(overlay)) {
 
-        if (this.activeOverlays.has(overlay)) {
-
-            this.handleCommandClose(event);
-
-        } else {
-
-            this.handleCommandOpen(event);
+            throw OVERLAY_UNREGISTERED_ERROR(overlay.constructor as typeof Overlay);
         }
     }
 }

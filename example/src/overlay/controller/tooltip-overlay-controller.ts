@@ -1,4 +1,4 @@
-import { DefaultOverlayController } from './default-overlay-controller';
+import { DefaultOverlayController } from './default-overlay-controller-new';
 import { DEFAULT_OVERLAY_CONTROLLER_CONFIG, OverlayControllerConfig } from './overlay-controller-config';
 
 export const TOOLTIP_OVERLAY_CONTROLLER_CONFIG: OverlayControllerConfig = {
@@ -10,11 +10,9 @@ export const TOOLTIP_OVERLAY_CONTROLLER_CONFIG: OverlayControllerConfig = {
 
 export class TooltipOverlayController extends DefaultOverlayController {
 
-    attach (element: HTMLElement) {
+    attach (element: HTMLElement): boolean {
 
-        if (this.hasAttached) return;
-
-        super.attach(element);
+        if (!super.attach(element)) return false;
 
         this.overlay.role = 'tooltip';
 
@@ -25,15 +23,17 @@ export class TooltipOverlayController extends DefaultOverlayController {
         this.listen(this.element!, 'mouseleave', (event) => this.close(event));
         this.listen(this.element!, 'focus', (event) => this.open(event));
         this.listen(this.element!, 'blur', (event) => this.close(event));
+
+        return true;
     }
 
-    detach () {
+    detach (): boolean {
 
-        if (!this.hasAttached) return;
+        if (!this.hasAttached) return false;
 
         this.element!.removeAttribute('tabindex');
         this.element!.removeAttribute('aria-describedby');
 
-        super.detach();
+        return super.detach();
     }
 }

@@ -1,20 +1,23 @@
-import { dispatch } from 'example/src/event-manager';
-import { Escape } from 'example/src/keys';
+import { PropertyChangeEvent } from '@partkit/component';
 import { Behavior } from '../../behavior';
+import { dispatch } from '../../event-manager';
+import { Escape } from '../../keys';
 import { FocusChangeEvent, FocusMonitor } from '../focus-monitor';
 import { FocusTrap } from '../focus-trap';
 import { Overlay } from '../overlay';
+import { OverlayService } from '../overlay-service-new';
+import { OverlayController } from './overlay-controller';
 import { OverlayControllerConfig } from './overlay-controller-config';
-import { PropertyChangeEvent } from 'src/component';
 
-
-export class DefaultOverlayController extends Behavior {
+export class DefaultOverlayController extends Behavior implements OverlayController {
 
     protected previousFocus: HTMLElement = document.body;
 
     protected focusTrap?: FocusTrap | FocusMonitor;
 
-    constructor (public overlay: Overlay, public config: Partial<OverlayControllerConfig>) {
+    protected isClosing = false;
+
+    constructor (public overlay: Overlay, protected overlayService: OverlayService, protected config: Partial<OverlayControllerConfig>) {
 
         super();
 
@@ -23,13 +26,12 @@ export class DefaultOverlayController extends Behavior {
             : new FocusMonitor();
     }
 
-    attach (element: HTMLElement): boolean {
+    attach (element?: HTMLElement): boolean {
 
         if (!super.attach(element)) return false;
 
         this.listen(this.overlay, 'command-open', event => this.handleOpen(event as CustomEvent));
         this.listen(this.overlay, 'command-close', event => this.handleClose(event as CustomEvent));
-        this.listen(this.overlay, 'command-toggle', event => this.handleToggle(event as CustomEvent));
 
         this.listen(this.overlay, 'open-changed', event => this.handleOpenChange(event as PropertyChangeEvent<boolean>));
         this.listen(this.overlay, 'focus-changed', event => this.handleFocusChange(event as FocusChangeEvent));
@@ -37,18 +39,6 @@ export class DefaultOverlayController extends Behavior {
         this.listen(this.overlay, 'keydown', event => this.handleKeydown(event as KeyboardEvent));
 
         return true;
-    }
-
-    detach (): boolean {
-
-        return super.detach();
-    }
-
-    update () {
-
-        const isOpen = this.overlay.open;
-
-        this.element!.setAttribute('aria-expanded', `${ isOpen }`);
     }
 
     open (event?: Event) {
@@ -67,39 +57,40 @@ export class DefaultOverlayController extends Behavior {
         });
     }
 
+    toggle (event?: Event, open?: boolean) {
+
+        open = (typeof open === 'boolean') ? open : !this.overlay.open;
+
+        if (open) {
+            this.open(event);
+        } else {
+            this.close(event);
+        }
+    }
+
     protected handleOpen (event: CustomEvent) {
 
-        console.log('overlay-trigger.handleOpen()...', event);
+        this.isClosing = false;
 
-        this.update();
+        console.log('OverlayController.handleOpen()...', event);
 
         this.storeFocus();
     }
 
     protected handleClose (event: CustomEvent) {
 
-        console.log('overlay-trigger.handleClose()...', event);
+        this.isClosing = true;
 
-        this.update();
+        console.log('OverlayController.handleClose()...', event);
 
         this.restoreFocus(event);
-    }
-
-    protected handleToggle (event: CustomEvent) {
-
-        if (this.overlay.open) {
-
-            this.handleOpen(event);
-
-        } else {
-
-            this.handleClose(event);
-        }
     }
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
         const open = event.detail.current;
+
+        console.log('OverlayController.handleOpenChange()...', event);
 
         if (open) {
 
@@ -121,7 +112,9 @@ export class DefaultOverlayController extends Behavior {
 
         const hasFocus = event.detail.type === 'focusin';
 
-        if (!hasFocus) {
+        console.log('OverlayController.handleFocusChange()...', this.isClosing, hasFocus);
+
+        if (!hasFocus && !this.isClosing) {
 
             // when loosing focus, we wait for potential focusin events on child or parent overlays by delaying
             // the active check in a new macrotask via setTimeout
@@ -158,11 +151,13 @@ export class DefaultOverlayController extends Behavior {
 
             case Escape:
 
-                if (!this.config.closeOnEscape) return;
+                if (!this.overlay.open || !this.config.closeOnEscape) return;
 
-                this.close(event);
                 event.preventDefault();
                 event.stopPropagation();
+
+                this.close(event);
+
                 break;
         }
     }
@@ -176,23 +171,23 @@ export class DefaultOverlayController extends Behavior {
         console.log('overlay-controller.storeFocus()...', this.previousFocus);
     }
 
-    protected restoreFocus (event?: Event) {
+    protected restoreFocus (event?: CustomEvent) {
 
-        console.log('overlay-controller.restoreFocus()...', this.previousFocus);
+        console.log('overlay-controller.restoreFocus()...', this.previousFocus, event);
 
         // we only restore the focus if the overlay is closed pressing Escape or programmatically
-        const restoreFocus = this.config.restoreFocus && (this.isEscape(event) || !event);
+        const restoreFocus = this.config.restoreFocus && (!event || this.isEscape(event.detail.source));
 
         if (restoreFocus) {
 
             this.previousFocus!.focus();
         }
 
-        this.previousFocus = document.body;
+        // this.previousFocus = document.body;
     }
 
     protected isEscape (event?: Event): boolean {
 
-        return event && event.type === 'keydown' && (event as KeyboardEvent).key === Escape || false;
+        return event && (event as KeyboardEvent).key === Escape || false;
     }
 }

@@ -8,6 +8,7 @@ export type OverlayControllerConfig = FocusTrapConfig & {
     closeOnFocusLoss: boolean;
 };
 
+// TODO: move to default-overlay-controller
 export const DEFAULT_OVERLAY_CONTROLLER_CONFIG: OverlayControllerConfig = {
     ...DEFAULT_FOCUS_TRAP_CONFIG,
     autoFocus: true,

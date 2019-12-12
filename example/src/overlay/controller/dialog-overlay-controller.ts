@@ -1,38 +1,37 @@
-import { PropertyChangeEvent } from 'src/component';
+import { PropertyChangeEvent } from '@partkit/component';
 import { Enter, Space } from '../../keys';
-import { DefaultOverlayController } from './default-overlay-controller';
-import { OverlayController } from './overlay-controller';
+import { DefaultOverlayController } from './default-overlay-controller-new';
 import { DEFAULT_OVERLAY_CONTROLLER_CONFIG, OverlayControllerConfig } from './overlay-controller-config';
+import { FocusTrap } from '../focus-trap';
 
 export const DIALOG_OVERLAY_CONTROLLER_CONFIG: OverlayControllerConfig = {
     ...DEFAULT_OVERLAY_CONTROLLER_CONFIG
 };
 
-export class DialogOverlayController extends DefaultOverlayController implements OverlayController {
+export class DialogOverlayController extends DefaultOverlayController {
 
-    attach (element: HTMLElement) {
+    attach (element: HTMLElement): boolean {
 
-        if (this.hasAttached) return;
-
-        super.attach(element);
+        if (!super.attach(element)) return false;
 
         this.element!.setAttribute('aria-haspopup', 'dialog');
 
+        this.listen(this.element!, 'click', (event: Event) => this.handleClick(event as MouseEvent));
         this.listen(this.element!, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
-        this.listen(this.element!, 'mousedown', (event: Event) => this.handleMousedown(event as MouseEvent));
-        this.listen(this.overlay, 'open-changed', (event: Event) => this.handleOpenChange(event as PropertyChangeEvent<boolean>));
 
         this.update();
+
+        return true;
     }
 
-    detach () {
+    detach (): boolean {
 
-        if (!this.hasAttached) return;
+        if (!this.hasAttached) return false;
 
         this.element!.removeAttribute('aria-haspopup');
         this.element!.removeAttribute('aria-expanded');
 
-        super.detach();
+        return super.detach();
     }
 
     update () {
@@ -44,7 +43,14 @@ export class DialogOverlayController extends DefaultOverlayController implements
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
+        super.handleOpenChange(event);
+
         this.update();
+    }
+
+    protected handleClick (event: MouseEvent) {
+
+        this.toggle(event);
     }
 
     protected handleKeydown (event: KeyboardEvent) {
@@ -54,22 +60,19 @@ export class DialogOverlayController extends DefaultOverlayController implements
             case Enter:
             case Space:
 
-                if (event.target !== this.element) return;
+                // handle events that happen on the trigger element
+                if (event.target === this.element) {
 
-                this.toggle(event);
-                event.preventDefault();
-                event.stopPropagation();
-                break;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.toggle(event);
+                    break;
+                }
 
             default:
 
                 super.handleKeydown(event);
                 break;
         }
-    }
-
-    protected handleMousedown (event: MouseEvent) {
-
-        this.toggle(event);
     }
 }

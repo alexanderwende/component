@@ -1,3 +1,4 @@
+import { PropertyChangeEvent } from '@partkit/component';
 import { Behavior } from '../../behavior';
 import { Escape } from '../../keys';
 import { FocusChangeEvent, FocusMonitor } from '../focus-monitor';
@@ -6,7 +7,6 @@ import { Overlay } from '../overlay';
 import { OverlayService } from '../overlay-service';
 import { OverlayController } from './overlay-controller';
 import { OverlayControllerConfig } from './overlay-controller-config';
-import { PropertyChangeEvent } from 'src/component';
 
 export class DefaultOverlayController extends Behavior implements OverlayController {
 
