@@ -111,6 +111,8 @@ export class Overlay extends Component {
         this.role = this.getAttribute('role') || 'dialog';
 
         super.connectedCallback();
+
+        console.log('overlay.connected...', this);
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {

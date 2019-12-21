@@ -5,7 +5,7 @@ import { template } from './app.template';
 import './card';
 import './checkbox';
 import './icon/icon';
-import './overlay-demo';
+import './overlay-new/demo';
 import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';

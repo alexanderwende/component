@@ -84,6 +84,6 @@ export class ConnectedPositionController extends PositionController {
         this.element!.style.right = '';
         this.element!.style.bottom = '';
 
-        this.element!.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
+        // this.element!.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
     }
 }

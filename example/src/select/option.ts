@@ -1,10 +1,12 @@
-import { Component, component, css, property, AttributeConverterARIABoolean, AttributeConverterNumber } from "@partkit/component";
+import { AttributeConverterARIABoolean, AttributeConverterNumber, Component, component, css, property } from "@partkit/component";
 import { html } from "lit-html";
 
 @component({
-    selector: 'ui-component',
+    selector: 'ui-option',
     styles: [css`
-    :host {}
+    :host {
+        display: block;
+    }
     :host([aria-selected=true]) {}
     `],
     template: (option: Option) => html`<slot></slot>`

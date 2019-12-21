@@ -46,14 +46,14 @@ export class OverlayService {
 
             document.body.addEventListener(
                 'connected',
-                event => (event.target instanceof Overlay) && this.handleOverlayConnected(event as CustomEvent),
-                { capture: true }
+                event => ((event as CustomEvent).detail?.component instanceof Overlay) && this.handleOverlayConnected(event as CustomEvent),
+                // { capture: true }
             );
 
             document.body.addEventListener(
                 'disconnected',
-                event => (event.target instanceof Overlay) && this.handleOverlayDisconnected(event as CustomEvent),
-                { capture: true }
+                event => ((event as CustomEvent).detail?.component instanceof Overlay) && this.handleOverlayDisconnected(event as CustomEvent),
+                // { capture: true }
             );
         }
 
@@ -373,13 +373,13 @@ export class OverlayService {
 
     protected handleOverlayConnected (event: CustomEvent) {
 
-        const overlay = event.target as Overlay;
+        const overlay = event.detail.component as Overlay;
 
         if (this.registeringOverlay === overlay) return;
 
         this.registeringOverlay = overlay;
 
-        console.log('OverlayService.handleOverlayConnected()...', event);
+        console.log('OverlayService.handleOverlayConnected()...', event.composedPath()[0]);
 
         this.registerOverlay(overlay, overlay.config);
 
@@ -388,7 +388,7 @@ export class OverlayService {
 
     protected handleOverlayDisconnected (event: CustomEvent) {
 
-        const overlay = event.target as Overlay;
+        const overlay = event.detail.component as Overlay;
 
         if (this.registeringOverlay === overlay) return;
 

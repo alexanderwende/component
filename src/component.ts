@@ -1018,7 +1018,12 @@ export abstract class Component extends HTMLElement {
             bubbles: true,
             composed: true,
             cancelable: true,
-            ...(detail ? { detail: detail } : {})
+            // TODO: commit message: inlude component instance in event detail, as events from within ShadowRoot are
+            // re-targeted, and that way nested components, like overlays, can't be caught by overlay-service
+            detail: {
+                component: this,
+                ...(detail ? detail : {})
+            }
         }));
     }
 

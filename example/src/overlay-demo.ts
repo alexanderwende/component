@@ -1,7 +1,9 @@
-import { Component, component, property } from '@partkit/component';
+import { Component, component, property, listener } from '@partkit/component';
 import { html } from 'lit-html';
 import { Overlay, OverlayConfig, OverlayService } from './overlay';
 import './overlay/overlay';
+import './select/option';
+import './select/select';
 
 const customOverlayConfig: Partial<OverlayConfig> = {
     alignment: {
@@ -75,6 +77,12 @@ const tooltipOverlayConfig: Partial<OverlayConfig> = {
     <ui-overlay controller="#tooltip" controller-type="dialog" position-type="connected" origin="#tooltip">
         <p>I'm another overlay on the tooltip trigger.</p>
     </ui-overlay>
+
+    <ui-select>
+        <ui-option slot="ui-select-options">Foo</ui-option>
+        <ui-option slot="ui-select-options">Bar</ui-option>
+        <ui-option slot="ui-select-options">Baz</ui-option>
+    </ui-select>
     `
 })
 export class OverlayDemoComponent extends Component {
@@ -147,6 +155,14 @@ export class OverlayDemoComponent extends Component {
 
             this.overlay = undefined;
         }
+    }
+
+    @listener({
+        event: 'connected'
+    })
+    protected handleConnected (event: CustomEvent) {
+
+        console.log('connected: ', event);
     }
 
     protected count () {

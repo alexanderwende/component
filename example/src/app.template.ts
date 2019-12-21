@@ -231,8 +231,6 @@ export const template = (element: App) => html`
 
             </ui-accordion>
 
-            <h2>Popover</h2>
-
             <overlay-demo></overlay-demo>
         </div>
 
