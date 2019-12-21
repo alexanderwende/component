@@ -1,4 +1,4 @@
-import { Component, component } from '@partkit/component';
+import { Component, component, Changes } from '@partkit/component';
 import { html } from 'lit-html';
 import { Overlay } from './overlay';
 import './overlay';
@@ -23,19 +23,25 @@ export class OverlayDemoComponent extends Component {
 
     currentRole = 0;
 
-    changeRole () {
+    overlay!: Overlay;
 
-        const overlay = this.renderRoot.querySelector('ui-overlay') as Overlay;
+    updateCallback (changes: Changes, firstUpdate: boolean) {
+
+        if (firstUpdate) {
+
+            this.overlay = this.renderRoot.querySelector('ui-overlay') as Overlay;
+        }
+    }
+
+    changeRole () {
 
         this.currentRole = (this.currentRole + 1 < this.roles.length) ? this.currentRole + 1 : 0;
 
-        overlay.role = this.roles[this.currentRole];
+        this.overlay.role = this.roles[this.currentRole];
     }
 
     toggle () {
 
-        const overlay = this.renderRoot.querySelector('ui-overlay') as Overlay;
-
-        overlay.open = !overlay.open;
+        this.overlay.open = !this.overlay.open;
     }
 }
