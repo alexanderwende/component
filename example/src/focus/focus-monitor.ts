@@ -1,4 +1,4 @@
-import { Behavior } from "../behavior";
+import { Behavior } from '../behavior';
 
 export interface FocusChangeEventDetail {
     type: 'focusin' | 'focusout';

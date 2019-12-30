@@ -1,4 +1,4 @@
-import { FocusTrapConfig, DEFAULT_FOCUS_TRAP_CONFIG } from '../focus-trap';
+import { FocusTrapConfig, DEFAULT_FOCUS_TRAP_CONFIG } from '../../focus/focus-trap';
 
 export type OverlayControllerConfig = FocusTrapConfig & {
     autoFocus: boolean;

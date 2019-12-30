@@ -1,6 +1,7 @@
 import { CSSSelector } from '../dom';
 import { Tab } from '../keys';
 import { FocusMonitor } from './focus-monitor';
+import { applyDefaults } from '../utils/config';
 
 export const TABBABLES = [
     'a[href]:not([disabled]):not([tabindex^="-"])',
@@ -29,6 +30,14 @@ export const DEFAULT_FOCUS_TRAP_CONFIG: FocusTrapConfig = {
     restoreFocus: true,
 };
 
+export const FOCUS_TRAP_CONFIG_FIELDS: (keyof FocusTrapConfig)[] = [
+    'autoFocus',
+    'wrapFocus',
+    'initialFocus',
+    'restoreFocus',
+    'tabbableSelector',
+];
+
 export class FocusTrap extends FocusMonitor {
 
     protected tabbables!: NodeListOf<HTMLElement>;
@@ -43,7 +52,7 @@ export class FocusTrap extends FocusMonitor {
 
         super();
 
-        this.config = { ...DEFAULT_FOCUS_TRAP_CONFIG, ...config };
+        this.config = applyDefaults(config || {}, DEFAULT_FOCUS_TRAP_CONFIG);
     }
 
     attach (element: HTMLElement): boolean {
@@ -101,6 +110,7 @@ export class FocusTrap extends FocusMonitor {
 
         if (!this.hasAttached) return;
 
+        // TODO: does this work with shadowDOM and re-attachment of overlay?
         this.tabbables = this.element!.querySelectorAll(this.config.tabbableSelector);
 
         const length = this.tabbables.length;

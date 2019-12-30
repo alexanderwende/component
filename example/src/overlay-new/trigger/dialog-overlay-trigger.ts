@@ -1,14 +1,13 @@
 import { PropertyChangeEvent } from '@partkit/component';
 import { Enter, Space } from '../../keys';
-import { DefaultOverlayController } from './default-overlay-controller-new';
-import { DEFAULT_OVERLAY_CONTROLLER_CONFIG, OverlayControllerConfig } from './overlay-controller-config';
-import { FocusTrap } from '../../focus/focus-trap';
+import { OverlayTrigger } from './overlay-trigger';
+import { DEFAULT_OVERLAY_TRIGGER_CONFIG, OverlayTriggerConfig } from './overlay-trigger-config';
 
-export const DIALOG_OVERLAY_CONTROLLER_CONFIG: OverlayControllerConfig = {
-    ...DEFAULT_OVERLAY_CONTROLLER_CONFIG
+export const DIALOG_OVERLAY_TRIGGER_CONFIG: OverlayTriggerConfig = {
+    ...DEFAULT_OVERLAY_TRIGGER_CONFIG
 };
 
-export class DialogOverlayController extends DefaultOverlayController {
+export class DialogOverlayTrigger extends OverlayTrigger {
 
     attach (element: HTMLElement): boolean {
 

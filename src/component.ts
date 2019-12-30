@@ -11,7 +11,7 @@ import {
     PropertyDeclaration,
     PropertyNotifier,
     PropertyReflector
-} from "./decorators/index.js";
+} from './decorators/index.js';
 
 /**
  * @internal

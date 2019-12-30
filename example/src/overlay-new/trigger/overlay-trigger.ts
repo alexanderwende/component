@@ -5,11 +5,9 @@ import { Escape } from '../../keys';
 import { FocusChangeEvent, FocusMonitor } from '../../focus/focus-monitor';
 import { FocusTrap } from '../../focus/focus-trap';
 import { Overlay } from '../overlay';
-import { OverlayService } from '../overlay-service-new';
-import { OverlayController } from './overlay-controller';
-import { OverlayControllerConfig } from './overlay-controller-config';
+import { OverlayTriggerConfig } from './overlay-trigger-config';
 
-export class DefaultOverlayController extends Behavior implements OverlayController {
+export class OverlayTrigger extends Behavior {
 
     protected previousFocus: HTMLElement = document.body;
 
@@ -17,7 +15,7 @@ export class DefaultOverlayController extends Behavior implements OverlayControl
 
     protected isClosing = false;
 
-    constructor (public overlay: Overlay, protected overlayService: OverlayService, protected config: Partial<OverlayControllerConfig>) {
+    constructor (protected config: Partial<OverlayTriggerConfig>, public overlay: Overlay) {
 
         super();
 
@@ -121,10 +119,10 @@ export class DefaultOverlayController extends Behavior implements OverlayControl
             setTimeout(() => {
 
                 // then we check if the overlay is active and if not, we close it
-                if (!this.overlayService.isOverlayActive(this.overlay)) {
+                if (!(this.overlay.constructor as typeof Overlay).isOverlayActive(this.overlay)) {
 
                     // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
-                    const parent = this.overlayService.getParentOverlay(this.overlay);
+                    const parent = (this.overlay.constructor as typeof Overlay).getParentOverlay(this.overlay);
 
                     if (this.config.closeOnFocusLoss) {
 
