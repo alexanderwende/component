@@ -2,7 +2,7 @@ import { Position } from '../position';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from '../position-config';
 import { PositionController } from '../position-controller';
 
-export const DEFAULT_POSITION_CONFIG_CONNECTED: PositionConfig = {
+export const CONNECTED_POSITION_CONFIG: PositionConfig = {
     ...DEFAULT_POSITION_CONFIG,
     alignment: {
         origin: {

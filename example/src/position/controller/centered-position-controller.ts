@@ -2,7 +2,7 @@ import { DEFAULT_POSITION, Position } from '../position';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from '../position-config';
 import { PositionController } from '../position-controller';
 
-export const DEFAULT_POSITION_CONFIG_CENTERED: PositionConfig = {
+export const CENTERED_POSITION_CONFIG: PositionConfig = {
     ...DEFAULT_POSITION_CONFIG,
 };
 

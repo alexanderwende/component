@@ -134,18 +134,15 @@ export class FocusTrap extends FocusMonitor {
 
                     event.preventDefault();
 
-                    if (this.config.wrapFocus) {
-                        this.focusLast();
-                    }
+                    if (this.config.wrapFocus) this.focusLast();
 
                 } else if (!event.shiftKey && event.target === this.end) {
 
                     event.preventDefault();
 
-                    if (this.config.wrapFocus) {
-                        this.focusFirst();
-                    }
+                    if (this.config.wrapFocus) this.focusFirst();
                 }
+
                 break;
         }
     }

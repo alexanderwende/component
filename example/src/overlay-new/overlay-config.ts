@@ -5,7 +5,7 @@ import { DEFAULT_OVERLAY_TRIGGER_CONFIG, OverlayTriggerConfig, OVERLAY_TRIGGER_C
 
 export type OverlayConfig = PositionConfig & OverlayTriggerConfig & {
     positionType: string;
-    trigger?: string;
+    trigger?: HTMLElement;
     triggerType: string;
     stacked: boolean;
     template?: TemplateFunction;

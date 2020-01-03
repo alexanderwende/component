@@ -29,3 +29,24 @@ export const replaceWith = <T extends Node, U extends Node> (newChild: T, refChi
 
     return refChild.parentNode?.replaceChild(newChild, refChild);
 }
+
+/**
+ * Get the currently active element
+ *
+ * @description
+ * Gets the currently active element, but pierces shadow roots to find the active element
+ * also within a custom element which has a shadow root.
+ */
+export const activeElement = (): HTMLElement => {
+
+    let root: DocumentOrShadowRoot | null = document;
+
+    let element;
+
+    while (root && (element = root.activeElement)) {
+
+        root = element.shadowRoot;
+    }
+
+    return element as HTMLElement || document.body;
+}

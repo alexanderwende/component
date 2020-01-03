@@ -3,6 +3,7 @@ import { Behavior } from '../behavior';
 export interface FocusChangeEventDetail {
     type: 'focusin' | 'focusout';
     event: FocusEvent;
+    target: EventTarget;
 }
 
 export type FocusChangeEvent = CustomEvent<FocusChangeEventDetail>;
@@ -27,7 +28,7 @@ export class FocusMonitor extends Behavior {
 
             this.hasFocus = true;
 
-            this.dispatch<FocusChangeEventDetail>('focus-changed', { type: 'focusin', event: event });
+            this.dispatch<FocusChangeEventDetail>('focus-changed', { type: 'focusin', event: event, target: event.target! });
         }
     }
 
@@ -41,7 +42,7 @@ export class FocusMonitor extends Behavior {
 
             this.hasFocus = false;
 
-            this.dispatch<FocusChangeEventDetail>('focus-changed', { type: 'focusout', event: event });
+            this.dispatch<FocusChangeEventDetail>('focus-changed', { type: 'focusout', event: event, target: event.target! });
         }
     }
 }

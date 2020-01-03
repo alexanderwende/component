@@ -1,7 +1,7 @@
-import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent } from '@partkit/component';
+import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior-factory';
-import { EventManager } from '../event-manager';
+import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
 import { PositionConfig, PositionController } from '../position';
@@ -200,11 +200,16 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     }
 
     /** @internal */
-    protected _config = DEFAULT_OVERLAY_CONFIG;
+    protected _config = { ...DEFAULT_OVERLAY_CONFIG };
 
     protected marker?: Comment;
 
     protected isReattaching = false;
+
+    @property({
+        converter: AttributeConverterNumber
+    })
+    tabindex = -1;
 
     @property({ converter: AttributeConverterBoolean })
     open = false;
@@ -220,15 +225,20 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         return this._config;
     }
 
+    get static (): typeof Overlay {
+
+        return this.constructor as typeof Overlay;
+    }
+
     connectedCallback () {
 
         if (this.isReattaching) return;
 
+        super.connectedCallback();
+
         this.id = this.id || ID_GENERATOR.getNextID();
 
         this.register();
-
-        super.connectedCallback();
     }
 
     disconnectedCallback () {
@@ -245,20 +255,26 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         if (firstUpdate) {
 
             this.setAttribute('aria-hidden', `${ !this.open }`);
-        }
 
-        if (changes.has('open')) {
+            this.static.registeredOverlays.get(this)?.overlayTrigger?.attach(this.config.trigger);
 
-            this.setAttribute('aria-hidden', `${ !this.open }`);
+        } else {
 
-            this.notifyProperty('open', changes.get('open'), this.open);
+            if (changes.has('open')) {
+
+                this.setAttribute('aria-hidden', `${ !this.open }`);
+
+                this.notifyProperty('open', changes.get('open'), this.open);
+            }
         }
     }
 
-    @listener({ event: 'open-changed' })
+    @listener({ event: 'open-changed', options: { capture: true } })
     protected handleOpenChanged (event: PropertyChangeEvent<boolean>) {
 
-        const overlayRoot = this.getConstructor().overlayRoot;
+        console.log('Overlay.handleOpenChange()...', event.detail.current);
+
+        const overlayRoot = this.static.overlayRoot;
 
         this.isReattaching = true;
 
@@ -267,16 +283,18 @@ export class Overlay extends MixinRole(Component, 'dialog') {
             this.marker = document.createComment(this.id);
 
             replaceWith(this.marker, this);
-            // this.parentNode?.replaceChild(this.marker, this);
 
             overlayRoot.appendChild(this);
+
+            this.static.registeredOverlays.get(this)?.positionController?.attach(this);
 
         } else {
 
             replaceWith(this, this.marker!);
-            // this.marker?.parentNode?.replaceChild(this, this.marker);
 
             this.marker = undefined;
+
+            this.static.registeredOverlays.get(this)?.positionController?.detach();
         }
 
         this.isReattaching = false;
@@ -284,27 +302,23 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
     protected register () {
 
-        const constructor = this.getConstructor();
-
-        if (constructor.isOverlayRegistered(this)) throw ALREADY_REGISTERED_ERROR(this);
+        if (this.static.isOverlayRegistered(this)) throw ALREADY_REGISTERED_ERROR(this);
 
         const settings: OverlaySettings = {
             config: this.config,
             events: new EventManager(),
-            overlayTrigger: constructor.overlayTriggerFactory.create(this.config.triggerType, this.config, this),
-            positionController: constructor.positionControllerFactory.create(this.config.positionType, this.config),
+            overlayTrigger: this.static.overlayTriggerFactory.create(this.config.triggerType, this.config, this),
+            positionController: this.static.positionControllerFactory.create(this.config.positionType, this.config),
         };
 
-        constructor.registeredOverlays.set(this, settings);
+        this.static.registeredOverlays.set(this, settings);
     }
 
     protected unregister () {
 
-        const constructor = this.getConstructor();
+        if (!this.static.isOverlayRegistered(this)) throw NOT_REGISTERED_ERROR(this);
 
-        if (!constructor.isOverlayRegistered(this)) throw NOT_REGISTERED_ERROR(this);
-
-        const settings = constructor.registeredOverlays.get(this)!;
+        const settings = this.static.registeredOverlays.get(this)!;
 
         settings.overlayTrigger?.detach();
         settings.positionController?.detach();
@@ -312,11 +326,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         settings.overlayTrigger = undefined;
         settings.positionController = undefined;
 
-        constructor.registeredOverlays.delete(this);
-    }
-
-    protected getConstructor (): typeof Overlay {
-
-        return this.constructor as typeof Overlay;
+        this.static.registeredOverlays.delete(this);
     }
 }

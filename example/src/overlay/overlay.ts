@@ -1,6 +1,6 @@
 import { AttributeConverterARIABoolean, AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, listener, property } from '@partkit/component';
 import { html } from 'lit-html';
-import { dispatch } from '../event-manager';
+import { dispatch } from '../events';
 import { IDGenerator } from '../id-generator';
 import { TemplateFunction } from '../template-function';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';

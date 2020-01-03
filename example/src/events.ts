@@ -1,3 +1,5 @@
+import { Escape } from './keys';
+
 export interface EventBinding {
     readonly target: EventTarget;
     readonly type: string;
@@ -12,6 +14,12 @@ export function isEventBinding (binding: any): binding is EventBinding {
         && typeof (binding as EventBinding).type === 'string'
         && (typeof (binding as EventBinding).listener === 'function'
             || typeof (binding as EventBinding).listener === 'object');
+}
+
+
+export function isEscape (event?: Event): boolean {
+
+    return (event as KeyboardEvent)?.key === Escape;
 }
 
 /**

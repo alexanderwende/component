@@ -1,6 +1,6 @@
 import { render } from 'lit-html';
 import { insertAfter } from '../dom';
-import { dispatch, EventManager } from '../event-manager';
+import { dispatch, EventManager } from '../events';
 import { OverlayController, OverlayControllerFactory } from './controller';
 import { Overlay } from './overlay';
 import { OverlayBackdrop } from './overlay-backdrop';

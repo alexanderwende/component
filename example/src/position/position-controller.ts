@@ -55,6 +55,9 @@ export class PositionController extends Behavior {
                 const nextPosition = position || this.getPosition();
                 const nextSize = size || this.getSize();
 
+                console.log(position);
+                console.log(nextPosition);
+
                 if (!this.currentPosition || this.hasPositionChanged(nextPosition, this.currentPosition)) {
 
                     this.applyPosition(nextPosition);
@@ -105,6 +108,9 @@ export class PositionController extends Behavior {
 
         const originBox = this.getBoundingBox(this.origin);
         const targetBox = this.getBoundingBox(this.element);
+
+        console.log(originBox);
+        console.log(targetBox);
 
         // TODO: include alignment offset
 

@@ -23,12 +23,16 @@ export interface BoundingBox {
 
 export const DEFAULT_ALIGNMENT_PAIR: AlignmentPair = {
     origin: {
-        horizontal: 'start',
-        vertical: 'end'
+        horizontal: 'center',
+        vertical: 'center',
     },
     target: {
-        horizontal: 'start',
-        vertical: 'start'
+        horizontal: 'center',
+        vertical: 'center',
+    },
+    offset: {
+        horizontal: 0,
+        vertical: 0,
     }
 };
 

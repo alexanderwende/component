@@ -1,6 +1,6 @@
 import { BehaviorFactory, BehaviorMap, ConfigurationMap } from '../behavior-factory';
-import { CenteredPositionController, DEFAULT_POSITION_CONFIG_CENTERED } from './controller/centered-position-controller';
-import { ConnectedPositionController, DEFAULT_POSITION_CONFIG_CONNECTED } from './controller/connected-position-controller';
+import { CenteredPositionController, CENTERED_POSITION_CONFIG } from './controller/centered-position-controller';
+import { ConnectedPositionController, CONNECTED_POSITION_CONFIG } from './controller/connected-position-controller';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position-config';
 import { PositionController } from './position-controller';
 
@@ -14,8 +14,8 @@ export const POSITION_CONTROLLERS: BehaviorMap<PositionController, PositionTypes
 
 export const POSITION_CONFIGURATIONS: ConfigurationMap<PositionConfig, PositionTypes> = {
     default: DEFAULT_POSITION_CONFIG,
-    centered: DEFAULT_POSITION_CONFIG_CENTERED,
-    connected: DEFAULT_POSITION_CONFIG_CONNECTED,
+    centered: CENTERED_POSITION_CONFIG,
+    connected: CONNECTED_POSITION_CONFIG,
 };
 
 export class PositionControllerFactory extends BehaviorFactory<PositionController, PositionConfig, PositionTypes> {

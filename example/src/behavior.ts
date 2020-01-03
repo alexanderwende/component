@@ -1,4 +1,4 @@
-import { EventBinding, EventManager } from './event-manager';
+import { EventBinding, EventManager } from './events';
 
 export abstract class Behavior {
 

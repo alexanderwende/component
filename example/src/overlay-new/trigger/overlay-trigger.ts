@@ -1,9 +1,9 @@
 import { PropertyChangeEvent } from '@partkit/component';
 import { Behavior } from '../../behavior';
-import { dispatch } from '../../event-manager';
-import { Escape } from '../../keys';
+import { activeElement } from '../../dom';
 import { FocusChangeEvent, FocusMonitor } from '../../focus/focus-monitor';
 import { FocusTrap } from '../../focus/focus-trap';
+import { Escape } from '../../keys';
 import { Overlay } from '../overlay';
 import { OverlayTriggerConfig } from './overlay-trigger-config';
 
@@ -11,25 +11,20 @@ export class OverlayTrigger extends Behavior {
 
     protected previousFocus: HTMLElement = document.body;
 
-    protected focusTrap?: FocusTrap | FocusMonitor;
-
-    protected isClosing = false;
+    protected focusBehavior?: FocusMonitor;
 
     constructor (protected config: Partial<OverlayTriggerConfig>, public overlay: Overlay) {
 
         super();
 
-        this.focusTrap = this.config.trapFocus
-            ? new FocusTrap(config)
+        this.focusBehavior = this.config.trapFocus
+            ? new FocusTrap(this.config)
             : new FocusMonitor();
     }
 
     attach (element?: HTMLElement): boolean {
 
         if (!super.attach(element)) return false;
-
-        this.listen(this.overlay, 'command-open', event => this.handleOpen(event as CustomEvent));
-        this.listen(this.overlay, 'command-close', event => this.handleClose(event as CustomEvent));
 
         this.listen(this.overlay, 'open-changed', event => this.handleOpenChange(event as PropertyChangeEvent<boolean>));
         this.listen(this.overlay, 'focus-changed', event => this.handleFocusChange(event as FocusChangeEvent));
@@ -39,69 +34,42 @@ export class OverlayTrigger extends Behavior {
         return true;
     }
 
+    // TODO: remove event parameter...
     open (event?: Event) {
 
-        dispatch(this.overlay, 'command-open', {
-            target: this.overlay,
-            source: event,
-        });
+        this.overlay.open = true;
     }
 
     close (event?: Event) {
 
-        dispatch(this.overlay, 'command-close', {
-            target: this.overlay,
-            source: event,
-        });
+        this.overlay.open = false;
     }
 
     toggle (event?: Event, open?: boolean) {
 
-        open = (typeof open === 'boolean') ? open : !this.overlay.open;
-
-        if (open) {
-            this.open(event);
-        } else {
-            this.close(event);
-        }
-    }
-
-    protected handleOpen (event: CustomEvent) {
-
-        this.isClosing = false;
-
-        console.log('OverlayController.handleOpen()...', event);
-
-        this.storeFocus();
-    }
-
-    protected handleClose (event: CustomEvent) {
-
-        this.isClosing = true;
-
-        console.log('OverlayController.handleClose()...', event);
-
-        this.restoreFocus(event);
+        this.overlay.open = open ?? !this.overlay.open;
     }
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
         const open = event.detail.current;
 
-        console.log('OverlayController.handleOpenChange()...', event);
+        console.log('OverlayTrigger.handleOpenChange()...', event);
 
         if (open) {
 
-            if (this.focusTrap) {
+            this.storeFocus();
 
-                this.focusTrap.attach(this.overlay);
+            if (this.focusBehavior) {
+
+                this.focusBehavior.attach(this.overlay);
             }
 
         } else {
 
-            if (this.focusTrap) {
+            if (this.focusBehavior) {
 
-                this.focusTrap.detach();
+                this.focusBehavior.detach();
             }
         }
     }
@@ -110,19 +78,19 @@ export class OverlayTrigger extends Behavior {
 
         const hasFocus = event.detail.type === 'focusin';
 
-        console.log('OverlayController.handleFocusChange()...', this.isClosing, hasFocus);
+        console.log('OverlayTrigger.handleFocusChange()...', hasFocus);
 
-        if (!hasFocus && !this.isClosing) {
+        if (!hasFocus) {
 
             // when loosing focus, we wait for potential focusin events on child or parent overlays by delaying
             // the active check in a new macrotask via setTimeout
             setTimeout(() => {
 
                 // then we check if the overlay is active and if not, we close it
-                if (!(this.overlay.constructor as typeof Overlay).isOverlayActive(this.overlay)) {
+                if (!this.overlay.static.isOverlayActive(this.overlay)) {
 
                     // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
-                    const parent = (this.overlay.constructor as typeof Overlay).getParentOverlay(this.overlay);
+                    const parent = this.overlay.static.getParentOverlay(this.overlay);
 
                     if (this.config.closeOnFocusLoss) {
 
@@ -133,7 +101,7 @@ export class OverlayTrigger extends Behavior {
 
                         // if we have a parent overlay, we let the parent know that our overlay has lost focus,
                         // by dispatching the FocusChangeEvent on the parent overlay to be handled or ignored
-                        // by the parent's OverlayController
+                        // by the parent's OverlayTrigger
                         parent.dispatchEvent(event);
                     }
                 }
@@ -143,7 +111,7 @@ export class OverlayTrigger extends Behavior {
 
     protected handleKeydown (event: KeyboardEvent) {
 
-        console.log('overlay-controller.handleKeydown()...', event);
+        console.log('OverlayTrigger.handleKeydown()...', event);
 
         switch (event.key) {
 
@@ -156,6 +124,15 @@ export class OverlayTrigger extends Behavior {
 
                 this.close(event);
 
+                if (!this.config.restoreFocus) return;
+
+                this.listen(this.overlay, 'open-changed', () => {
+
+                    console.log('once: open-changed restoreFocus...');
+                    this.restoreFocus();
+
+                }, { once: true });
+
                 break;
         }
     }
@@ -164,28 +141,15 @@ export class OverlayTrigger extends Behavior {
 
     protected storeFocus () {
 
-        this.previousFocus = document.activeElement as HTMLElement || document.body;
+        this.previousFocus = activeElement();
 
-        console.log('overlay-controller.storeFocus()...', this.previousFocus);
+        console.log('OverlayTrigger.storeFocus()...', this.previousFocus);
     }
 
-    protected restoreFocus (event?: CustomEvent) {
+    protected restoreFocus () {
 
-        console.log('overlay-controller.restoreFocus()...', this.previousFocus, event);
+        this.previousFocus.focus();
 
-        // we only restore the focus if the overlay is closed pressing Escape or programmatically
-        const restoreFocus = this.config.restoreFocus && (!event || this.isEscape(event.detail.source));
-
-        if (restoreFocus) {
-
-            this.previousFocus!.focus();
-        }
-
-        // this.previousFocus = document.body;
-    }
-
-    protected isEscape (event?: Event): boolean {
-
-        return event && (event as KeyboardEvent).key === Escape || false;
+        console.log('OverlayTrigger.restoreFocus()...', this.previousFocus);
     }
 }
