@@ -1,17 +1,5 @@
 import { render, TemplateResult } from 'lit-html';
-import {
-    AttributeReflector,
-    createEventName,
-    isAttributeReflector,
-    isPropertyChangeDetector,
-    isPropertyKey,
-    isPropertyNotifier,
-    isPropertyReflector,
-    ListenerDeclaration,
-    PropertyDeclaration,
-    PropertyNotifier,
-    PropertyReflector
-} from './decorators/index.js';
+import { AttributeReflector, createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, ListenerDeclaration, PropertyDeclaration, PropertyNotifier, PropertyReflector, SelectorDeclaration } from './decorators/index.js';
 
 /**
  * @internal
@@ -66,7 +54,7 @@ export interface PropertyChangeEventDetail<T> {
 /**
  * A type for property change events, as dispatched by the {@link _notifyProperty} method
  */
-export interface PropertyChangeEvent<T> extends CustomEvent<PropertyChangeEventDetail<T>> {}
+export interface PropertyChangeEvent<T> extends CustomEvent<PropertyChangeEventDetail<T>> { }
 
 /**
  * The component base class
@@ -165,12 +153,23 @@ export abstract class Component extends HTMLElement {
      * A map of property keys and their respective listener declarations
      *
      * @remarks
-     * This map is populated by the {@link property} decorator and can be used to obtain the
+     * This map is populated by the {@link listener} decorator and can be used to obtain the
      * {@link ListenerDeclaration} of a method.
      *
      * @internal
      */
     static listeners: Map<PropertyKey, ListenerDeclaration> = new Map();
+
+    /**
+     * A map of property keys and their respective selector declarations
+     *
+     * @remarks
+     * This map is populated by the {@link selector} decorator and can be used to obtain the
+     * {@link SelectorDeclaration} of a property.
+     *
+     * @internal
+     */
+    static selectors: Map<PropertyKey, SelectorDeclaration> = new Map();
 
     /**
      * The component's selector
@@ -365,6 +364,8 @@ export abstract class Component extends HTMLElement {
     disconnectedCallback () {
 
         this._unlisten();
+
+        this._unselect();
 
         this._notifyLifecycle('disconnected');
 
@@ -592,6 +593,7 @@ export abstract class Component extends HTMLElement {
         if (template) render(template, this.renderRoot, { eventContext: this });
     }
 
+    // TODO: Maybe remove update method and just use performUpdate()...?
     /**
      * Updates the component after an update was requested with {@link requestUpdate}
      *
@@ -606,6 +608,8 @@ export abstract class Component extends HTMLElement {
     protected update (changes?: Changes) {
 
         this.render();
+
+        this._select();
 
         // reflect all properties marked for reflection
         this._reflectingProperties.forEach((oldValue: any, propertyKey: PropertyKey) => {
@@ -1056,7 +1060,7 @@ export abstract class Component extends HTMLElement {
 
             // add the bound event listener to the target
             instanceDeclaration.target.addEventListener(
-                instanceDeclaration.event as string,
+                instanceDeclaration.event!,
                 instanceDeclaration.listener,
                 instanceDeclaration.options);
 
@@ -1076,10 +1080,31 @@ export abstract class Component extends HTMLElement {
         this._listenerDeclarations.forEach((declaration) => {
 
             declaration.target.removeEventListener(
-                declaration.event as string,
+                declaration.event!,
                 declaration.listener,
                 declaration.options);
         });
+    }
+
+    // TODO: Document this
+    private _select () {
+
+        (this.constructor as typeof Component).selectors.forEach((declaration, property) => {
+
+            const element = declaration.all
+                ? this.renderRoot.querySelectorAll(declaration.query!)
+                : this.renderRoot.querySelector(declaration.query!);
+
+            this[property as keyof this] = element as any;
+        })
+    }
+
+    private _unselect () {
+
+        (this.constructor as typeof Component).selectors.forEach((declaration, property) => {
+
+            this[property as keyof this] = null as any;
+        })
     }
 
     /**
@@ -1164,9 +1189,39 @@ export abstract class Component extends HTMLElement {
 
             const changes = new Map(this._changedProperties);
 
-            // pass a copy of the property changes to the update method, so property changes
-            // are available in an overridden update method
-            this.update(changes);
+            if (!this._hasUpdated) {
+
+                this.render();
+
+                this._adoptStyles();
+
+                // select all component children
+                this._select();
+
+                // bind listeners after render to ensure all DOM is rendered, all properties
+                // are up-to-date and any user-created objects (e.g. workers) will be created in an
+                // overridden connectedCallback; but before dispatching any property-change events
+                // to make sure local listeners are bound first
+                this._listen();
+
+                // reflect all properties marked for reflection
+                this._reflectingProperties.forEach((oldValue: any, propertyKey: PropertyKey) => {
+
+                    this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
+                });
+
+                // notify all properties marked for notification
+                this._notifyingProperties.forEach((oldValue, propertyKey) => {
+
+                    this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
+                });
+
+            } else {
+
+                // pass a copy of the property changes to the update method, so property changes
+                // are available in an overridden update method
+                this.update(changes);
+            }
 
             // reset property maps directly after the update, so changes during the updateCallback
             // can be recorded for the next update, which has to be triggered manually though
@@ -1174,16 +1229,17 @@ export abstract class Component extends HTMLElement {
             this._reflectingProperties = new Map();
             this._notifyingProperties = new Map();
 
+            // TODO: Clean this up
             // in the first update we adopt the element's styles and set up declared listeners
-            if (!this._hasUpdated) {
+            // if (!this._hasUpdated) {
 
-                this._adoptStyles();
+            //     this._adoptStyles();
 
-                // bind listeners after the update, this way we ensure all DOM is rendered, all properties
-                // are up-to-date and any user-created objects (e.g. workers) will be created in an
-                // overridden connectedCallback
-                this._listen();
-            }
+            //     // bind listeners after the update, this way we ensure all DOM is rendered, all properties
+            //     // are up-to-date and any user-created objects (e.g. workers) will be created in an
+            //     // overridden connectedCallback
+            //     this._listen();
+            // }
 
             this.updateCallback(changes, !this._hasUpdated);
 
