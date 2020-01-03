@@ -3,5 +3,7 @@ export * from './component.js';
 export * from './component-declaration.js';
 export * from './listener.js';
 export * from './listener-declaration.js';
+export * from './selector.js';
+export * from './selector-declaration.js';
 export * from './property.js';
 export * from './property-declaration.js';
