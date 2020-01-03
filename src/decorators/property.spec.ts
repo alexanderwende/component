@@ -3,7 +3,7 @@ import { AttributeConverter } from './attribute-converter';
 import { component } from './component';
 import { property } from './property';
 
-const ARIABooleanConverter: AttributeConverter<boolean> = {
+const ARIABooleanConverter: AttributeConverter<any, boolean> = {
     fromAttribute: (value) => value === 'true',
     toAttribute: (value) => (value == null) ? value : value.toString()
 }

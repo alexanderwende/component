@@ -3,12 +3,12 @@ import { Component } from "../component";
 /**
  * A function that will map an attribute value to a property value
  */
-export type AttributeMapper<C extends Component = Component, T = any> = (this: C, value: string | null) => T | null;
+export type AttributeMapper<C extends Component = any, T = any> = (this: C, value: string | null) => T | null;
 
 /**
  * A function that will map a property value to an attribute value
  */
-export type PropertyMapper<C extends Component = Component, T = any> = (this: C, value: T | null) => string | null | undefined;
+export type PropertyMapper<C extends Component = any, T = any> = (this: C, value: T | null) => string | null | undefined;
 
 /**
  * An object that holds an {@link AttributeMapper} and a {@link PropertyMapper}
@@ -26,7 +26,7 @@ export type PropertyMapper<C extends Component = Component, T = any> = (this: C,
  * }
  * ```
  */
-export interface AttributeConverter<C extends Component = Component, T = any> {
+export interface AttributeConverter<C extends Component = any, T = any> {
     toAttribute: PropertyMapper<C, T>;
     fromAttribute: AttributeMapper<C, T>;
 }
@@ -77,7 +77,7 @@ export const AttributeConverterDefault: AttributeConverter = {
  * any value at all. In order to set the attribute to false, the attribute has to be removed by
  * setting the attribute value to `null`.
  */
-export const AttributeConverterBoolean: AttributeConverter<Component, boolean> = {
+export const AttributeConverterBoolean: AttributeConverter<any, boolean> = {
     fromAttribute: (value: string | null) => (value !== null),
     toAttribute: (value: boolean | null) => value ? '' : null
 }
@@ -86,39 +86,39 @@ export const AttributeConverterBoolean: AttributeConverter<Component, boolean> =
  * Handles boolean ARIA attributes, like `aria-checked` or `aria-selected`, which have to be
  * set explicitly to `true` or `false`.
  */
-export const AttributeConverterARIABoolean: AttributeConverter<Component, boolean> = {
+export const AttributeConverterARIABoolean: AttributeConverter<any, boolean> = {
     fromAttribute: (value) => value === 'true',
     // pass through null or undefined using `value == null`
     toAttribute: (value) => (value == null) ? value : value.toString()
 };
 
-export const AttributeConverterString: AttributeConverter<Component, string> = {
+export const AttributeConverterString: AttributeConverter<any, string> = {
     fromAttribute: (value: string | null) => (value === null) ? null : value,
     // pass through null or undefined
     toAttribute: (value: string | null) => value
 }
 
-export const AttributeConverterNumber: AttributeConverter<Component, number> = {
+export const AttributeConverterNumber: AttributeConverter<any, number> = {
     fromAttribute: (value: string | null) => (value === null) ? null : Number(value),
     // pass through null or undefined using `value == null`
     toAttribute: (value: number | null) => (value == null) ? value : value.toString()
 }
 
-export const AttributeConverterObject: AttributeConverter<Component, object> = {
+export const AttributeConverterObject: AttributeConverter<any, object> = {
     // `JSON.parse()` will throw an error for empty strings - we consider it null
     fromAttribute: (value: string | null) => (value === null || value === '') ? null : JSON.parse(value),
     // pass through null or undefined using `value == null`
     toAttribute: (value: object | null) => (value == null) ? value : JSON.stringify(value)
 }
 
-export const AttributeConverterArray: AttributeConverter<Component, any[]> = {
+export const AttributeConverterArray: AttributeConverter<any, any[]> = {
     // `JSON.parse()` will throw an error for empty strings - we consider it null
     fromAttribute: (value: string | null) => (value === null || value === '') ? null : JSON.parse(value),
     // pass through null or undefined using `value == null`
     toAttribute: (value: any[] | null) => (value == null) ? value : JSON.stringify(value)
 };
 
-export const AttributeConverterDate: AttributeConverter<Component, Date> = {
+export const AttributeConverterDate: AttributeConverter<any, Date> = {
     // `new Date()` will return an `Invalid Date` for empty strings - we consider it null
     fromAttribute: (value: string | null) => (value === null || value === '') ? null : new Date(value),
     // pass through null or undefined using `value == null`
