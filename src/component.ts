@@ -1,5 +1,6 @@
 import { render, TemplateResult } from 'lit-html';
-import { AttributeReflector, createEventName, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, ListenerDeclaration, PropertyDeclaration, PropertyNotifier, PropertyReflector, SelectorDeclaration } from './decorators/index.js';
+import { AttributeReflector, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, ListenerDeclaration, PropertyDeclaration, PropertyNotifier, PropertyReflector, SelectorDeclaration } from './decorators/index.js';
+import { LifecycleEvent, PropertyChangeEvent } from './events.js';
 
 /**
  * @internal
@@ -40,21 +41,9 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
 /**
  * A type for property changes, as used in {@link updateCallback}
  */
+// TODO: check if we can use different signature
+// type Changes<C extends Component = Component> = Map<keyof C, any>
 export type Changes = Map<PropertyKey, any>;
-
-/**
- * A type for property change event details, as used by {@link PropertyChangeEvent}
- */
-export interface PropertyChangeEventDetail<T> {
-    property: string;
-    previous: T;
-    current: T;
-}
-
-/**
- * A type for property change events, as dispatched by the {@link _notifyProperty} method
- */
-export interface PropertyChangeEvent<T> extends CustomEvent<PropertyChangeEventDetail<T>> { }
 
 /**
  * The component base class
@@ -252,7 +241,10 @@ export abstract class Component extends HTMLElement {
      *
      *      static get observedAttributes (): string[] {
      *
-     *          return [...super.observedAttributes, 'my-additional-attribute'];
+     *          return [
+     *              ...super.observedAttributes,
+     *              'my-additional-attribute'
+     *          ];
      *      }
      * }
      * ```
@@ -452,6 +444,9 @@ export abstract class Component extends HTMLElement {
      */
     protected notify (eventName: string, eventInit?: CustomEventInit) {
 
+        // TODO: improve this! we should pull the dispatch method from example into ./events
+        // and use it here; we should change notify() arguments to type, detail, init
+        // maybe we should even rename it to dispatch...
         this.dispatchEvent(new CustomEvent(eventName, eventInit));
     }
 
@@ -593,35 +588,56 @@ export abstract class Component extends HTMLElement {
         if (template) render(template, this.renderRoot, { eventContext: this });
     }
 
-    // TODO: Maybe remove update method and just use performUpdate()...?
     /**
      * Updates the component after an update was requested with {@link requestUpdate}
      *
      * @remarks
      * This method renders the template, reflects changed properties to attributes and
      * dispatches change events for properties which are marked for notification.
-     * To handle updates differently, this method can be overridden and a map of property
-     * changes is provided.
+     * To handle updates differently, this method can be overridden.
      *
-     * @param changes   A map of properties that changed in the update, containg the property key and the old value
+     * @param changes       A map of properties that changed in the update, containg the property key and the old value
+     * @param reflections   A map of properties that were marked for reflection in the update, containg the property key and the old value
+     * @param notifications A map of properties that were marked for notification in the update, containg the property key and the old value
+     * @param firstUpdate   A boolean indicating if this is the first update of the component
      */
-    protected update (changes?: Changes) {
+    protected update (changes: Changes, reflections: Changes, notifications: Changes, firstUpdate: boolean = false) {
 
         this.render();
 
-        this._select();
+        // in the first update we adopt the element's styles and set up declared listeners
+        if (firstUpdate) {
 
-        // reflect all properties marked for reflection
-        this._reflectingProperties.forEach((oldValue: any, propertyKey: PropertyKey) => {
+            this._style();
+            this._select();
+            // bind listeners after render to ensure all DOM is rendered, all properties
+            // are up-to-date and any user-created objects (e.g. workers) will be created in an
+            // overridden connectedCallback; but before dispatching any property-change events
+            // to make sure local listeners are bound first
+            this._listen();
 
-            this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
-        });
+        } else {
 
-        // notify all properties marked for notification
-        this._notifyingProperties.forEach((oldValue, propertyKey) => {
+            this._select();
 
-            this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
-        });
+            // TODO: can we check if selected nodes changed and if listeners are affected?
+        }
+
+        this.reflectProperties(reflections);
+        this.notifyProperties(notifications);
+    }
+
+    /**
+     * Resets the component after an update
+     *
+     * @description
+     * Resets the component's property tracking maps which are used in the update cycle to track changes.
+     */
+    protected reset () {
+
+        this._changedProperties = new Map();
+        this._reflectingProperties = new Map();
+        this._notifyingProperties = new Map();
     }
 
     /**
@@ -664,6 +680,26 @@ export abstract class Component extends HTMLElement {
     protected getPropertyDeclaration (propertyKey: PropertyKey): PropertyDeclaration | undefined {
 
         return (this.constructor as typeof Component).properties.get(propertyKey);
+    }
+
+    protected reflectProperties (properties?: Map<PropertyKey, any>) {
+
+        properties = properties ?? this._reflectingProperties as Map<keyof this, any>;
+
+        properties.forEach((oldValue, propertyKey) => {
+
+            this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof this]);
+        });
+    }
+
+    protected notifyProperties (properties?: Map<PropertyKey, any>) {
+
+        properties = properties ?? this._notifyingProperties as Map<keyof this, any>;
+
+        properties.forEach((oldValue, propertyKey) => {
+
+            this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof this]);
+        });
     }
 
     /**
@@ -860,7 +896,7 @@ export abstract class Component extends HTMLElement {
      * @internal
      * @private
      */
-    private _adoptStyles () {
+    private _style () {
 
         const constructor = this.constructor as typeof Component;
         const styleSheet = constructor.styleSheet;
@@ -982,7 +1018,7 @@ export abstract class Component extends HTMLElement {
     }
 
     /**
-     * Dispatch a property-changed event
+     * Dispatch a {@link PropertyChangeEvent}
      *
      * @param propertyKey
      * @param oldValue
@@ -991,24 +1027,20 @@ export abstract class Component extends HTMLElement {
      * @internal
      * @private
      */
-    private _notifyProperty (propertyKey: PropertyKey, oldValue: any, newValue: any): void {
+    private _notifyProperty<T = any> (propertyKey: PropertyKey, oldValue: T, newValue: T): void {
 
-        const eventName = createEventName(propertyKey, '', 'changed');
+        const event = new PropertyChangeEvent(propertyKey, {
+            target: this,
+            property: propertyKey.toString(),
+            previous: oldValue,
+            current: newValue,
+        });
 
-        this.dispatchEvent(new CustomEvent(eventName, {
-            bubbles: true,
-            composed: true,
-            cancelable: true,
-            detail: {
-                property: propertyKey,
-                previous: oldValue,
-                current: newValue,
-            },
-        }));
+        this.dispatchEvent(event);
     }
 
     /**
-     * Dispatch a lifecycle event
+     * Dispatch a {@link LifecycleEvent}
      *
      * @param lifecycle The lifecycle for which to raise the event (will be the event name)
      * @param detail    Optional event details
@@ -1016,19 +1048,14 @@ export abstract class Component extends HTMLElement {
      * @internal
      * @private
      */
-    private _notifyLifecycle (lifecycle: 'adopted' | 'connected' | 'disconnected' | 'update', detail?: object) {
+    private _notifyLifecycle (lifecycle: 'adopted' | 'connected' | 'disconnected' | 'update', detail: object = {}) {
 
-        this.dispatchEvent(new CustomEvent(lifecycle, {
-            bubbles: true,
-            composed: true,
-            cancelable: true,
-            // TODO: commit message: inlude component instance in event detail, as events from within ShadowRoot are
-            // re-targeted, and that way nested components, like overlays, can't be caught by overlay-service
-            detail: {
-                component: this,
-                ...(detail ? detail : {})
-            }
-        }));
+        const event = new LifecycleEvent(lifecycle, {
+            target: this,
+            ...detail,
+        });
+
+        this.dispatchEvent(event);
     }
 
     /**
@@ -1131,10 +1158,15 @@ export abstract class Component extends HTMLElement {
         // execution can resume here
         await previousRequest;
 
-        const result = this._scheduleUpdate();
+        // ask the scheduler for a new update
+        const update = this._scheduleUpdate();
 
-        // the actual update may be scheduled asynchronously as well
-        if (result) await result;
+        // the actual update may be scheduled asynchronously as well, in which case we wait for it
+        if (update) await update;
+
+        // mark component as updated *after* the update to prevent infinte loops in the update process
+        // N.B.: any property changes during the update will not trigger another update
+        this._hasRequestedUpdate = false;
 
         // resolve the new {@link _updateRequest} after the result of the current update resolves
         resolve!(!this._hasRequestedUpdate);
@@ -1188,58 +1220,16 @@ export abstract class Component extends HTMLElement {
         if (this.isConnected) {
 
             const changes = new Map(this._changedProperties);
+            const reflections = new Map(this._reflectingProperties);
+            const notifications = new Map(this._notifyingProperties);
 
-            if (!this._hasUpdated) {
-
-                this.render();
-
-                this._adoptStyles();
-
-                // select all component children
-                this._select();
-
-                // bind listeners after render to ensure all DOM is rendered, all properties
-                // are up-to-date and any user-created objects (e.g. workers) will be created in an
-                // overridden connectedCallback; but before dispatching any property-change events
-                // to make sure local listeners are bound first
-                this._listen();
-
-                // reflect all properties marked for reflection
-                this._reflectingProperties.forEach((oldValue: any, propertyKey: PropertyKey) => {
-
-                    this.reflectProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
-                });
-
-                // notify all properties marked for notification
-                this._notifyingProperties.forEach((oldValue, propertyKey) => {
-
-                    this.notifyProperty(propertyKey, oldValue, this[propertyKey as keyof Component]);
-                });
-
-            } else {
-
-                // pass a copy of the property changes to the update method, so property changes
-                // are available in an overridden update method
-                this.update(changes);
-            }
+            // pass a copy of the property changes to the update method, so property changes
+            // are available in an overridden update method
+            this.update(changes, reflections, notifications, !this._hasUpdated);
 
             // reset property maps directly after the update, so changes during the updateCallback
             // can be recorded for the next update, which has to be triggered manually though
-            this._changedProperties = new Map();
-            this._reflectingProperties = new Map();
-            this._notifyingProperties = new Map();
-
-            // TODO: Clean this up
-            // in the first update we adopt the element's styles and set up declared listeners
-            // if (!this._hasUpdated) {
-
-            //     this._adoptStyles();
-
-            //     // bind listeners after the update, this way we ensure all DOM is rendered, all properties
-            //     // are up-to-date and any user-created objects (e.g. workers) will be created in an
-            //     // overridden connectedCallback
-            //     this._listen();
-            // }
+            this.reset();
 
             this.updateCallback(changes, !this._hasUpdated);
 
@@ -1247,9 +1237,5 @@ export abstract class Component extends HTMLElement {
 
             this._hasUpdated = true;
         }
-
-        // mark component as updated *after* the update to prevent infinte loops in the update process
-        // N.B.: any property changes during the update will not trigger another update
-        this._hasRequestedUpdate = false;
     }
 }

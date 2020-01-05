@@ -373,7 +373,7 @@ export class OverlayService {
 
     protected handleOverlayConnected (event: CustomEvent) {
 
-        const overlay = event.detail.component as Overlay;
+        const overlay = event.detail.target as Overlay;
 
         if (this.registeringOverlay === overlay) return;
 
@@ -388,7 +388,7 @@ export class OverlayService {
 
     protected handleOverlayDisconnected (event: CustomEvent) {
 
-        const overlay = event.detail.component as Overlay;
+        const overlay = event.detail.target as Overlay;
 
         if (this.registeringOverlay === overlay) return;
 
