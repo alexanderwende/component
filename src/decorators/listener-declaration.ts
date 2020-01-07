@@ -54,5 +54,5 @@ export interface ListenerDeclaration<Type extends Component = Component> {
      * }
      * ```
      */
-    target?: EventTarget | ((this: Type) => EventTarget);
+    target?: EventTarget | ((this: Type) => EventTarget | undefined);
 }
