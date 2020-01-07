@@ -1,6 +1,6 @@
 import { render, TemplateResult } from 'lit-html';
 import { AttributeReflector, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector, ListenerDeclaration, PropertyDeclaration, PropertyNotifier, PropertyReflector, SelectorDeclaration } from './decorators/index.js';
-import { LifecycleEvent, PropertyChangeEvent } from './events.js';
+import { ComponentEvent, LifecycleEvent, PropertyChangeEvent } from './events.js';
 
 /**
  * @internal
@@ -39,10 +39,8 @@ interface InstanceListenerDeclaration extends ListenerDeclaration {
 }
 
 /**
- * A type for property changes, as used in {@link updateCallback}
+ * A type for property changes, as used in {@link Component.updateCallback}
  */
-// TODO: check if we can use different signature
-// type Changes<C extends Component = Component> = Map<keyof C, any>
 export type Changes = Map<PropertyKey, any>;
 
 /**
@@ -441,6 +439,7 @@ export abstract class Component extends HTMLElement {
      *
      * @param eventName An event name
      * @param eventInit A {@link CustomEventInit} dictionary
+     * @deprecated  Use {@link Component.dispatch} instead
      */
     protected notify (eventName: string, eventInit?: CustomEventInit) {
 
@@ -448,6 +447,36 @@ export abstract class Component extends HTMLElement {
         // and use it here; we should change notify() arguments to type, detail, init
         // maybe we should even rename it to dispatch...
         this.dispatchEvent(new CustomEvent(eventName, eventInit));
+    }
+
+    /**
+     * Dispatch an event on the component
+     *
+     * @param event The event to dispatch
+     */
+    protected dispatch (event: Event): boolean;
+
+    /**
+     * Dispatch a {@link ComponentEvent} on the component
+     *
+     * @remarks
+     * If called with a type and detail argument, the dispatch method will create a new {@link ComponentEvent}
+     * and set its detail's `target` property to the component instance.
+     *
+     * @param type      The type of the event
+     * @param detail    An optional custom event detail
+     * @param init      An optional {@link EventInit} dictionary
+     */
+    protected dispatch<T = any> (type: string, detail?: T, init?: Partial<EventInit>): boolean;
+
+    protected dispatch<T = any> (eventOrType: Event | string, detail?: T, init: Partial<EventInit> = {}): boolean {
+
+        if (typeof eventOrType === 'string') {
+
+            eventOrType = new ComponentEvent<T>(eventOrType, { target: this, ...detail! }, init)
+        }
+
+        return this.dispatchEvent(eventOrType);
     }
 
     /**
@@ -516,7 +545,7 @@ export abstract class Component extends HTMLElement {
      * attribute changes. If you need the component to update based on a state change that is
      * not covered by a decorated property, call this method without any arguments.
      *
-     * @param propertyKey   The name of the changed property that requests the update
+     * @param propertyKey   The key of the changed property that requests the update
      * @param oldValue      The old property value
      * @param newValue      the new property value
      * @returns             A Promise which is resolved when the update is completed
@@ -682,6 +711,17 @@ export abstract class Component extends HTMLElement {
         return (this.constructor as typeof Component).properties.get(propertyKey);
     }
 
+    /**
+     * Reflect all property changes
+     *
+     * @remarks
+     * This method is used to reflect all properties of the component, which have been marked for reflection.
+     * It is called by the {@link Component.update} method after the template has been rendered. If no
+     * properties map is provided, this method will reflect all properties which have been marked for
+     * reflection since the last `update`.
+     *
+     * @param properties An optional map of property keys and their previous value
+     */
     protected reflectProperties (properties?: Map<PropertyKey, any>) {
 
         properties = properties ?? this._reflectingProperties as Map<keyof this, any>;
@@ -692,6 +732,17 @@ export abstract class Component extends HTMLElement {
         });
     }
 
+    /**
+     * Raise change events for all changed properties
+     *
+     * @remarks
+     * This method is used to raise change events for all properties of the component, which have been
+     * marked for notification. It is called by the {@link Component.update} method after the template
+     * has been rendered and properties have been reflected. If no properties map is provided, this
+     * method will notify all properties which have been marked for notification since the last `update`.
+     *
+     * @param properties An optional map of property keys and their previous value
+     */
     protected notifyProperties (properties?: Map<PropertyKey, any>) {
 
         properties = properties ?? this._notifyingProperties as Map<keyof this, any>;
@@ -899,11 +950,15 @@ export abstract class Component extends HTMLElement {
     private _style () {
 
         const constructor = this.constructor as typeof Component;
-        const styleSheet = constructor.styleSheet;
-        const styleElement = constructor.styleElement;
-        const styles = constructor.styles;
 
-        if (styleSheet) {
+        let styleSheet: CSSStyleSheet | undefined;
+        let styleElement: HTMLStyleElement | undefined;
+
+        // we invoke the getter in the if statement to have the getter invoked lazily
+        // the getters for styleSheet and styleElement will create the actual styleSheet
+        // and styleElement and cache them statically and we don't want to create both
+        // we prefer the constructable styleSheet and fallback to the style element
+        if ((styleSheet = constructor.styleSheet)) {
 
             // TODO: test this part once we have constructable stylesheets (Chrome 73)
             if (!constructor.shadow) {
@@ -922,7 +977,7 @@ export abstract class Component extends HTMLElement {
                 (this.renderRoot as ShadowRoot).adoptedStyleSheets = [styleSheet];
             }
 
-        } else if (styleElement) {
+        } else if ((styleElement = constructor.styleElement)) {
 
             // TODO: test we don't duplicate stylesheets for non-shadow elements
             const styleAlreadyAdded = constructor.shadow
@@ -1029,14 +1084,12 @@ export abstract class Component extends HTMLElement {
      */
     private _notifyProperty<T = any> (propertyKey: PropertyKey, oldValue: T, newValue: T): void {
 
-        const event = new PropertyChangeEvent(propertyKey, {
+        this.dispatch(new PropertyChangeEvent(propertyKey, {
             target: this,
             property: propertyKey.toString(),
             previous: oldValue,
             current: newValue,
-        });
-
-        this.dispatchEvent(event);
+        }));
     }
 
     /**
@@ -1050,12 +1103,10 @@ export abstract class Component extends HTMLElement {
      */
     private _notifyLifecycle (lifecycle: 'adopted' | 'connected' | 'disconnected' | 'update', detail: object = {}) {
 
-        const event = new LifecycleEvent(lifecycle, {
+        this.dispatch(new LifecycleEvent(lifecycle, {
             target: this,
             ...detail,
-        });
-
-        this.dispatchEvent(event);
+        }));
     }
 
     /**
@@ -1078,11 +1129,10 @@ export abstract class Component extends HTMLElement {
                 listener: (this[listener as keyof this] as unknown as EventListener).bind(this),
 
                 // determine the event target and store it in the instance declaration
-                target: (declaration.target)
-                    ? (typeof declaration.target === 'function')
-                        ? declaration.target.call(this)
-                        : declaration.target
-                    : this
+                target: ((typeof declaration.target === 'function')
+                    ? declaration.target.call(this)
+                    : declaration.target)
+                    || this,
             };
 
             // add the bound event listener to the target
@@ -1113,25 +1163,41 @@ export abstract class Component extends HTMLElement {
         });
     }
 
-    // TODO: Document this
+    /**
+     * Query component selectors
+     *
+     * @internal
+     * @private
+     */
     private _select () {
 
         (this.constructor as typeof Component).selectors.forEach((declaration, property) => {
 
+            const root = ((typeof declaration.root === 'function')
+                ? declaration.root.call(this)
+                : declaration.root)
+                || this.renderRoot;
+
             const element = declaration.all
-                ? this.renderRoot.querySelectorAll(declaration.query!)
-                : this.renderRoot.querySelector(declaration.query!);
+                ? root.querySelectorAll(declaration.query!)
+                : root.querySelector(declaration.query!);
 
             this[property as keyof this] = element as any;
-        })
+        });
     }
 
+    /**
+     * Reset component selector references
+     *
+     * @internal
+     * @private
+     */
     private _unselect () {
 
         (this.constructor as typeof Component).selectors.forEach((declaration, property) => {
 
             this[property as keyof this] = null as any;
-        })
+        });
     }
 
     /**
