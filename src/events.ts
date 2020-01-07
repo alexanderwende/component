@@ -40,7 +40,7 @@ export class ComponentEvent<T = any, C extends Component = Component> extends Cu
         const eventInit: CustomEventInit<T & ComponentEventDetail<C>> = {
             ...DEFAULT_EVENT_INIT,
             ...init,
-            detail
+            detail,
         };
 
         super(type, eventInit);
