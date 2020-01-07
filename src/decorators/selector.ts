@@ -1,6 +1,11 @@
 import { Component } from '../component.js';
 import { SelectorDeclaration, DEFAULT_SELECTOR_DECLARATION } from './selector-declaration.js';
 
+/**
+ * Decorates a {@link Component} property as a selector
+ *
+ * @param options The selector declaration
+ */
 export function selector<Type extends Component = Component> (options: SelectorDeclaration<Type>) {
 
     return function (target: Object, propertyKey: PropertyKey, propertyDescriptor?: PropertyDescriptor) {
@@ -17,7 +22,7 @@ export function selector<Type extends Component = Component> (options: SelectorD
 
         } else {
 
-            constructor.selectors.set(propertyKey, { ...options } as SelectorDeclaration<Type>);
+            constructor.selectors.set(propertyKey, { ...options } as SelectorDeclaration);
         }
     }
 }

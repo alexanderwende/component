@@ -13,6 +13,13 @@ export interface SelectorDeclaration<Type extends Component = Component> {
     query: string | null;
 
     /**
+     * The root element/document from which to query
+     *
+     * Default value: The component's `renderRoot`
+     */
+    root?: Document | DocumentFragment | Element | ((this: Type) => Document | DocumentFragment | Element | undefined);
+
+    /**
      * Use querySelectorAll for querying
      *
      * Default value: `false`
