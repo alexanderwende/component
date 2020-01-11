@@ -1,4 +1,4 @@
-import { BehaviorFactory, BehaviorMap, ConfigurationMap } from 'example/src/behavior-factory';
+import { BehaviorFactory, BehaviorMap, ConfigurationMap } from 'example/src/behavior/behavior-factory';
 import { Overlay } from '../overlay';
 import { DialogOverlayTrigger, DIALOG_OVERLAY_TRIGGER_CONFIG } from './dialog-overlay-trigger';
 import { OverlayTrigger } from './overlay-trigger';

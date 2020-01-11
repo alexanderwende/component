@@ -2,7 +2,7 @@ import { BoundingBox, getTargetPosition } from './alignment';
 import { hasPositionChanged, isPosition, Position } from './position';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position-config';
 import { hasSizeChanged, Size } from './size';
-import { Behavior } from 'example/src/behavior';
+import { Behavior } from 'example/src/behavior/behavior';
 import { applyDefaults } from '../../utils/config';
 
 export class PositionStrategy {

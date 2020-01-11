@@ -1,6 +1,6 @@
 import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber } from '@partkit/component';
 import { html } from 'lit-html';
-import { BehaviorFactory } from '../behavior-factory';
+import { BehaviorFactory } from '../behavior/behavior-factory';
 import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
@@ -269,6 +269,16 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         }
     }
 
+    /**
+     * Handle the overlay's open-changed event
+     *
+     * @remarks
+     * Property changes are dispatched during the update cycle of the component, so they run in
+     * an animationFrame callback. We can therefore run code in these handlers, which runs inside
+     * an animationFrame, like updating the position of the overlay without scheduling it.
+     *
+     * @param event
+     */
     @listener({ event: 'open-changed', options: { capture: true } })
     protected handleOpenChanged (event: PropertyChangeEvent<boolean>) {
 
@@ -287,6 +297,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
             overlayRoot.appendChild(this);
 
             this.static.registeredOverlays.get(this)?.positionController?.attach(this);
+            this.static.registeredOverlays.get(this)?.positionController?.update();
 
         } else {
 

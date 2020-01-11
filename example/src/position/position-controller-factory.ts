@@ -1,4 +1,4 @@
-import { BehaviorFactory, BehaviorMap, ConfigurationMap } from '../behavior-factory';
+import { BehaviorFactory, BehaviorMap, ConfigurationMap } from '../behavior/behavior-factory';
 import { CenteredPositionController, CENTERED_POSITION_CONFIG } from './controller/centered-position-controller';
 import { ConnectedPositionController, CONNECTED_POSITION_CONFIG } from './controller/connected-position-controller';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position-config';

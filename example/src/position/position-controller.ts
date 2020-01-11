@@ -1,4 +1,4 @@
-import { Behavior } from '../behavior';
+import { Behavior } from '../behavior/behavior';
 import { applyDefaults } from '../utils/config';
 import { BoundingBox, getTargetPosition } from './alignment';
 import { hasPositionChanged, isPosition, Position } from './position';
@@ -8,8 +8,6 @@ import { hasSizeChanged, Size } from './size';
 export class PositionController extends Behavior {
 
     private _origin: Position | HTMLElement | string | undefined;
-
-    protected animationFrame: number | undefined;
 
     protected currentPosition: Position | undefined;
 
@@ -44,58 +42,41 @@ export class PositionController extends Behavior {
         this.origin = this.config.origin;
     }
 
-    update (position?: Position, size?: Size) {
+    requestUpdate (position?: Position, size?: Size): Promise<boolean> {
 
-        if (!this.hasAttached) return;
+        return super.requestUpdate(position, size);
+    }
 
-        if (!this.animationFrame) {
+    update (position?: Position, size?: Size): boolean {
 
-            this.animationFrame = requestAnimationFrame(() => {
+        const nextPosition = position || this.getPosition();
+        const nextSize = size || this.getSize();
+        let updated = false;
 
-                const nextPosition = position || this.getPosition();
-                const nextSize = size || this.getSize();
+        if (!this.currentPosition || this.hasPositionChanged(nextPosition, this.currentPosition)) {
 
-                console.log(position);
-                console.log(nextPosition);
-
-                if (!this.currentPosition || this.hasPositionChanged(nextPosition, this.currentPosition)) {
-
-                    this.applyPosition(nextPosition);
-                    this.currentPosition = nextPosition;
-                }
-
-                if (!this.currentSize || this.hasSizeChanged(nextSize, this.currentSize)) {
-
-                    this.applySize(nextSize);
-                    this.currentSize = nextSize;
-                }
-
-                this.animationFrame = undefined;
-            });
+            this.applyPosition(nextPosition);
+            this.currentPosition = nextPosition;
+            updated = true;
         }
+
+        if (!this.currentSize || this.hasSizeChanged(nextSize, this.currentSize)) {
+
+            this.applySize(nextSize);
+            this.currentSize = nextSize;
+            updated = true;
+        }
+
+        return updated;
     }
 
     attach (element: HTMLElement): boolean {
 
         if (!super.attach(element)) return false;
 
-        this.update();
+        this.requestUpdate();
 
         return true;
-    }
-
-    detach (): boolean {
-
-        if (!this.hasAttached) return false;
-
-        if (this.animationFrame) {
-
-            cancelAnimationFrame(this.animationFrame);
-
-            this.animationFrame = undefined;
-        }
-
-        return super.detach();
     }
 
     /**
@@ -108,9 +89,6 @@ export class PositionController extends Behavior {
 
         const originBox = this.getBoundingBox(this.origin);
         const targetBox = this.getBoundingBox(this.element);
-
-        console.log(originBox);
-        console.log(targetBox);
 
         // TODO: include alignment offset
 

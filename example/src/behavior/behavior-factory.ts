@@ -1,5 +1,5 @@
 import { Behavior } from './behavior';
-import { applyDefaults } from './utils/config';
+import { applyDefaults } from '../utils/config';
 
 export const UNDEFINED_TYPE = (type: string, map: string = 'behavior') => new Error(
     `Undefined type key: No ${ map } found for key '${ type }'.

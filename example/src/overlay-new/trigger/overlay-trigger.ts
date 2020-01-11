@@ -1,5 +1,5 @@
 import { PropertyChangeEvent } from '@partkit/component';
-import { Behavior } from '../../behavior';
+import { Behavior } from '../../behavior/behavior';
 import { activeElement } from '../../dom';
 import { FocusChangeEvent, FocusMonitor } from '../../focus/focus-monitor';
 import { FocusTrap } from '../../focus/focus-trap';

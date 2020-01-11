@@ -26,8 +26,8 @@ export class ConnectedPositionController extends PositionController {
 
         if (!super.attach(element)) return false;
 
-        this.listen(window, 'resize', () => this.update(), true);
-        this.listen(document, 'scroll', () => this.update(), true);
+        this.listen(window, 'resize', () => this.requestUpdate(), true);
+        this.listen(document, 'scroll', () => this.requestUpdate(), true);
 
         // TODO: add contend-changed event to overlay via MutationObserver
         // and update position when content changes

@@ -1200,6 +1200,11 @@ export abstract class Component extends HTMLElement {
         });
     }
 
+    // TODO: review _enqueueUpdate method
+    // await previousUpdate is already deferring everything to next micro task
+    // then we await update - except for first time...
+    // we never enqueue when _hasRequestedUpdate is true and we only set it to false
+    // after the new request resolved
     /**
      * Enqueue a request for an asynchronous update
      *
