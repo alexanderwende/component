@@ -1,8 +1,39 @@
+/**
+ * A task object interface as returned by the scheduler methods
+ *
+ * @remarks
+ * A task is an object consisting of a {@link Promise} which will be resolved
+ * when the task callback was executed and a cancel method, which will prevent
+ * the task callback from being executed and reject the task's Promise. A task
+ * which is already resolved cannot be canceled anymore.
+ */
 export interface Task<T = any> {
     promise: Promise<T>;
     cancel: () => void;
 };
 
+/**
+ * A special error class which is thrown when a task is canceled
+ *
+ * @remarks
+ * This error class is used to reject a task's Promise, when the task
+ * is canceled. You can check for this specific error, to handle canceled
+ * tasks different from otherwise rejected tasks.
+ *
+ * ```typescript
+ * const task = microTask(() => {
+ *      // do sth...
+ * });
+ *
+ * task.cancel();
+ *
+ * task.promise.catch(reason => {
+ *      if (reason instanceof TaskCanceledError) {
+ *          // ...this task was canceled
+ *      }
+ * });
+ * ```
+ */
 export class TaskCanceledError extends Error {
 
     constructor (message?: string) {
@@ -76,12 +107,15 @@ export function macroTask<T = any> (task: () => T): Task<T> {
 
     const promise = new Promise<T>((resolve, reject) => {
 
-        const timeout = setTimeout(() => runTask(task, resolve, reject), 0);
+        let timeout: number | undefined = setTimeout(() => runTask(task, resolve, reject), 0);
 
         cancel = () => {
 
-            clearTimeout(timeout);
-            reject(TASK_CANCELED_ERROR());
+            if (timeout) {
+                clearTimeout(timeout);
+                timeout = undefined;
+                reject(TASK_CANCELED_ERROR());
+            }
         };
     });
 
@@ -106,13 +140,16 @@ export function animationFrameTask<T = any> (task: () => T): Task<T> {
 
     const promise = new Promise<T>((resolve, reject) => {
 
-        const animationFrame = requestAnimationFrame(() => runTask(task, resolve, reject));
+        let animationFrame: number | undefined = requestAnimationFrame(() => runTask(task, resolve, reject));
 
         cancel = () => {
 
-            cancelAnimationFrame(animationFrame);
-            reject(TASK_CANCELED_ERROR());
-        }
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = undefined;
+                reject(TASK_CANCELED_ERROR());
+            }
+        };
     });
 
     return { promise, cancel };

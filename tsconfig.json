@@ -20,7 +20,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "@partkit/component": ["src"]
+      "@partkit/component": ["src"],
+      "@partkit/component/*": ["src/*"]
     }
   },
   "include": [
