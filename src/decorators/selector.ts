@@ -29,13 +29,17 @@ export function selector<Type extends Component = Component> (options: SelectorD
                 return getter.call(this);
             },
             set (this: Type, value: any): void {
+                const oldValue = getter.call(this);
                 setter.call(this, value);
                 // selectors are queried during the update cycle, this means, when they change
                 // we cannot trigger another update from within the current update cycle
                 // we need to schedule an update just after this update is over
                 // also, selectors are not properties, so they don't appear in the property maps
                 // that's why we invoke requestUpdate without any parameters
-                microTask(() => this.requestUpdate());
+                if (oldValue !== getter.call(this)) {
+
+                    microTask(() => this.requestUpdate());
+                }
             }
         }
 
