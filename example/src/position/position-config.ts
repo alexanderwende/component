@@ -1,5 +1,4 @@
-import { CSSSelector } from '../dom';
-import { AlignmentPair, hasAlignmentPairChanged, DEFAULT_ALIGNMENT_PAIR } from './alignment';
+import { AlignmentPair, DEFAULT_ALIGNMENT_PAIR, hasAlignmentPairChanged } from './alignment';
 import { Position } from './position';
 import { hasSizeChanged, Size } from './size';
 
@@ -11,14 +10,13 @@ export const ORIGIN = 'origin';
  * A PositionConfig contains the size and alignment of an Element and may include an origin, which references an origin Element
  */
 export interface PositionConfig extends Size {
-    // TODO: handle 'origin' case in PositionStrategy
     width: number | string | 'origin';
     height: number | string | 'origin';
     maxWidth: number | string | 'origin';
     maxHeight: number | string | 'origin';
     minWidth: number | string | 'origin';
     minHeight: number | string | 'origin';
-    origin: Position | HTMLElement | CSSSelector | 'viewport';
+    origin: Position | HTMLElement | 'viewport';
     alignment: AlignmentPair;
 }
 
@@ -38,8 +36,8 @@ export const DEFAULT_POSITION_CONFIG: PositionConfig = {
     height: 'auto',
     maxWidth: '100vw',
     maxHeight: '100vh',
-    minWidth: 'origin',
-    minHeight: 'origin',
+    minWidth: 'auto',
+    minHeight: 'auto',
     origin: 'viewport',
     alignment: { ...DEFAULT_ALIGNMENT_PAIR }
 };

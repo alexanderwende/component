@@ -4,6 +4,8 @@ import { PositionController } from '../position-controller';
 
 export const CONNECTED_POSITION_CONFIG: PositionConfig = {
     ...DEFAULT_POSITION_CONFIG,
+    minWidth: 'origin',
+    minHeight: 'origin',
     alignment: {
         origin: {
             horizontal: 'start',
@@ -40,15 +42,15 @@ export class ConnectedPositionController extends PositionController {
      *
      * This can result in better performance.
      */
-    protected applyPosition (position: Position) {
+    // protected applyPosition (position: Position) {
 
-        if (!this.hasAttached) return;
+    //     if (!this.hasAttached) return;
 
-        this.element!.style.top = '';
-        this.element!.style.left = '';
-        this.element!.style.right = '';
-        this.element!.style.bottom = '';
+    //     this.element!.style.top = '';
+    //     this.element!.style.left = '';
+    //     this.element!.style.right = '';
+    //     this.element!.style.bottom = '';
 
-        // this.element!.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
-    }
+    //     // this.element!.style.transform = `translate(${ this.parseStyle(position.x) }, ${ this.parseStyle(position.y) })`;
+    // }
 }

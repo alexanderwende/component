@@ -1,45 +1,18 @@
 import { Behavior } from '../behavior/behavior';
-import { applyDefaults } from '../utils/config';
 import { BoundingBox, getTargetPosition } from './alignment';
 import { hasPositionChanged, isPosition, Position } from './position';
-import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position-config';
+import { PositionConfig } from './position-config';
 import { hasSizeChanged, Size } from './size';
 
 export class PositionController extends Behavior {
-
-    private _origin: Position | HTMLElement | string | undefined;
 
     protected currentPosition: Position | undefined;
 
     protected currentSize: Size | undefined;
 
-    protected config: PositionConfig;
-
-    // TODO: maybe we shouldn't allow CSSQuery strings, because querySelector() through ShadowDOM will not work
-    protected set origin (origin: Position | HTMLElement | string | undefined) {
-
-        // cache the origin element if it is a CSS selector
-        if (typeof origin === 'string' && origin !== 'viewport') {
-
-            origin = document.querySelector(origin) as HTMLElement || undefined;
-        }
-
-        this._origin = origin;
-    }
-
-    protected get origin (): Position | HTMLElement | string | undefined {
-
-        return this._origin;
-    }
-
-    // TODO: unify the way configurations are treated by position and overlay controller...
-    constructor (config?: Partial<PositionConfig>) {
+    constructor (protected config: PositionConfig) {
 
         super();
-
-        this.config = applyDefaults(config || {}, DEFAULT_POSITION_CONFIG);
-
-        this.origin = this.config.origin;
     }
 
     attach (element: HTMLElement): boolean {
@@ -87,7 +60,7 @@ export class PositionController extends Behavior {
      */
     protected getPosition (): Position {
 
-        const originBox = this.getBoundingBox(this.origin);
+        const originBox = this.getBoundingBox(this.config.origin);
         const targetBox = this.getBoundingBox(this.element);
 
         // TODO: include alignment offset
@@ -105,13 +78,25 @@ export class PositionController extends Behavior {
      */
     protected getSize (): Size {
 
+        const originWidth = (this.config.origin === 'viewport')
+            ? window.innerWidth
+            : (this.config.origin instanceof HTMLElement)
+                ? this.config.origin.clientWidth
+                : 'auto';
+
+        const originHeight = (this.config.origin === 'viewport')
+            ? window.innerHeight
+            : (this.config.origin instanceof HTMLElement)
+                ? this.config.origin.clientHeight
+                : 'auto';
+
         return {
-            width: this.config.width,
-            height: this.config.height,
-            maxWidth: this.config.maxWidth,
-            maxHeight: this.config.maxHeight,
-            minWidth: this.config.minWidth,
-            minHeight: this.config.minHeight,
+            width: (this.config.width === 'origin') ? originWidth : this.config.width,
+            height: (this.config.height === 'origin') ? originHeight : this.config.height,
+            maxWidth: (this.config.maxWidth === 'origin') ? originWidth : this.config.maxWidth,
+            maxHeight: (this.config.maxHeight === 'origin') ? originHeight : this.config.maxWidth,
+            minWidth: (this.config.minWidth === 'origin') ? originWidth : this.config.minWidth,
+            minHeight: (this.config.minHeight === 'origin') ? originHeight : this.config.minHeight,
         };
     }
 
