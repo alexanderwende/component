@@ -301,6 +301,21 @@ export abstract class Component extends HTMLElement {
     private _isReflecting = false;
 
     /**
+     * A boolean indicating if the component's update cycle was run at least once
+     *
+     * @remarks
+     * This property is analogous to the {@link update} and {@link updateCallback} method's `firstUpdate` parameter.
+     * It can be useful in situations where logic can't be run inside a component's update/updateCallback methods but
+     * we still need to know if the component has updated already.
+     *
+     * @readonly
+     */
+    get hasUpdated (): boolean {
+
+        return this._hasUpdated;
+    }
+
+    /**
      * The render root is where the {@link render} method will attach its DOM output
      */
     readonly renderRoot: Element | DocumentFragment;
