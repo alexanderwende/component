@@ -62,12 +62,12 @@ export function property<Type extends Component = Component> (options: Partial<P
          * the class we are decorating.
          */
         const descriptor = propertyDescriptor || getPropertyDescriptor(target, propertyKey);
-        const hiddenKey = (typeof propertyKey === 'string') ? `__${ propertyKey }` : Symbol();
+        const hiddenKey = Symbol(`__${ propertyKey.toString() }`);
 
         // if we found an accessor descriptor (from either this class or a parent) we use it, otherwise we create
         // default accessors to store the actual property value in a hidden field and retrieve it from there
-        const getter = descriptor && descriptor.get || function (this: any) { return this[hiddenKey]; };
-        const setter = descriptor && descriptor.set || function (this: any, value: any) { this[hiddenKey] = value; };
+        const getter = descriptor?.get || function (this: any) { return this[hiddenKey]; };
+        const setter = descriptor?.set || function (this: any, value: any) { this[hiddenKey] = value; };
 
         // we define a new accessor descriptor which will wrap the previously retrieved or created accessors
         // and request an update of the component whenever the property is set
@@ -78,7 +78,7 @@ export function property<Type extends Component = Component> (options: Partial<P
                 return getter.call(this);
             },
             set (value: any): void {
-                const oldValue = this[propertyKey];
+                const oldValue = getter.call(this);
                 setter.call(this, value);
                 // don't pass `value` on as `newValue` - an inherited setter might modify it
                 // instead get the new value by invoking the getter

@@ -1,5 +1,7 @@
 import { Component } from '../component.js';
 import { SelectorDeclaration, DEFAULT_SELECTOR_DECLARATION } from './selector-declaration.js';
+import { getPropertyDescriptor } from './utils/get-property-descriptor.js';
+import { microTask } from '../tasks.js';
 
 /**
  * Decorates a {@link Component} property as a selector
@@ -8,7 +10,34 @@ import { SelectorDeclaration, DEFAULT_SELECTOR_DECLARATION } from './selector-de
  */
 export function selector<Type extends Component = Component> (options: SelectorDeclaration<Type>) {
 
-    return function (target: Object, propertyKey: PropertyKey, propertyDescriptor?: PropertyDescriptor) {
+    return function (
+        target: Object,
+        propertyKey: PropertyKey,
+        propertyDescriptor?: PropertyDescriptor,
+    ): any {
+
+        const descriptor = propertyDescriptor || getPropertyDescriptor(target, propertyKey);
+        const hiddenKey = Symbol(`__${ propertyKey.toString() }`);
+
+        const getter = descriptor?.get || function (this: any) { return this[hiddenKey]; };
+        const setter = descriptor?.set || function (this: any, value: any) { this[hiddenKey] = value; };
+
+        const wrappedDescriptor: PropertyDescriptor = {
+            configurable: true,
+            enumerable: true,
+            get (this: Type): any {
+                return getter.call(this);
+            },
+            set (this: Type, value: any): void {
+                setter.call(this, value);
+                // selectors are queried during the update cycle, this means, when they change
+                // we cannot trigger another update from within the current update cycle
+                // we need to schedule an update just after this update is over
+                // also, selectors are not properties, so they don't appear in the property maps
+                // that's why we invoke requestUpdate without any parameters
+                microTask(() => this.requestUpdate());
+            }
+        }
 
         const constructor = target.constructor as typeof Component;
 
@@ -23,6 +52,19 @@ export function selector<Type extends Component = Component> (options: SelectorD
         } else {
 
             constructor.selectors.set(propertyKey, { ...options } as SelectorDeclaration);
+        }
+
+        if (!propertyDescriptor) {
+
+            // if no propertyDescriptor was defined for this decorator, this decorator is a property
+            // decorator which must return void and we can define the wrapped descriptor here
+            Object.defineProperty(target, propertyKey, wrappedDescriptor);
+
+        } else {
+
+            // if a propertyDescriptor was defined for this decorator, this decorator is an accessor
+            // decorator and we must return the wrapped property descriptor
+            return wrappedDescriptor;
         }
     }
 }

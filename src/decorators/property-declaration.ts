@@ -169,6 +169,7 @@ export interface PropertyDeclaration<Type extends Component = Component> {
      * * `true`: The attribute name will be inferred by camel-casing the property name
      * * `string`: Use the provided string as the associated attribute name
      *
+     * // TODO: consider setting this to false
      * Default value: `true`
      */
     attribute: boolean | string;
@@ -263,6 +264,7 @@ export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValu
  * The default {@link PropertyDeclaration}
  */
 export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
+    // TODO: consider setting false as default value
     attribute: true,
     converter: AttributeConverterDefault,
     reflectAttribute: true,
