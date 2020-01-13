@@ -1,10 +1,10 @@
-import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber } from '@partkit/component';
+import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber, AttributeConverterString } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
 import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
-import { PositionConfig, PositionController } from '../position';
+import { PositionConfig, PositionController, Position } from '../position';
 import { PositionControllerFactory } from '../position/position-controller-factory';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
 import { OverlayTrigger, OverlayTriggerConfig, OverlayTriggerFactory } from './trigger';
@@ -189,7 +189,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
-        overlay.config = { ...DEFAULT_OVERLAY_CONFIG, ...config };
+        overlay.config = { ...DEFAULT_OVERLAY_CONFIG, ...config } as OverlayConfig;
 
         return overlay;
     }
@@ -199,8 +199,18 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         overlay.parentElement?.removeChild(overlay);
     }
 
-    /** @internal */
-    protected _config = { ...DEFAULT_OVERLAY_CONFIG };
+    /**
+     * The overlay's configurtion
+     *
+     * @remarks
+     * Initially _config only contains a partial OverlayConfig, but once the overlay instance has been
+     * registered, _config will be a full OverlayConfig. This is to allow the BehaviorFactories for
+     * position and trigger to apply their default configuration, based on the behavior type which is
+     * created by the factories.
+     *
+     * @internal
+     * */
+    protected _config: OverlayConfig = { ...DEFAULT_OVERLAY_CONFIG } as OverlayConfig;
 
     protected marker?: Comment;
 
@@ -217,12 +227,58 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     @property({ attribute: false })
     set config (value: OverlayConfig) {
 
+        console.log('set config: ', value);
         this._config = Object.assign(this._config, value);
     }
 
     get config (): OverlayConfig {
 
         return this._config;
+    }
+
+    @property({ attribute: false })
+    set origin (value: Position | HTMLElement | 'viewport') {
+
+        console.log('set origin: ', value);
+        this.config.origin = value;
+    }
+    get origin (): Position | HTMLElement | 'viewport' {
+
+        // TODO: fix typings for origin (remove CSSSelector)
+        return this.config.origin as Position | HTMLElement | 'viewport';
+    }
+
+    @property({ converter: AttributeConverterString })
+    set positionType (value: string) {
+
+        console.log('set positionType: ', value);
+        this.config.positionType = value;
+    }
+    get positionType (): string {
+
+        return this.config.positionType;
+    }
+
+    @property({ attribute: false })
+    set trigger (value: HTMLElement | undefined) {
+
+        console.log('set trigger: ', value);
+        this.config.trigger = value;
+    }
+    get trigger (): HTMLElement | undefined {
+
+        return this.config.trigger;
+    }
+
+    @property({ converter: AttributeConverterString })
+    set triggerType (value: string) {
+
+        console.log('set triggerType: ', value);
+        this.config.triggerType = value;
+    }
+    get triggerType (): string {
+
+        return this.config.triggerType;
     }
 
     get static (): typeof Overlay {
@@ -260,11 +316,18 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         } else {
 
+            console.log('Overlay.updateCallback()... config: ', this.config);
+
             if (changes.has('open')) {
 
                 this.setAttribute('aria-hidden', `${ !this.open }`);
 
                 this.notifyProperty('open', changes.get('open'), this.open);
+            }
+
+            if (changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
+
+                this.configure();
             }
         }
     }
@@ -315,6 +378,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         if (this.static.isOverlayRegistered(this)) throw ALREADY_REGISTERED_ERROR(this);
 
+        console.log('Overly.register()... config: ', this.config);
+
         const settings: OverlaySettings = {
             config: this.config,
             events: new EventManager(),
@@ -338,5 +403,24 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         settings.positionController = undefined;
 
         this.static.registeredOverlays.delete(this);
+    }
+
+    protected configure (config: Partial<OverlayConfig> = {}) {
+
+        console.log('Overlay.configure()...');
+
+        const settings = this.static.registeredOverlays.get(this)!;
+
+        this.config = config as OverlayConfig;
+
+        settings.overlayTrigger?.detach();
+        settings.positionController?.detach();
+
+        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType, this.config, this);
+        settings.positionController = this.static.positionControllerFactory.create(this.config.positionType, this.config);
+
+        settings.overlayTrigger.attach(this.config.trigger);
+
+        console.log(this.config);
     }
 }

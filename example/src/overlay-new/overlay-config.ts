@@ -27,9 +27,9 @@ export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
     'closeOnBackdropClick',
 ];
 
-export const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
-    ...DEFAULT_POSITION_CONFIG,
-    ...DEFAULT_OVERLAY_TRIGGER_CONFIG,
+export const DEFAULT_OVERLAY_CONFIG: Partial<OverlayConfig> = {
+    // ...DEFAULT_POSITION_CONFIG,
+    // ...DEFAULT_OVERLAY_TRIGGER_CONFIG,
     positionType: 'default',
     trigger: undefined,
     triggerType: 'default',

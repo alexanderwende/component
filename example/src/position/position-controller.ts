@@ -42,6 +42,15 @@ export class PositionController extends Behavior {
         this.origin = this.config.origin;
     }
 
+    attach (element: HTMLElement): boolean {
+
+        if (!super.attach(element)) return false;
+
+        this.requestUpdate();
+
+        return true;
+    }
+
     requestUpdate (position?: Position, size?: Size): Promise<boolean> {
 
         return super.requestUpdate(position, size);
@@ -68,15 +77,6 @@ export class PositionController extends Behavior {
         }
 
         return updated;
-    }
-
-    attach (element: HTMLElement): boolean {
-
-        if (!super.attach(element)) return false;
-
-        this.requestUpdate();
-
-        return true;
     }
 
     /**

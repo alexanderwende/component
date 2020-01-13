@@ -1,10 +1,11 @@
-import { Changes, Component, component, selector } from '@partkit/component';
+import { Changes, Component, component, selector, property } from '@partkit/component';
 import { html } from 'lit-html';
 import { CONNECTED_POSITION_CONFIG } from '../position';
 import './overlay';
 import { Overlay } from './overlay';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
 import { DIALOG_OVERLAY_TRIGGER_CONFIG } from './trigger';
+import { microTask } from '@partkit/component/tasks';
 
 const CONFIG: Partial<OverlayConfig> = {
 
@@ -34,7 +35,7 @@ const DIALOG_CONFIG = {
 
     <button id="dialog-button">Dialog</button>
 
-    <ui-overlay .config=${ DIALOG_CONFIG } .trigger=${ element.dialogButton } .origin=${ element.dialogButton }>
+    <ui-overlay trigger-type="dialog" position-type="connected" .trigger=${ element.dialogButton } .origin=${ element.dialogButton }>
         <h3>Dialog</h3>
         <p>This is some dialog content.</p>
         <p>
@@ -49,23 +50,17 @@ export class OverlayDemoComponent extends Component {
 
     currentRole = 0;
 
-    @selector({
-        query: '#overlay',
-        all: false
-    })
+    @selector({ query: '#overlay' })
     overlay!: Overlay;
 
-    @selector({
-        query: '#dialog-button',
-        all: false
-    })
-    dialogButton: HTMLButtonElement | null = null;
+    @selector({ query: '#dialog-button' })
+    dialogButton!: HTMLButtonElement;
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
 
-        if (firstUpdate) {
+        console.log('Demo.updateCallback()... firstUpdate: ', firstUpdate);
 
-            // this.overlay = this.renderRoot.querySelector('ui-overlay') as Overlay;
+        if (firstUpdate) {
 
             console.log('overlay-demo... overlay: ', this.overlay);
             console.log('overlay-demo... dialogButton: ', this.dialogButton);
