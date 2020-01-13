@@ -13,10 +13,13 @@ export class DialogOverlayTrigger extends OverlayTrigger {
 
         if (!super.attach(element)) return false;
 
-        this.element!.setAttribute('aria-haspopup', 'dialog');
+        if (this.element) {
 
-        this.listen(this.element!, 'click', (event: Event) => this.handleClick(event as MouseEvent));
-        this.listen(this.element!, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
+            this.element.setAttribute('aria-haspopup', 'dialog');
+
+            this.listen(this.element, 'click', (event: Event) => this.handleClick(event as MouseEvent));
+            this.listen(this.element, 'keydown', (event: Event) => this.handleKeydown(event as KeyboardEvent));
+        }
 
         this.update();
 
@@ -27,8 +30,11 @@ export class DialogOverlayTrigger extends OverlayTrigger {
 
         if (!this.hasAttached) return false;
 
-        this.element!.removeAttribute('aria-haspopup');
-        this.element!.removeAttribute('aria-expanded');
+        if (this.element) {
+
+            this.element.removeAttribute('aria-haspopup');
+            this.element.removeAttribute('aria-expanded');
+        }
 
         return super.detach();
     }
@@ -37,7 +43,10 @@ export class DialogOverlayTrigger extends OverlayTrigger {
 
         if (!this.hasAttached) return;
 
-        this.element!.setAttribute('aria-expanded', this.overlay.open ? 'true' : 'false');
+        if (this.element) {
+
+            this.element.setAttribute('aria-expanded', this.overlay.open ? 'true' : 'false');
+        }
     }
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {

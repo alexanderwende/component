@@ -1,11 +1,10 @@
-import { Changes, Component, component, selector, property } from '@partkit/component';
+import { Changes, Component, component, selector } from '@partkit/component';
 import { html } from 'lit-html';
 import { CONNECTED_POSITION_CONFIG } from '../position';
 import './overlay';
 import { Overlay } from './overlay';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
 import { DIALOG_OVERLAY_TRIGGER_CONFIG } from './trigger';
-import { microTask } from '@partkit/component/tasks';
 
 const CONFIG: Partial<OverlayConfig> = {
 
@@ -42,6 +41,8 @@ const DIALOG_CONFIG = {
             <input type="text" placeholder="Search term..."/> <button>Search</button>
         </p>
     </ui-overlay>
+
+    <ui-overlay trigger-type="dialog" position-type="connected"></ui-overlay>
     `
 })
 export class OverlayDemoComponent extends Component {
@@ -59,12 +60,6 @@ export class OverlayDemoComponent extends Component {
     updateCallback (changes: Changes, firstUpdate: boolean) {
 
         console.log('Demo.updateCallback()... firstUpdate: ', firstUpdate);
-
-        if (firstUpdate) {
-
-            console.log('overlay-demo... overlay: ', this.overlay);
-            console.log('overlay-demo... dialogButton: ', this.dialogButton);
-        }
     }
 
     changeRole () {

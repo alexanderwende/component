@@ -312,7 +312,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
             this.setAttribute('aria-hidden', `${ !this.open }`);
 
-            this.static.registeredOverlays.get(this)?.overlayTrigger?.attach(this.config.trigger);
+            this.configure();
 
         } else {
 
@@ -383,8 +383,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         const settings: OverlaySettings = {
             config: this.config,
             events: new EventManager(),
-            overlayTrigger: this.static.overlayTriggerFactory.create(this.config.triggerType, this.config, this),
-            positionController: this.static.positionControllerFactory.create(this.config.positionType, this.config),
         };
 
         this.static.registeredOverlays.set(this, settings);
@@ -405,22 +403,39 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         this.static.registeredOverlays.delete(this);
     }
 
-    protected configure (config: Partial<OverlayConfig> = {}) {
+    protected configure () {
 
-        console.log('Overlay.configure()...');
+        console.log('Overlay.configure()... config: ', this.config);
 
         const settings = this.static.registeredOverlays.get(this)!;
 
-        this.config = config as OverlayConfig;
-
+        // dispose of the overlay trigger and position controller
         settings.overlayTrigger?.detach();
         settings.positionController?.detach();
 
+        // recreate the overlay trigger and position controller from the config
         settings.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType, this.config, this);
         settings.positionController = this.static.positionControllerFactory.create(this.config.positionType, this.config);
 
+        // attach the overlay trigger
         settings.overlayTrigger.attach(this.config.trigger);
 
-        console.log(this.config);
+        // attach the position controller, if the overlay is open
+        if (this.open) {
+
+            settings.positionController?.attach(this);
+            settings.positionController?.update();
+        }
+
+        console.log(settings.overlayTrigger);
+        console.log(settings.positionController);
+    }
+}
+
+// TODO: figure out how to add web component types to html language server
+declare global {
+
+    interface HTMLElementTagNameMap {
+        'ui-overlay': Overlay
     }
 }
