@@ -38,6 +38,13 @@ export abstract class Behavior {
         return this._element;
     }
 
+    /**
+     * Attaches the behavior instance to an HTMLElement
+     *
+     * @param element   An optional HTMLElement to attach the behavior to
+     * @param args      Optional argumantes which can be passed to the attach method
+     * @returns         A boolean indicating if the behavior was successfully attached
+     */
     attach (element?: HTMLElement, ...args: any[]): boolean {
 
         if (this.hasAttached) return false;
@@ -49,6 +56,16 @@ export abstract class Behavior {
         return true;
     }
 
+    /**
+     * Detaches the behavior instance
+     *
+     * @remarks
+     * Detaching a behavior will cancel any scheduled update, remove all bound listeners
+     * bound with the {@link Behavior.listen} method and clear the behavior's element
+     * reference.
+     *
+     * @param args  Optional arguments which can be passed to the detach method
+     */
     detach (...args: any[]): boolean {
 
         if (!this.hasAttached) return false;
@@ -70,7 +87,8 @@ export abstract class Behavior {
      * @remarks
      * This method schedules an update call using requestAnimationFrame. It returns a Promise
      * which will resolve with the return value of the update method, or reject if an error
-     * occurrs during update or the update was canceled.
+     * occurrs during update or the update was canceled. If an update has been scheduled
+     * already, but hasn't executed yet, the scheduled update's promise is returned.
      */
     requestUpdate (...args: any[]): Promise<any> {
 

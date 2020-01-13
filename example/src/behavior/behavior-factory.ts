@@ -77,7 +77,7 @@ export abstract class BehaviorFactory<B extends Behavior, C, K extends string = 
      */
     protected getBehavior (type: K): BehaviorConstructor<B> {
 
-        return this.behaviors[type] || this.behaviors['default' as K];
+        return this.behaviors[type] || this.behaviors['default'];
     }
 
     /**
@@ -85,6 +85,6 @@ export abstract class BehaviorFactory<B extends Behavior, C, K extends string = 
      */
     protected getConfiguration (type: K): C {
 
-        return this.configurations[type] || this.configurations['default' as K];
+        return this.configurations[type] || this.configurations['default'];
     }
 }
