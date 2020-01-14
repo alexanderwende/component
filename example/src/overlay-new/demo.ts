@@ -34,16 +34,20 @@ const DIALOG_CONFIG = {
 
     <button id="dialog-button">Dialog</button>
 
-    <!-- trigger-type="dialog" position-type="connected" .trigger=${ element.dialogButton } .origin=${ element.dialogButton } -->
     <ui-overlay id="dialog" .config=${ element.dialogConfig }>
         <h3>Dialog</h3>
         <p>This is some dialog content.</p>
-        <p>
-            <input type="text" placeholder="Search term..."/> <button>Search</button>
-        </p>
+        <p><button id="nested-dialog-button">Nested dialog</button></p>
+        <ui-overlay
+            id="nested-dialog"
+            trigger-type="dialog"
+            position-type="connected"
+            .trigger=${ element.nestedDialogButton }
+            .origin=${ element.nestedDialogButton }>
+            <h3>Nested Dialog</h3>
+            <p>This is some dialog content.</p>
+        </ui-overlay>
     </ui-overlay>
-
-    <ui-overlay trigger-type="dialog" position-type="connected"></ui-overlay>
     `
 })
 export class OverlayDemoComponent extends Component {
@@ -60,6 +64,12 @@ export class OverlayDemoComponent extends Component {
 
     @selector({ query: '#dialog-button' })
     dialogButton!: HTMLButtonElement;
+
+    @selector({ query: '#nested-dialog' })
+    nestedDialog!: Overlay;
+
+    @selector({ query: '#nested-dialog-button' })
+    nestedDialogButton!: HTMLButtonElement;
 
     get dialogConfig (): Partial<OverlayConfig> {
         return {

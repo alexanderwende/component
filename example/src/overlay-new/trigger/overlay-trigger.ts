@@ -1,4 +1,5 @@
 import { PropertyChangeEvent } from '@partkit/component';
+import { macroTask } from '@partkit/component/tasks';
 import { Behavior } from '../../behavior/behavior';
 import { activeElement } from '../../dom';
 import { FocusChangeEvent, FocusMonitor } from '../../focus/focus-monitor';
@@ -52,9 +53,12 @@ export class OverlayTrigger extends Behavior {
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
+        // if it's an event bubbling up from a nested overlay, ignore it
+        if (event.detail.target !== this.overlay) return;
+
         const open = event.detail.current;
 
-        console.log('OverlayTrigger.handleOpenChange()...', event);
+        console.log('OverlayTrigger.handleOpenChange()...', this.overlay, event.detail.current);
 
         if (open) {
 
@@ -76,15 +80,19 @@ export class OverlayTrigger extends Behavior {
 
     protected handleFocusChange (event: FocusChangeEvent) {
 
+        // if it's an event bubbling up from a nested overlay, ignore it
+        // we check the event's target because custom events get retargeted at the shadowRoot
+        if (event.target !== this.overlay) return;
+
         const hasFocus = event.detail.type === 'focusin';
 
-        console.log('OverlayTrigger.handleFocusChange()...', hasFocus);
+        console.log('OverlayTrigger.handleFocusChange()...', this.overlay.id, hasFocus);
 
         if (!hasFocus) {
 
             // when loosing focus, we wait for potential focusin events on child or parent overlays by delaying
-            // the active check in a new macrotask via setTimeout
-            setTimeout(() => {
+            // the active check in a new macro-task
+            macroTask(() => {
 
                 // then we check if the overlay is active and if not, we close it
                 if (!this.overlay.static.isOverlayActive(this.overlay)) {
@@ -105,7 +113,7 @@ export class OverlayTrigger extends Behavior {
                         parent.dispatchEvent(event);
                     }
                 }
-            }, 0);
+            });
         }
     }
 

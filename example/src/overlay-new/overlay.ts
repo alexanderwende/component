@@ -383,6 +383,9 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     @listener({ event: 'open-changed', options: { capture: true } })
     protected handleOpenChanged (event: PropertyChangeEvent<boolean>) {
 
+        // if it's an event bubbling up from a nested overlay, ignore it
+        if (event.detail.target !== this) return;
+
         console.log('Overlay.handleOpenChange()...', event.detail.current);
 
         const overlayRoot = this.static.overlayRoot;
@@ -397,6 +400,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
             overlayRoot.appendChild(this);
 
+            this.handleOpen();
+
             this.static.registeredOverlays.get(this)?.positionController?.attach(this);
             this.static.registeredOverlays.get(this)?.positionController?.update();
 
@@ -406,10 +411,51 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
             this.marker = undefined;
 
+            this.handleClose();
+
             this.static.registeredOverlays.get(this)?.positionController?.detach();
         }
 
         this.isReattaching = false;
+
+        console.log(this.static.activeOverlays);
+    }
+
+    protected handleOpen () {
+
+        if (this._config.stacked) {
+
+            // if (this.static.activeOverlays.size) {
+
+            //     const activeOverlays = [...this.static.activeOverlays];
+
+            //     for (let index = activeOverlays.length - 1; index >= 0; index--) {
+
+            //         const lastOverlay = activeOverlays[index];
+
+            //         if (lastOverlay === this || lastOverlay.contains(source.target)) {
+
+            //             // we found the active overlay that caused the event, we keep the stack up to this overlay
+            //             break;
+
+            //         } else {
+
+            //             // the active overlay didn't cause the event, so it should be closed and discarded from the stack
+            //             this.closeOverlay(overlay);
+            //         }
+            //     }
+            // }
+
+            this.static.activeOverlays.add(this);
+        }
+    }
+
+    protected handleClose () {
+
+        if (this._config.stacked) {
+
+            this.static.activeOverlays.delete(this);
+        }
     }
 
     protected register () {
