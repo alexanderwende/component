@@ -252,13 +252,23 @@ export interface PropertyDeclaration<Type extends Component = Component> {
  * @param newValue  The new property value
  * @returns         A boolean indicating if the property value changed
  */
-export const DEFAULT_PROPERTY_CHANGE_DETECTOR: PropertyChangeDetector = (oldValue: any, newValue: any) => {
+export const PropertyChangeDetectorDefault: PropertyChangeDetector = (oldValue: any, newValue: any) => {
     // in case `oldValue` and `newValue` are `NaN`, `(NaN !== NaN)` returns `true`,
     // but `(NaN === NaN || NaN === NaN)` returns `false`
     return oldValue !== newValue && (oldValue === oldValue || newValue === newValue);
 };
 
-// TODO: maybe provide flat array/object change detector? date change detector?
+// TODO: add tests for change detectors
+// TODO: move change detector to own files?
+export const PropertyChangeDetectorObject: PropertyChangeDetector = (oldValue: any, newValue: any) => {
+    const oldKeys = Object.keys(oldValue);
+    const newKeys = Object.keys(newValue);
+    return oldKeys.length !== newKeys.length || oldKeys.some(key => oldValue[key] !== newValue[key]);
+}
+
+export const PropertyChangeDetectorArray: PropertyChangeDetector = (oldValue: any[], newValue: any[]) => {
+    return oldValue.length !== newValue.length || oldValue.some((value, index) => value !== newValue[index]);
+}
 
 /**
  * The default {@link PropertyDeclaration}
@@ -270,5 +280,5 @@ export const DEFAULT_PROPERTY_DECLARATION: PropertyDeclaration = {
     reflectAttribute: true,
     reflectProperty: true,
     notify: true,
-    observe: DEFAULT_PROPERTY_CHANGE_DETECTOR,
+    observe: PropertyChangeDetectorDefault,
 };

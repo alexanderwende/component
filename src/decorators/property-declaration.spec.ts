@@ -1,4 +1,4 @@
-import { createAttributeName, createEventName, DEFAULT_PROPERTY_CHANGE_DETECTOR, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from './property-declaration';
+import { createAttributeName, createEventName, PropertyChangeDetectorDefault, isAttributeReflector, isPropertyChangeDetector, isPropertyKey, isPropertyNotifier, isPropertyReflector } from './property-declaration';
 
 describe('PropertyDeclaration', () => {
 
@@ -7,32 +7,32 @@ describe('PropertyDeclaration', () => {
         it('should detect property changes', () => {
 
             // numbers
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(1, 1)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(1, 1.0)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(1, 2)).toBe(true);
+            expect(PropertyChangeDetectorDefault(1, 1)).toBe(false);
+            expect(PropertyChangeDetectorDefault(1, 1.0)).toBe(false);
+            expect(PropertyChangeDetectorDefault(1, 2)).toBe(true);
 
             // strings
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR("foo", "foo")).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR("foo", "Foo")).toBe(true);
+            expect(PropertyChangeDetectorDefault('foo', 'foo')).toBe(false);
+            expect(PropertyChangeDetectorDefault('foo', 'Foo')).toBe(true);
 
             // booleans
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(false, false)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(false, true)).toBe(true);
+            expect(PropertyChangeDetectorDefault(false, false)).toBe(false);
+            expect(PropertyChangeDetectorDefault(false, true)).toBe(true);
 
             // objects
             const o = {}, a = [{}];
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR({}, {})).toBe(true);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR([], [])).toBe(true);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(o, o)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(a, a)).toBe(false);
+            expect(PropertyChangeDetectorDefault({}, {})).toBe(true);
+            expect(PropertyChangeDetectorDefault([], [])).toBe(true);
+            expect(PropertyChangeDetectorDefault(o, o)).toBe(false);
+            expect(PropertyChangeDetectorDefault(a, a)).toBe(false);
 
             // null/undefined
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(null, null)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(undefined, undefined)).toBe(false);
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(null, undefined)).toBe(true);
+            expect(PropertyChangeDetectorDefault(null, null)).toBe(false);
+            expect(PropertyChangeDetectorDefault(undefined, undefined)).toBe(false);
+            expect(PropertyChangeDetectorDefault(null, undefined)).toBe(true);
 
             // NaN
-            expect(DEFAULT_PROPERTY_CHANGE_DETECTOR(NaN, NaN)).toBe(false);
+            expect(PropertyChangeDetectorDefault(NaN, NaN)).toBe(false);
         });
     });
 
