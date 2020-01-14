@@ -1,4 +1,4 @@
-import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber, AttributeConverterString } from '@partkit/component';
+import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber, AttributeConverterString, PropertyChangeDetectorObject } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
 import { EventManager } from '../events';
@@ -216,70 +216,108 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
     protected isReattaching = false;
 
-    @property({
-        converter: AttributeConverterNumber
-    })
+    @property({ converter: AttributeConverterNumber })
     tabindex = -1;
 
     @property({ converter: AttributeConverterBoolean })
     open = false;
 
-    @property({ attribute: false })
-    set config (value: OverlayConfig) {
 
-        console.log('set config: ', value);
-        this._config = Object.assign(this._config, value);
+    @property({
+        attribute: false,
+        observe: PropertyChangeDetectorObject,
+    })
+    set config (value: Partial<OverlayConfig>) {
+        this._config = { ...this._config, ...value };
     }
-
-    get config (): OverlayConfig {
-
+    get config (): Partial<OverlayConfig> {
         return this._config;
     }
 
+
     @property({ attribute: false })
     set origin (value: Position | HTMLElement | 'viewport') {
-
-        console.log('set origin: ', value);
-        this.config.origin = value;
+        this._config.origin = value;
     }
     get origin (): Position | HTMLElement | 'viewport' {
-
-        // TODO: fix typings for origin (remove CSSSelector)
-        return this.config.origin as Position | HTMLElement | 'viewport';
+        return this._config.origin;
     }
 
     @property({ converter: AttributeConverterString })
     set positionType (value: string) {
-
-        console.log('set positionType: ', value);
-        this.config.positionType = value;
+        this._config.positionType = value;
     }
     get positionType (): string {
-
-        return this.config.positionType;
+        return this._config.positionType;
     }
 
     @property({ attribute: false })
     set trigger (value: HTMLElement | undefined) {
-
-        console.log('set trigger: ', value);
-        this.config.trigger = value;
+        this._config.trigger = value;
     }
     get trigger (): HTMLElement | undefined {
-
-        return this.config.trigger;
+        return this._config.trigger;
     }
 
     @property({ converter: AttributeConverterString })
     set triggerType (value: string) {
-
-        console.log('set triggerType: ', value);
-        this.config.triggerType = value;
+        this._config.triggerType = value;
     }
     get triggerType (): string {
-
-        return this.config.triggerType;
+        return this._config.triggerType;
     }
+
+    // set width(value: string | number) {
+    //     this._config.width = value;
+    // };
+    // get width (): string | number {
+    //     return this._config.width;
+    // }
+    // set height(value: string | number) {
+    //     this._config.width = value;
+    // };
+    // get height (): string | number {
+    //     return this._config.height;
+    // }
+    // set maxWidth(value: string | number) {
+    //     this._config.width = value;
+    // };
+    // get maxWidth (): string | number {
+    //     return this._config.maxWidth;
+    // }
+    // set maxHeight(value: string | number) {
+    //     this._config.width = value;
+    // };
+    // get maxHeight (): string | number {
+    //     return this._config.maxHeight;
+    // }
+    // set minWidth(value: string | number) {
+    //     this._config.minWidth = value;
+    // };
+    // get minWidth (): string | number {
+    //     return this._config.minWidth;
+    // }
+    // set minHeight(value: string | number) {
+    //     this._config.minHeight = value;
+    // };
+    // get minHeight (): string | number{
+    //     return this._config.minHeight;
+    // }
+
+    // alignment: import("../position").AlignmentPair;
+    // tabbableSelector: string;
+    // wrapFocus: boolean;
+    // autoFocus: boolean;
+    // restoreFocus: boolean;
+    // initialFocus?: string | undefined;
+    // trapFocus: boolean;
+    // closeOnEscape: boolean;
+    // closeOnFocusLoss: boolean;
+    // stacked: boolean;
+    // template?: import("../template-function").TemplateFunction | undefined;
+    // context?: Component | undefined;
+    // backdrop: boolean;
+    // closeOnBackdropClick: boolean;
 
     get static (): typeof Overlay {
 
@@ -316,8 +354,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         } else {
 
-            console.log('Overlay.updateCallback()... config: ', this.config);
-
             if (changes.has('open')) {
 
                 this.setAttribute('aria-hidden', `${ !this.open }`);
@@ -325,7 +361,9 @@ export class Overlay extends MixinRole(Component, 'dialog') {
                 this.notifyProperty('open', changes.get('open'), this.open);
             }
 
-            if (changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
+            if (changes.has('config') || changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
+
+                console.log('Overlay.updateCallback()... config: ', this.config);
 
                 this.configure();
             }
@@ -414,8 +452,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         settings.positionController?.detach();
 
         // recreate the overlay trigger and position controller from the config
-        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType, this.config, this);
-        settings.positionController = this.static.positionControllerFactory.create(this.config.positionType, this.config);
+        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this._config.triggerType, this.config, this);
+        settings.positionController = this.static.positionControllerFactory.create(this._config.positionType, this.config);
 
         // attach the overlay trigger
         settings.overlayTrigger.attach(this.config.trigger);
@@ -426,9 +464,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
             settings.positionController?.attach(this);
             settings.positionController?.update();
         }
-
-        console.log(settings.overlayTrigger);
-        console.log(settings.positionController);
     }
 }
 

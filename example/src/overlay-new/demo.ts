@@ -34,7 +34,8 @@ const DIALOG_CONFIG = {
 
     <button id="dialog-button">Dialog</button>
 
-    <ui-overlay trigger-type="dialog" position-type="connected" .trigger=${ element.dialogButton } .origin=${ element.dialogButton }>
+    <!-- trigger-type="dialog" position-type="connected" .trigger=${ element.dialogButton } .origin=${ element.dialogButton } -->
+    <ui-overlay id="dialog" .config=${ element.dialogConfig }>
         <h3>Dialog</h3>
         <p>This is some dialog content.</p>
         <p>
@@ -54,12 +55,29 @@ export class OverlayDemoComponent extends Component {
     @selector({ query: '#overlay' })
     overlay!: Overlay;
 
+    @selector({ query: '#dialog' })
+    dialog!: Overlay;
+
     @selector({ query: '#dialog-button' })
     dialogButton!: HTMLButtonElement;
+
+    get dialogConfig (): Partial<OverlayConfig> {
+        return {
+            triggerType: 'dialog',
+            positionType: 'connected',
+            trigger: this.dialogButton,
+            origin: this.dialogButton,
+        };
+    }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
 
         console.log('Demo.updateCallback()... firstUpdate: ', firstUpdate);
+
+        if (firstUpdate) {
+
+        }
+
     }
 
     changeRole () {
@@ -67,6 +85,8 @@ export class OverlayDemoComponent extends Component {
         this.currentRole = (this.currentRole + 1 < this.roles.length) ? this.currentRole + 1 : 0;
 
         this.overlay.role = this.roles[this.currentRole];
+
+        this.requestUpdate();
     }
 
     toggle () {
