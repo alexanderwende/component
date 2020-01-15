@@ -37,7 +37,10 @@ const DIALOG_CONFIG = {
     <ui-overlay id="dialog" .config=${ element.dialogConfig }>
         <h3>Dialog</h3>
         <p>This is some dialog content.</p>
-        <p><button id="nested-dialog-button">Nested dialog</button></p>
+        <p>
+            <button id="nested-dialog-button">Nested dialog 1</button>
+            <button id="nested-dialog-button-2">Nested dialog 2</button>
+        </p>
         <ui-overlay
             id="nested-dialog"
             trigger-type="dialog"
@@ -45,6 +48,15 @@ const DIALOG_CONFIG = {
             .trigger=${ element.nestedDialogButton }
             .origin=${ element.nestedDialogButton }>
             <h3>Nested Dialog</h3>
+            <p>This is some dialog content.</p>
+        </ui-overlay>
+        <ui-overlay
+            id="nested-dialog-2"
+            trigger-type="dialog"
+            position-type="connected"
+            .trigger=${ element.nestedDialogButton2 }
+            .origin=${ element.nestedDialogButton2 }>
+            <h3>Nested Dialog 2</h3>
             <p>This is some dialog content.</p>
         </ui-overlay>
     </ui-overlay>
@@ -71,6 +83,12 @@ export class OverlayDemoComponent extends Component {
     @selector({ query: '#nested-dialog-button' })
     nestedDialogButton!: HTMLButtonElement;
 
+    @selector({ query: '#nested-dialog-2' })
+    nestedDialog2!: Overlay;
+
+    @selector({ query: '#nested-dialog-button-2' })
+    nestedDialogButton2!: HTMLButtonElement;
+
     get dialogConfig (): Partial<OverlayConfig> {
         return {
             triggerType: 'dialog',
@@ -87,7 +105,6 @@ export class OverlayDemoComponent extends Component {
         if (firstUpdate) {
 
         }
-
     }
 
     changeRole () {

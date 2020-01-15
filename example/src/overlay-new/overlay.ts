@@ -1,14 +1,14 @@
-import { AttributeConverterBoolean, Changes, Component, component, css, listener, property, PropertyChangeEvent, AttributeConverterNumber, AttributeConverterString, PropertyChangeDetectorObject } from '@partkit/component';
+import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, listener, property, PropertyChangeDetectorObject, PropertyChangeEvent } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
+import { replaceWith } from '../dom';
 import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
-import { PositionConfig, PositionController, Position } from '../position';
+import { Position, PositionConfig, PositionController } from '../position';
 import { PositionControllerFactory } from '../position/position-controller-factory';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
 import { OverlayTrigger, OverlayTriggerConfig, OverlayTriggerFactory } from './trigger';
-import { replaceWith, insertAfter } from '../dom';
 
 const ALREADY_INITIALIZED_ERROR = () => new Error('Cannot initialize Overlay. Overlay has already been initialized.');
 
@@ -200,7 +200,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     }
 
     /**
-     * The overlay's configurtion
+     * The overlay's configuration
      *
      * @remarks
      * Initially _config only contains a partial OverlayConfig, but once the overlay instance has been
@@ -212,7 +212,9 @@ export class Overlay extends MixinRole(Component, 'dialog') {
      * */
     protected _config: OverlayConfig = { ...DEFAULT_OVERLAY_CONFIG } as OverlayConfig;
 
-    protected marker?: Comment;
+    protected _open = false;
+
+    protected marker!: Comment;
 
     protected isReattaching = false;
 
@@ -220,7 +222,16 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     tabindex = -1;
 
     @property({ converter: AttributeConverterBoolean })
-    open = false;
+    set open (value: boolean) {
+        // if open has changed we update the active overlay stack synchronously
+        if (this._open !== value) {
+            this._open = value;
+            this.updateStack(value);
+        }
+    }
+    get open (): boolean {
+        return this._open;
+    }
 
 
     @property({
@@ -332,6 +343,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         this.id = this.id || ID_GENERATOR.getNextID();
 
+        this.marker = document.createComment(this.id);
+
         this.register();
     }
 
@@ -371,6 +384,65 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     }
 
     /**
+     * Update the {@link Overlay.(activeOverlays:static)} stack
+     *
+     * @remarks
+     * {@link Overlay} is a stacked overlay system. This means, that at any given time, there is at
+     * maximum one overlay considered the active overlay. This is usually the focused overlay and
+     * it is always the last overlay in the {@link Overlay.(activeOverlays:static)} stack.
+     * When a stacked overlay is opened or closed, we need to update the {@link Overlay.(activeOverlays:static)}
+     * stack to reflect the new stack order. The rules for updating the stack are as follows:
+     *
+     * * when opening a stacked overlay, it is added to the stack
+     * * when closing a stacked overlay, all overlays higher in the stack have to be closed too
+     * * when opening a stacked overlay with a trigger, we look for an overlay in the stack which
+     *   contains the opening overlay's trigger - all overlays higher in the stack have to be closed
+     *
+     * This method is invoked from the {@link Overlay.open} setter and is executed immediately and
+     * synchronously to guarantee the order in which overlays are opened/closed and the stability of
+     * the stack as opposed to being scheduled in the update cycle.
+     *
+     * @param open  `true` if the overlay is opening, `false` otherwise
+     */
+    protected updateStack (open: boolean) {
+
+        // only stacked overlays participate in the stack management
+        if (!this._config.stacked) return;
+
+        // turn stack into array and reverse it, as we want to start with the currently active overlay
+        const activeOverlays = [...this.static.activeOverlays].reverse();
+
+        // then iterate over the reverse stack and close each currently active overlay one by one
+        // until we find an active overlay which fulfills the rules and can stay open
+        activeOverlays.some(activeOverlay => {
+
+            // we are done in the following cases:
+            const done = open
+                // [this overlay is opening]:
+                // the currently active overlay contains the trigger of this overlay and can be
+                // considered the parent of this overlay in the stack - or  this overlay doesn't
+                // have a trigger and we consider the currently active overlay the parent
+                ? this.trigger && activeOverlay.contains(this.trigger) || !this.trigger
+                // [this overlay is closing]:
+                // the currently active overlay is this overlay which we are about to close;
+                // if the currently active overlay is not this overlay, then it is an active
+                // overlay higher in the stack which has to be closed
+                : activeOverlay === this;
+
+            if (!done) {
+
+                activeOverlay.open = false;
+            }
+
+            return done;
+        });
+
+        // finally we add/remove this overlay to/from the stack
+        open ? this.static.activeOverlays.add(this) : this.static.activeOverlays.delete(this);
+    }
+
+
+    /**
      * Handle the overlay's open-changed event
      *
      * @remarks
@@ -383,79 +455,42 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     @listener({ event: 'open-changed', options: { capture: true } })
     protected handleOpenChanged (event: PropertyChangeEvent<boolean>) {
 
-        // if it's an event bubbling up from a nested overlay, ignore it
+        // overlays can be nested, which means that 'open-changed'-events can bubble from
+        // a nested overlay to its parent - we only want to handle events from this overlay
+        // instance, so we check the {@link ComponentEvent}'s detail.target property
         if (event.detail.target !== this) return;
 
         console.log('Overlay.handleOpenChange()...', event.detail.current);
 
-        const overlayRoot = this.static.overlayRoot;
-
-        this.isReattaching = true;
-
         if (event.detail.current === true) {
-
-            this.marker = document.createComment(this.id);
-
-            replaceWith(this.marker, this);
-
-            overlayRoot.appendChild(this);
 
             this.handleOpen();
 
-            this.static.registeredOverlays.get(this)?.positionController?.attach(this);
-            this.static.registeredOverlays.get(this)?.positionController?.update();
-
         } else {
 
-            replaceWith(this, this.marker!);
-
-            this.marker = undefined;
-
             this.handleClose();
-
-            this.static.registeredOverlays.get(this)?.positionController?.detach();
         }
 
-        this.isReattaching = false;
-
-        console.log(this.static.activeOverlays);
+        console.log('activeOverlays: ', this.static.activeOverlays);
     }
 
     protected handleOpen () {
 
-        if (this._config.stacked) {
+        // TODO: think about this: if we move overlays in the DOM, then a component's selectors might
+        // get lost if an update happens in that component while the overlay is open
+        this.moveToRoot();
 
-            // if (this.static.activeOverlays.size) {
+        const positionController = this.static.registeredOverlays.get(this)?.positionController;
 
-            //     const activeOverlays = [...this.static.activeOverlays];
-
-            //     for (let index = activeOverlays.length - 1; index >= 0; index--) {
-
-            //         const lastOverlay = activeOverlays[index];
-
-            //         if (lastOverlay === this || lastOverlay.contains(source.target)) {
-
-            //             // we found the active overlay that caused the event, we keep the stack up to this overlay
-            //             break;
-
-            //         } else {
-
-            //             // the active overlay didn't cause the event, so it should be closed and discarded from the stack
-            //             this.closeOverlay(overlay);
-            //         }
-            //     }
-            // }
-
-            this.static.activeOverlays.add(this);
-        }
+        positionController?.attach(this);
+        positionController?.update();
     }
 
     protected handleClose () {
 
-        if (this._config.stacked) {
+        this.static.registeredOverlays.get(this)?.positionController?.detach();
 
-            this.static.activeOverlays.delete(this);
-        }
+        this.moveFromRoot();
     }
 
     protected register () {
@@ -510,6 +545,26 @@ export class Overlay extends MixinRole(Component, 'dialog') {
             settings.positionController?.attach(this);
             settings.positionController?.update();
         }
+    }
+
+    protected moveToRoot () {
+
+        this.isReattaching = true;
+
+        replaceWith(this.marker, this);
+
+        this.static.overlayRoot.appendChild(this);
+
+        this.isReattaching = false;
+    }
+
+    protected moveFromRoot () {
+
+        this.isReattaching = true;
+
+        replaceWith(this, this.marker);
+
+        this.isReattaching = false;
     }
 }
 
