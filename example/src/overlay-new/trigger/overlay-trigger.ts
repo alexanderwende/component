@@ -2,8 +2,7 @@ import { PropertyChangeEvent } from '@partkit/component';
 import { macroTask } from '@partkit/component/tasks';
 import { Behavior } from '../../behavior/behavior';
 import { activeElement } from '../../dom';
-import { FocusChangeEvent, FocusMonitor } from '../../focus/focus-monitor';
-import { FocusTrap } from '../../focus/focus-trap';
+import { FocusChangeEvent, FocusMonitor, FocusTrap } from '../../focus';
 import { Escape } from '../../keys';
 import { Overlay } from '../overlay';
 import { OverlayTriggerConfig } from './overlay-trigger-config';
@@ -58,74 +57,56 @@ export class OverlayTrigger extends Behavior {
 
         const open = event.detail.current;
 
-        console.log('OverlayTrigger.handleOpenChange()...', this.overlay, event.detail.current);
+        console.log('OverlayTrigger.handleOpenChange()...', this.overlay.id, event.detail.current);
 
         if (open) {
 
             this.storeFocus();
 
-            if (this.focusBehavior) {
-
-                this.focusBehavior.attach(this.overlay);
-            }
+            this.focusBehavior?.attach(this.overlay);
 
         } else {
 
-            if (this.focusBehavior) {
-
-                this.focusBehavior.detach();
-            }
+            this.focusBehavior?.detach();
         }
     }
 
     protected handleFocusChange (event: FocusChangeEvent) {
 
-        // if it's an event bubbling up from a nested overlay, ignore it
-        // we check the event's target because custom events get retargeted at the shadowRoot
+        // this overlay trigger only handles FocusChangeEvents which were dispatched on its own overlay
+        // if the event's target is not this trigger's overlay, then the event is bubbling from a nested overlay
         if (event.target !== this.overlay) return;
 
-        const hasFocus = event.detail.type === 'focusin';
+        console.log('OverlayTrigger.handleFocusChange()... %s, %s, bubbling: %s', this.overlay.id, event.detail.hasFocus, event.target !== this.overlay);
 
-        console.log('OverlayTrigger.handleFocusChange()...', this.overlay.id, hasFocus);
+        // we only need to handle focus loss
+        if (event.detail.hasFocus) return;
 
-        if (!hasFocus) {
+        // the FocusChangeEvent is dispatched after the focus has changed, so we can check if our overlay is
+        // still active - the focus might have moved to a nested overlay (higher in the stack)
+        if (this.overlay.static.isOverlayActive(this.overlay)) return;
 
-            // when loosing focus, we wait for potential focusin events on child or parent overlays by delaying
-            // the active check in a new macro-task
-            macroTask(() => {
+        // if this trigger's overlay is no longer active we can close it
 
-                // then we check if the overlay is active and if not, we close it
-                if (!this.overlay.static.isOverlayActive(this.overlay)) {
+        // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
+        const parent = this.overlay.static.getParentOverlay(this.overlay);
 
-                    // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
-                    const parent = this.overlay.static.getParentOverlay(this.overlay);
+        if (this.config.closeOnFocusLoss) this.close(event);
 
-                    if (this.config.closeOnFocusLoss) {
-
-                        this.close(event);
-                    }
-
-                    if (parent) {
-
-                        // if we have a parent overlay, we let the parent know that our overlay has lost focus,
-                        // by dispatching the FocusChangeEvent on the parent overlay to be handled or ignored
-                        // by the parent's OverlayTrigger
-                        parent.dispatchEvent(event);
-                    }
-                }
-            });
-        }
+        // if we have a parent overlay, we let the parent know that our overlay has lost focus by dispatching the
+        // FocusChangeEvent on the parent overlay to be handled or ignored by the parent's OverlayTrigger
+        macroTask(() => parent?.dispatchEvent(event));
     }
 
     protected handleKeydown (event: KeyboardEvent) {
-
-        console.log('OverlayTrigger.handleKeydown()...', event);
 
         switch (event.key) {
 
             case Escape:
 
                 if (!this.overlay.open || !this.config.closeOnEscape) return;
+
+                console.log('OverlayTrigger.handleKeydown()...', event);
 
                 event.preventDefault();
                 event.stopPropagation();
@@ -144,8 +125,6 @@ export class OverlayTrigger extends Behavior {
                 break;
         }
     }
-
-
 
     protected storeFocus () {
 
