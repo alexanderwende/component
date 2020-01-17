@@ -1211,7 +1211,7 @@ export abstract class Component extends HTMLElement {
 
         (this.constructor as typeof Component).selectors.forEach((declaration, property) => {
 
-            this[property as keyof this] = null as any;
+            this[property as keyof this] = undefined as any;
         });
     }
 

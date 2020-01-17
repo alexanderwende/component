@@ -1,12 +1,12 @@
 import { Component } from '@partkit/component';
-import { DEFAULT_POSITION_CONFIG, PositionConfig, POSITION_CONFIG_FIELDS } from '../position/position-config';
+import { PositionConfig, POSITION_CONFIG_FIELDS } from '../position/position-config';
 import { TemplateFunction } from '../template-function';
-import { DEFAULT_OVERLAY_TRIGGER_CONFIG, OverlayTriggerConfig, OVERLAY_TRIGGER_CONFIG_FIELDS } from './trigger/overlay-trigger-config';
+import { OverlayTriggerConfig, OVERLAY_TRIGGER_CONFIG_FIELDS } from './trigger/overlay-trigger-config';
 
 export type OverlayConfig = PositionConfig & OverlayTriggerConfig & {
     positionType: string;
-    trigger?: HTMLElement;
     triggerType: string;
+    trigger?: HTMLElement;
     stacked: boolean;
     template?: TemplateFunction;
     context?: Component;
@@ -28,11 +28,9 @@ export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
 ];
 
 export const DEFAULT_OVERLAY_CONFIG: Partial<OverlayConfig> = {
-    // ...DEFAULT_POSITION_CONFIG,
-    // ...DEFAULT_OVERLAY_TRIGGER_CONFIG,
     positionType: 'default',
-    trigger: undefined,
     triggerType: 'default',
+    trigger: undefined,
     stacked: true,
     template: undefined,
     context: undefined,
