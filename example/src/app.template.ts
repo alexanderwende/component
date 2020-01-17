@@ -232,6 +232,8 @@ export const template = (element: App) => html`
             </ui-accordion>
 
             <overlay-demo></overlay-demo>
+
+            <event-order-demo></event-order-demo>
         </div>
 
     </main>

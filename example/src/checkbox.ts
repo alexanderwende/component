@@ -6,36 +6,36 @@ import { Enter, Space } from './keys';
     selector: 'ui-checkbox',
     styles: [css`
     :host {
-            position: relative;
-            display: inline-flex;
-            width: 1rem;
-            height: 1rem;
-            cursor: pointer;
-            border: var(--border-width, 0.125rem) solid var(--border-color, #bfbfbf);
-            border-radius: var(--border-radius, 0.25rem);
-            box-sizing: content-box;
-            transition: .1s ease-in;
-        }
-        :host([aria-checked="true"]) {
-            border-color: var(--selected-color, #bfbfbf);
-            background-color: var(--selected-color, #bfbfbf);
-        }
-        .check-mark {
-            position: absolute;
-            top: 0.25rem;
-            left: 0.125rem;
-            display: block;
-            width: 0.625rem;
-            height: 0.25rem;
-            border: solid var(--background-color, #ffffff);
-            border-width: 0 0 var(--border-width, 0.125rem) var(--border-width, 0.125rem);
-            transform: rotate(-45deg);
-            transition: .1s ease-in;
-            opacity: 0;
-        }
-        :host([aria-checked="true"]) .check-mark {
-            opacity: 1;
-        }
+        position: relative;
+        display: inline-flex;
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+        border: var(--border-width, 0.125rem) solid var(--border-color, #bfbfbf);
+        border-radius: var(--border-radius, 0.25rem);
+        box-sizing: content-box;
+        transition: .1s ease-in;
+    }
+    :host([aria-checked="true"]) {
+        border-color: var(--selected-color, #bfbfbf);
+        background-color: var(--selected-color, #bfbfbf);
+    }
+    .check-mark {
+        position: absolute;
+        top: 0.25rem;
+        left: 0.125rem;
+        display: block;
+        width: 0.625rem;
+        height: 0.25rem;
+        border: solid var(--background-color, #ffffff);
+        border-width: 0 0 var(--border-width, 0.125rem) var(--border-width, 0.125rem);
+        transform: rotate(-45deg);
+        transition: .1s ease-in;
+        opacity: 0;
+    }
+    :host([aria-checked="true"]) .check-mark {
+        opacity: 1;
+    }
     `],
     template: checkbox => html`
     <span class="check-mark"></span>

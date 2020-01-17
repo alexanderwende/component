@@ -10,6 +10,7 @@ import './tabs/tab';
 import './tabs/tab-list';
 import './tabs/tab-panel';
 import './toggle';
+import './event-order-demo'
 
 @component({
     selector: 'demo-app',
