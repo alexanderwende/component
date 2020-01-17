@@ -1,7 +1,7 @@
 import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, listener, property, PropertyChangeDetectorObject, PropertyChangeEvent } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
-import { replaceWith } from '../dom';
+import { replaceWith, activeElement } from '../dom';
 import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
@@ -29,7 +29,7 @@ const ID_GENERATOR = new IDGenerator('partkit-overlay-');
 export interface OverlayInit {
     overlayTriggerFactory: BehaviorFactory<OverlayTrigger, OverlayTriggerConfig>;
     positionControllerFactory: BehaviorFactory<PositionController, PositionConfig>;
-    overlayRoot: HTMLElement;
+    overlayRoot?: HTMLElement;
 }
 
 export interface OverlaySettings {
@@ -71,7 +71,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     protected static _positionControllerFactory: BehaviorFactory<PositionController, PositionConfig> = new PositionControllerFactory();
 
     /** @internal */
-    protected static _overlayRoot: HTMLElement = document.body;
+    protected static _overlayRoot?: HTMLElement;
 
     protected static registeredOverlays = new Map<Overlay, OverlaySettings>();
 
@@ -87,7 +87,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         return this._positionControllerFactory;
     }
 
-    static get overlayRoot (): HTMLElement {
+    static get overlayRoot (): HTMLElement | undefined {
 
         return this._overlayRoot;
     }
@@ -120,9 +120,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         THROW_UNREGISTERED_OVERLAY(overlay);
 
-        const activeElement = document.activeElement;
-
-        return overlay === activeElement || overlay.contains(activeElement);
+        return overlay.contains(activeElement());
     }
 
     /**
@@ -146,6 +144,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
                 if (isActive) break;
             }
         }
+
+        console.log('isOverlayActive(): ', overlay.id, isActive);
 
         return isActive;
     }
@@ -476,8 +476,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
     protected handleOpen () {
 
-        // TODO: think about this: if we move overlays in the DOM, then a component's selectors might
-        // get lost if an update happens in that component while the overlay is open
         this.moveToRoot();
 
         const positionController = this.static.registeredOverlays.get(this)?.positionController;
@@ -549,16 +547,22 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
     protected moveToRoot () {
 
+        if (!this.static.overlayRoot) return;
+
         this.isReattaching = true;
 
         replaceWith(this.marker, this);
 
+        // TODO: think about this: if we move overlays in the DOM, then a component's selectors might
+        // get lost if an update happens in that component while the overlay is open
         this.static.overlayRoot.appendChild(this);
 
         this.isReattaching = false;
     }
 
     protected moveFromRoot () {
+
+        if (!this.static.overlayRoot) return;
 
         this.isReattaching = true;
 
