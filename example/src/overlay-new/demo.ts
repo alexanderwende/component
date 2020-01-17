@@ -1,38 +1,57 @@
 import { Changes, Component, component, selector } from '@partkit/component';
 import { html } from 'lit-html';
-import { CONNECTED_POSITION_CONFIG } from '../position';
 import './overlay';
 import { Overlay } from './overlay';
-import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
-import { DIALOG_OVERLAY_TRIGGER_CONFIG } from './trigger';
-
-const CONFIG: Partial<OverlayConfig> = {
-
-};
-
-const DIALOG_CONFIG = {
-    ...DEFAULT_OVERLAY_CONFIG,
-    ...DIALOG_OVERLAY_TRIGGER_CONFIG,
-    ...CONNECTED_POSITION_CONFIG
-}
+import { OverlayConfig } from './overlay-config';
 
 @component<OverlayDemoComponent>({
     selector: 'overlay-demo',
     template: element => html`
     <h2>Overlay</h2>
 
-    <button @click=${ element.changeRole }>Change Role</button>
-    <button @click=${ element.toggle }>Toggle</button>
+    <h3>Default Overlay</h3>
+
+    <p>An overlay with its default configuration. The overlay is opened and closed programmatically.</p>
+
+    <button @click=${ element.toggleOverlay }>Toggle Overlay</button>
 
     <ui-overlay id="overlay">
         <h3>Overlay</h3>
-        <p>This is some overlay content.</p>
+        <p>This is the overlay's content.</p>
+        <p>Some interactive elements showcase the auto-focus and focus-trap behavior of the overlay.</p>
         <p>
-            <input type="text" placeholder="Search term..."/> <button>Search</button>
+            <label>Some text field <input type="text" placeholder=""/></label>
+        </p>
+        <p>
+            <label>Some checkbox <input type="checkbox"/></label>
+        </p>
+        <p>
+            <button>Some button</button>
         </p>
     </ui-overlay>
 
-    <button id="dialog-button">Dialog</button>
+    <h3>Programmatic Overlay</h3>
+
+    <p>An overlay which is created via the static Overlay.create() method.</p>
+
+    <button @click=${ element.toggleProgrammaticOverlay }>Toggle Overlay</button>
+
+    <h3>Tooltip</h3>
+
+    <p>An overlay which is configured as a tooltip, with its <code>trigger-type</code> being <code>"tooltip"</code> and <code>position-type</code> being <code>"connected"</code>. Tooltips should not be stacked, as they are not considered active - meaning, they usually don't receive focus and are not interactive.</p>
+
+    <p>This is some sample text with a <a href="#" id="tooltip-trigger">tooltip</a>.</p>
+
+    <ui-overlay id="tooltip" .config=${ element.tooltipConfig }>
+        <p>This is the tooltip content.</p>
+    </ui-overlay>
+
+    <h3>Dialog</h3>
+
+    <p>An overlay which is configured as a dialog, with its <code>trigger-type</code> being <code>"dialog"</code> and <code>position-type</code> being <code>"connected"</code>.</p>
+    <p>The dialog itself contains 2 nested dialogs to showcase overlay's stacking feature and focus management.</p>
+
+    <button id="dialog-button">Toggle Dialog</button>
 
     <ui-overlay id="dialog" .config=${ element.dialogConfig }>
         <h3>Dialog</h3>
@@ -47,7 +66,7 @@ const DIALOG_CONFIG = {
             position-type="connected"
             .trigger=${ element.nestedDialogButton }
             .origin=${ element.nestedDialogButton }>
-            <h3>Nested Dialog</h3>
+            <h3>Nested Dialog 1</h3>
             <p>This is some dialog content.</p>
         </ui-overlay>
         <ui-overlay
@@ -63,10 +82,6 @@ const DIALOG_CONFIG = {
     `
 })
 export class OverlayDemoComponent extends Component {
-
-    roles = ['dialog', 'menu', 'tooltip'];
-
-    currentRole = 0;
 
     @selector({ query: '#overlay' })
     overlay!: Overlay;
@@ -89,6 +104,9 @@ export class OverlayDemoComponent extends Component {
     @selector({ query: '#nested-dialog-button-2' })
     nestedDialogButton2!: HTMLButtonElement;
 
+    @selector({ query: '#tooltip-trigger' })
+    tooltipTrigger!: HTMLSpanElement;
+
     get dialogConfig (): Partial<OverlayConfig> {
         return {
             triggerType: 'dialog',
@@ -98,26 +116,42 @@ export class OverlayDemoComponent extends Component {
         };
     }
 
-    updateCallback (changes: Changes, firstUpdate: boolean) {
-
-        console.log('Demo.updateCallback()... firstUpdate: ', firstUpdate);
-
-        if (firstUpdate) {
-
+    get tooltipConfig (): Partial<OverlayConfig> {
+        return {
+            triggerType: 'tooltip',
+            positionType: 'connected',
+            alignment: {
+                origin: {
+                    horizontal: 'center',
+                    vertical: 'start',
+                },
+                target: {
+                    horizontal: 'center',
+                    vertical: 'end',
+                },
+                offset: {
+                    horizontal: 0,
+                    vertical: '1rem'
+                }
+            },
+            trigger: this.tooltipTrigger,
+            origin: this.tooltipTrigger,
+            stacked: false,
         }
     }
 
-    changeRole () {
+    updateCallback (changes: Changes, firstUpdate: boolean) {
 
-        this.currentRole = (this.currentRole + 1 < this.roles.length) ? this.currentRole + 1 : 0;
 
-        this.overlay.role = this.roles[this.currentRole];
-
-        this.requestUpdate();
     }
 
-    toggle () {
+    toggleOverlay () {
 
         this.overlay.open = !this.overlay.open;
+    }
+
+    toggleProgrammaticOverlay () {
+
+
     }
 }
