@@ -36,6 +36,12 @@ export function dispatch<T = any> (target: EventTarget, type: string, detail?: T
     }));
 }
 
+export function cancel (event: Event) {
+
+    event.preventDefault();
+    event.stopPropagation();
+}
+
 /**
  * A class for managing event listeners
  *
