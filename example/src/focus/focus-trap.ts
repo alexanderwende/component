@@ -3,18 +3,40 @@ import { Tab } from '../keys';
 import { FocusMonitor } from './focus-monitor';
 import { applyDefaults } from '../utils/config';
 
-export const TABBABLES = [
-    'a[href]:not([disabled]):not([tabindex^="-"])',
-    'area[href]:not([disabled]):not([tabindex^="-"])',
-    'button:not([disabled]):not([tabindex^="-"])',
-    'input:not([disabled]):not([tabindex^="-"])',
-    'select:not([disabled]):not([tabindex^="-"])',
-    'textarea:not([disabled]):not([tabindex^="-"])',
-    'iframe:not([disabled]):not([tabindex^="-"])',
-    '[contentEditable]:not([disabled]):not([tabindex^="-"])',
-    '[tabindex]:not([tabindex^="-"])',
+/**
+ * A CSS selector for matching elements which are not disabled or removed from the tab order
+ *
+ * @private
+ * @internal
+ */
+const INTERACTIVE = ':not([disabled]):not([tabindex^="-"])';
+
+/**
+ * An array of CSS selectors to match generally tabbable elements
+ *
+ * @private
+ * @internal
+ */
+const ELEMENTS = [
+    'a[href]',
+    'area[href]',
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'iframe',
+    '[contentEditable]',
+    '[tabindex]',
 ];
 
+/**
+ * An array of CSS selectors to match interactive, tabbable elements
+ */
+export const TABBABLES = ELEMENTS.map(ELEMENT => `${ ELEMENT }${ INTERACTIVE }`);
+
+/**
+ * The {@link FocusTrap} configuration interface
+ */
 export interface FocusTrapConfig {
     tabbableSelector: CSSSelector;
     wrapFocus: boolean;
@@ -23,6 +45,9 @@ export interface FocusTrapConfig {
     initialFocus?: CSSSelector;
 }
 
+/**
+ * The default {@link FocusTrap} configuration
+ */
 export const DEFAULT_FOCUS_TRAP_CONFIG: FocusTrapConfig = {
     tabbableSelector: TABBABLES.join(','),
     wrapFocus: true,
@@ -30,6 +55,9 @@ export const DEFAULT_FOCUS_TRAP_CONFIG: FocusTrapConfig = {
     restoreFocus: true,
 };
 
+/**
+ * An array of {@link FocusTrapConfig} property names
+ */
 export const FOCUS_TRAP_CONFIG_FIELDS: (keyof FocusTrapConfig)[] = [
     'autoFocus',
     'wrapFocus',
@@ -38,6 +66,9 @@ export const FOCUS_TRAP_CONFIG_FIELDS: (keyof FocusTrapConfig)[] = [
     'tabbableSelector',
 ];
 
+/**
+ * The focus trap behavior
+ */
 export class FocusTrap extends FocusMonitor {
 
     protected tabbables!: NodeListOf<HTMLElement>;
