@@ -39,14 +39,14 @@ export const replaceWith = <T extends Node, U extends Node> (newChild: T, refChi
  */
 export const activeElement = (): HTMLElement => {
 
-    let root: DocumentOrShadowRoot | null = document;
+    let shadowRoot: DocumentOrShadowRoot | null = document;
+    let activeElement: Element = shadowRoot.activeElement ?? document.body;
 
-    let element;
+    while (shadowRoot && shadowRoot.activeElement) {
 
-    while (root && (element = root.activeElement)) {
-
-        root = element.shadowRoot;
+        activeElement = shadowRoot.activeElement;
+        shadowRoot = activeElement.shadowRoot;
     }
 
-    return element as HTMLElement || document.body;
+    return activeElement as HTMLElement;
 }
