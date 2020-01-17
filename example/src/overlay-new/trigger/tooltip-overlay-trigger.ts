@@ -12,17 +12,18 @@ export class TooltipOverlayTrigger extends OverlayTrigger {
 
     attach (element: HTMLElement): boolean {
 
-        if (!super.attach(element)) return false;
+        // we enforce the element by only attaching, if it is provided
+        if (!element || !super.attach(element)) return false;
 
         this.overlay.role = 'tooltip';
 
         this.element!.setAttribute('tabindex', '0');
         this.element!.setAttribute('aria-describedby', this.overlay.id);
 
-        this.listen(this.element!, 'mouseenter', (event) => this.open(event));
-        this.listen(this.element!, 'mouseleave', (event) => this.close(event));
-        this.listen(this.element!, 'focus', (event) => this.open(event));
-        this.listen(this.element!, 'blur', (event) => this.close(event));
+        this.listen(this.element!, 'mouseenter', () => this.open());
+        this.listen(this.element!, 'mouseleave', () => this.close());
+        this.listen(this.element!, 'focus', () => this.open());
+        this.listen(this.element!, 'blur', () => this.close());
 
         return true;
     }

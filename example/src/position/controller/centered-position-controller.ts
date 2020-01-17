@@ -14,7 +14,7 @@ export class CenteredPositionController extends PositionController {
      * We actually don't care about the position, because we are going to use viewport relative
      * CSS units to position the element. After the first calculation of the position, it's
      * never going to change and applyPosition will only be called once. This makes this
-     * position strategy really cheap.
+     * position controller really cheap.
      */
     protected getPosition (): Position {
 

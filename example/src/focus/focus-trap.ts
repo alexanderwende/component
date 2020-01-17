@@ -67,7 +67,13 @@ export const FOCUS_TRAP_CONFIG_FIELDS: (keyof FocusTrapConfig)[] = [
 ];
 
 /**
- * The focus trap behavior
+ * The FocusTrap behavior
+ *
+ * @remarks
+ * The FocusTrap behavior extends the {@link FocusMonitor} behavior and adds additional
+ * functionality to it, like trapping the focus in the monitored element, auto wrapping
+ * the focus order, as well as auto-focus and restore-focus. The behavior of the
+ * FocusTrap can be defined through a {@link FocusTrapConfig}.
  */
 export class FocusTrap extends FocusMonitor {
 
@@ -92,19 +98,11 @@ export class FocusTrap extends FocusMonitor {
 
         this.update();
 
-        if (this.config.autoFocus) {
-
-            this.focusInitial();
-        }
-
         this.listen(this.element!, 'keydown', ((event: KeyboardEvent) => this.handleKeyDown(event)) as EventListener);
 
+        if (this.config.autoFocus) this.focusInitial();
+
         return true;
-    }
-
-    detach () {
-
-        return super.detach();
     }
 
     focusInitial () {
@@ -141,7 +139,6 @@ export class FocusTrap extends FocusMonitor {
 
         if (!this.hasAttached) return;
 
-        // TODO: does this work with shadowDOM and re-attachment of overlay?
         this.tabbables = this.element!.querySelectorAll(this.config.tabbableSelector);
 
         const length = this.tabbables.length;

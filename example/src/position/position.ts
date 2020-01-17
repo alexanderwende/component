@@ -13,7 +13,6 @@ export function isPosition (position: any): position is Position {
     return typeof (position as Position).x !== 'undefined' && typeof (position as Position).y !== 'undefined';
 }
 
-
 export function hasPositionChanged (position?: Position, other?: Position): boolean {
 
     if (position && other) {

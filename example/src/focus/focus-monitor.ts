@@ -4,10 +4,19 @@ import { activeElement } from '../dom';
 import { cancel } from '../events';
 import { FocusChangeEvent } from './focus-change-event';
 
+/**
+ * The FocusMonitor behavior
+ *
+ * @remarks
+ * The FocusMonitor behavior can be attached to an element to monitor the focus state
+ * of the element and its descendants. It dispatches a {@link FocusChangeEvent} if
+ * the focus is moved into the element (or one of its descendants) or if the focus
+ * moves out.
+ */
 export class FocusMonitor extends Behavior {
 
     /**
-     * The previous focus state (when the last FocusChangeEvent was fired)
+     * The previous focus state (when the last FocusChangeEvent was dispatched)
      */
     protected hadFocus?: boolean;
 

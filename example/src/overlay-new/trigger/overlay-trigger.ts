@@ -6,6 +6,7 @@ import { FocusChangeEvent, FocusMonitor, FocusTrap } from '../../focus';
 import { Escape } from '../../keys';
 import { Overlay } from '../overlay';
 import { OverlayTriggerConfig } from './overlay-trigger-config';
+import { cancel } from 'example/src/events';
 
 export class OverlayTrigger extends Behavior {
 
@@ -13,7 +14,7 @@ export class OverlayTrigger extends Behavior {
 
     protected focusBehavior?: FocusMonitor;
 
-    constructor (protected config: Partial<OverlayTriggerConfig>, public overlay: Overlay) {
+    constructor (protected config: OverlayTriggerConfig, public overlay: Overlay) {
 
         super();
 
@@ -34,18 +35,17 @@ export class OverlayTrigger extends Behavior {
         return true;
     }
 
-    // TODO: remove event parameter...
-    open (event?: Event) {
+    open () {
 
         this.overlay.open = true;
     }
 
-    close (event?: Event) {
+    close () {
 
         this.overlay.open = false;
     }
 
-    toggle (event?: Event, open?: boolean) {
+    toggle (open?: boolean) {
 
         this.overlay.open = open ?? !this.overlay.open;
     }
@@ -56,8 +56,6 @@ export class OverlayTrigger extends Behavior {
         if (event.detail.target !== this.overlay) return;
 
         const open = event.detail.current;
-
-        console.log('OverlayTrigger.handleOpenChange()...', this.overlay.id, event.detail.current);
 
         if (open) {
 
@@ -91,7 +89,10 @@ export class OverlayTrigger extends Behavior {
         // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
         const parent = this.overlay.static.getParentOverlay(this.overlay);
 
-        if (this.config.closeOnFocusLoss) this.close(event);
+        if (this.config.closeOnFocusLoss) {
+
+            this.close();
+        }
 
         // if we have a parent overlay, we let the parent know that our overlay has lost focus by dispatching the
         // FocusChangeEvent on the parent overlay to be handled or ignored by the parent's OverlayTrigger
@@ -106,21 +107,14 @@ export class OverlayTrigger extends Behavior {
 
                 if (!this.overlay.open || !this.config.closeOnEscape) return;
 
-                console.log('OverlayTrigger.handleKeydown()...', event);
+                cancel(event);
 
-                event.preventDefault();
-                event.stopPropagation();
+                this.close();
 
-                this.close(event);
+                if (this.config.restoreFocus) {
 
-                if (!this.config.restoreFocus) return;
-
-                this.listen(this.overlay, 'open-changed', () => {
-
-                    console.log('once: open-changed restoreFocus...');
-                    this.restoreFocus();
-
-                }, { once: true });
+                    this.listen(this.overlay, 'open-changed', () => this.restoreFocus(), { once: true });
+                }
 
                 break;
         }
@@ -128,15 +122,15 @@ export class OverlayTrigger extends Behavior {
 
     protected storeFocus () {
 
-        this.previousFocus = activeElement();
-
         console.log('OverlayTrigger.storeFocus()...', this.previousFocus);
+
+        this.previousFocus = activeElement();
     }
 
     protected restoreFocus () {
 
-        this.previousFocus.focus();
-
         console.log('OverlayTrigger.restoreFocus()...', this.previousFocus);
+
+        this.previousFocus.focus();
     }
 }

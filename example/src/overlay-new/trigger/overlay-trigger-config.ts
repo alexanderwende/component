@@ -1,4 +1,4 @@
-import { FocusTrapConfig, DEFAULT_FOCUS_TRAP_CONFIG, FOCUS_TRAP_CONFIG_FIELDS } from '../../focus/focus-trap';
+import { FocusTrapConfig, DEFAULT_FOCUS_TRAP_CONFIG, FOCUS_TRAP_CONFIG_FIELDS } from '../../focus';
 
 export type OverlayTriggerConfig = FocusTrapConfig & {
     trapFocus: boolean;
