@@ -17,10 +17,7 @@ const NOT_REGISTERED_ERROR = (overlay: Overlay) => new Error(`Overlay is not reg
 
 const THROW_UNREGISTERED_OVERLAY = (overlay: Overlay) => {
 
-    if (!(overlay.constructor as typeof Overlay).isOverlayRegistered(overlay)) {
-
-        throw NOT_REGISTERED_ERROR(overlay);
-    }
+    if (!overlay.isRegistered) throw NOT_REGISTERED_ERROR(overlay);
 }
 
 const ID_GENERATOR = new IDGenerator('partkit-overlay-');
@@ -98,6 +95,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     static initialize (config: Partial<OverlayInit>) {
 
+        // TODO: maybe we can allow changing OverlayInit...
         if (this.isInitialized) throw ALREADY_INITIALIZED_ERROR();
 
         this._overlayTriggerFactory = config.overlayTriggerFactory || this._overlayTriggerFactory;
@@ -105,97 +103,6 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         this._overlayRoot = config.overlayRoot || this._overlayRoot;
 
         this._initialized = true;
-    }
-
-    static isOverlayRegistered (overlay: Overlay): boolean {
-
-        return this.registeredOverlays.has(overlay);
-    }
-
-    /**
-    * An overlay is considered focused, if either itself or any of its descendant nodes has focus.
-    */
-    static isOverlayFocused (overlay: Overlay): boolean {
-
-        THROW_UNREGISTERED_OVERLAY(overlay);
-
-        return overlay.contains(activeElement());
-    }
-
-    /**
-     * An overlay is considered active if it is either focused or has a descendant overlay which is focused.
-     */
-    static isOverlayActive (overlay: Overlay): boolean {
-
-        THROW_UNREGISTERED_OVERLAY(overlay);
-
-        let isFound = false;
-        let isActive = false;
-
-        if (overlay.config.stacked && overlay.open) {
-
-            for (let current of this.activeOverlays) {
-
-                isFound = isFound || current === overlay;
-
-                isActive = isFound && this.isOverlayFocused(current);
-
-                if (isActive) break;
-            }
-        }
-
-        console.log('isOverlayActive(): ', overlay.id, isActive);
-
-        return isActive;
-    }
-
-    /**
-     * Get the parent overlay of an active overlay
-     *
-     * @description
-     * If an overlay is stacked, its parent overlay is the one from which it was opened.
-     * This parent overlay will be in the activeOverlays stack just before this one.
-     */
-    static getParentOverlay (overlay: Overlay): Overlay | undefined {
-
-        THROW_UNREGISTERED_OVERLAY(overlay);
-
-        if (overlay.config.stacked && overlay.open) {
-
-            // we start with parent being undefined
-            // if the first active overlay in the set matches the specified overlay
-            // then indeed the overlay has no parent (the first active overlay is the root)
-            let parent: Overlay | undefined = undefined;
-
-            // go through the active overlays
-            for (let current of this.activeOverlays) {
-
-                // if we have reached the specified active overlay
-                // we can return the parent of that overlay (it's the active overlay in the set just before this one)
-                if (current === overlay) return parent;
-
-                // if we haven't found the specified overlay yet, we set
-                // the current overlay as potential parent and move on
-                parent = current;
-            }
-        }
-    }
-
-    /**
-    * Create a new overlay
-    */
-    static createOverlay (config: Partial<OverlayConfig>): Overlay {
-
-        const overlay = document.createElement(Overlay.selector) as Overlay;
-
-        overlay.config = config;
-
-        return overlay;
-    }
-
-    static disposeOverlay (overlay: Overlay) {
-
-        overlay.parentElement?.removeChild(overlay);
     }
 
     protected _open = false;
@@ -223,6 +130,48 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
     get static (): typeof Overlay {
 
         return this.constructor as typeof Overlay;
+    }
+
+    get isRegistered (): boolean {
+
+        return this.static.registeredOverlays.has(this);
+    }
+
+    /**
+    * An overlay is considered focused, if either itself or any of its descendant nodes has focus.
+    */
+    get isFocused (): boolean {
+
+        THROW_UNREGISTERED_OVERLAY(this);
+
+        return this.contains(activeElement());
+    }
+
+    /**
+     * An overlay is considered active if it is either focused or has a descendant overlay which is focused.
+     */
+    get isActive (): boolean {
+
+        THROW_UNREGISTERED_OVERLAY(this);
+
+        let isFound = false;
+        let isActive = false;
+
+        if (this.config.stacked && this.open) {
+
+            for (let current of this.static.activeOverlays) {
+
+                isFound = isFound || current === this;
+
+                isActive = isFound && current.isFocused;
+
+                if (isActive) break;
+            }
+        }
+
+        console.log('Overlay.isActive()... ', this.id, isActive);
+
+        return isActive;
     }
 
     connectedCallback () {
@@ -257,19 +206,72 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         } else {
 
-            if (changes.has('open')) {
-
-                this.setAttribute('aria-hidden', `${ !this.open }`);
-
-                this.notifyProperty('open', changes.get('open'), this.open);
-            }
-
-            // if (changes.has('config') || changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
             if (changes.has('config')) {
 
                 console.log('Overlay.updateCallback()... config: ', this.config);
 
                 this.configure();
+            }
+        }
+
+        if (changes.has('open')) {
+
+            this.setAttribute('aria-hidden', `${ !this.open }`);
+
+            this.notifyProperty('open', changes.get('open'), this.open);
+        }
+    }
+
+    show () {
+
+        this.open = true;
+    }
+
+    hide () {
+
+        this.open = false;
+    }
+
+    toggle (open?: boolean) {
+
+        this.open = open ?? !this.open;
+    }
+
+    dispose () {
+
+        this.hide();
+
+        this.parentElement?.removeChild(this);
+    }
+
+    /**
+     * Get the parent overlay of an active overlay
+     *
+     * @description
+     * If an overlay is stacked, its parent overlay is the one from which it was opened.
+     * The parent overlay will be in the activeOverlays stack just before this one.
+     */
+    getParentOverlay (): Overlay | undefined {
+
+        THROW_UNREGISTERED_OVERLAY(this);
+
+        if (this.config.stacked && this.open) {
+
+            // we start with parent being undefined
+            // if the first active overlay in the set matches the specified overlay
+            // then indeed the overlay has no parent (the first active overlay is the root)
+            let parent: Overlay | undefined = undefined;
+
+            // go through the active overlays
+            for (let current of this.static.activeOverlays) {
+
+                // if we have reached the specified active overlay
+                // we can return the parent of that overlay (it's the active overlay in the stack just before this one)
+                if (current === this) return parent;
+
+                // if we haven't found the specified overlay yet, we set
+                // the current overlay as potential parent and move on
+                parent = current;
             }
         }
     }
@@ -384,9 +386,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     protected register () {
 
-        if (this.static.isOverlayRegistered(this)) throw ALREADY_REGISTERED_ERROR(this);
-
-        console.log('Overly.register()... config: ', this.config);
+        if (this.isRegistered) throw ALREADY_REGISTERED_ERROR(this);
 
         const settings: OverlaySettings = {
             config: this.config,
@@ -398,7 +398,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     protected unregister () {
 
-        if (!this.static.isOverlayRegistered(this)) throw NOT_REGISTERED_ERROR(this);
+        if (!this.isRegistered) throw NOT_REGISTERED_ERROR(this);
 
         const settings = this.static.registeredOverlays.get(this)!;
 
@@ -446,6 +446,8 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         // TODO: think about this: if we move overlays in the DOM, then a component's selectors might
         // get lost if an update happens in that component while the overlay is open
+        // maybe it's better to select dialogs instances only once after 1st render?
+        // maybe have a selector option to disable re-querying?
         this.static.overlayRoot.appendChild(this);
 
         this.isReattaching = false;

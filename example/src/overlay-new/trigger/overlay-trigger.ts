@@ -35,19 +35,19 @@ export class OverlayTrigger extends Behavior {
         return true;
     }
 
-    open () {
+    show () {
 
-        this.overlay.open = true;
+        this.overlay.show();
     }
 
-    close () {
+    hide () {
 
-        this.overlay.open = false;
+        this.overlay.hide();
     }
 
     toggle (open?: boolean) {
 
-        this.overlay.open = open ?? !this.overlay.open;
+        this.overlay.toggle(open);
     }
 
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
@@ -82,16 +82,16 @@ export class OverlayTrigger extends Behavior {
 
         // the FocusChangeEvent is dispatched after the focus has changed, so we can check if our overlay is
         // still active - the focus might have moved to a nested overlay (higher in the stack)
-        if (this.overlay.static.isOverlayActive(this.overlay)) return;
+        if (this.overlay.isActive) return;
 
         // if this trigger's overlay is no longer active we can close it
 
         // we have to get the parent before closing the overlay - when overlay is closed, it doesn't have a parent
-        const parent = this.overlay.static.getParentOverlay(this.overlay);
+        const parent = this.overlay.getParentOverlay();
 
         if (this.config.closeOnFocusLoss) {
 
-            this.close();
+            this.hide();
         }
 
         // if we have a parent overlay, we let the parent know that our overlay has lost focus by dispatching the
@@ -109,7 +109,7 @@ export class OverlayTrigger extends Behavior {
 
                 cancel(event);
 
-                this.close();
+                this.hide();
 
                 if (this.config.restoreFocus) {
 

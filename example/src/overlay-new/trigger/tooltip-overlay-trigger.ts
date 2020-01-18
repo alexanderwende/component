@@ -20,10 +20,10 @@ export class TooltipOverlayTrigger extends OverlayTrigger {
         this.element!.setAttribute('tabindex', '0');
         this.element!.setAttribute('aria-describedby', this.overlay.id);
 
-        this.listen(this.element!, 'mouseenter', () => this.open());
-        this.listen(this.element!, 'mouseleave', () => this.close());
-        this.listen(this.element!, 'focus', () => this.open());
-        this.listen(this.element!, 'blur', () => this.close());
+        this.listen(this.element!, 'mouseenter', () => this.show());
+        this.listen(this.element!, 'mouseleave', () => this.hide());
+        this.listen(this.element!, 'focus', () => this.show());
+        this.listen(this.element!, 'blur', () => this.hide());
 
         return true;
     }

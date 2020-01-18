@@ -89,6 +89,8 @@ import { OverlayConfig } from './overlay-config';
 })
 export class OverlayDemoComponent extends Component {
 
+    programmaticOverlay?: Overlay;
+
     @selector({ query: '#overlay' })
     overlay!: Overlay;
 
@@ -158,6 +160,26 @@ export class OverlayDemoComponent extends Component {
 
     toggleProgrammaticOverlay () {
 
+        if (!this.programmaticOverlay) {
 
+            const template = () => html`
+                <h3>Programmatic Overlay</h3>
+                <p>This is some overlay content.</p>
+                <p><button @click=${ this.toggleProgrammaticOverlay }>Got it</button></p>
+            `;
+
+            this.programmaticOverlay = new Overlay();
+
+            this.programmaticOverlay.config = { template, context: this };
+
+            this.renderRoot.appendChild(this.programmaticOverlay);
+
+            this.programmaticOverlay.show();
+
+
+        } else {
+
+            this.programmaticOverlay.toggle();
+        }
     }
 }
