@@ -2,23 +2,13 @@ import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
 import { activeElement, replaceWith } from '../dom';
-import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
 import { PositionConfig, PositionController, PositionControllerFactory } from '../position';
-import { DEFAULT_OVERLAY_CONFIG, MixinOverlayConfig, OverlayConfig } from './overlay-config';
+import { DEFAULT_OVERLAY_CONFIG, MixinOverlayConfig } from './overlay-config';
 import { OverlayTrigger, OverlayTriggerConfig, OverlayTriggerFactory } from './trigger';
 
 const ALREADY_INITIALIZED_ERROR = () => new Error('Cannot initialize Overlay. Overlay has already been initialized.');
-
-const ALREADY_REGISTERED_ERROR = (overlay: Overlay) => new Error(`Overlay has already been registered: ${ overlay.id }.`);
-
-const NOT_REGISTERED_ERROR = (overlay: Overlay) => new Error(`Overlay is not registered: ${ overlay.id }.`);
-
-const THROW_UNREGISTERED_OVERLAY = (overlay: Overlay) => {
-
-    if (!overlay.isRegistered) throw NOT_REGISTERED_ERROR(overlay);
-}
 
 const ID_GENERATOR = new IDGenerator('partkit-overlay-');
 
@@ -26,14 +16,6 @@ export interface OverlayInit {
     overlayTriggerFactory: BehaviorFactory<OverlayTrigger, OverlayTriggerConfig>;
     positionControllerFactory: BehaviorFactory<PositionController, PositionConfig>;
     overlayRoot?: HTMLElement;
-}
-
-export interface OverlaySettings {
-    // TODO: check if we need to store config...
-    config: Partial<OverlayConfig>;
-    events: EventManager;
-    positionController?: PositionController;
-    overlayTrigger?: OverlayTrigger;
 }
 
 @component({
@@ -68,8 +50,6 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     /** @internal */
     protected static _overlayRoot?: HTMLElement;
-
-    protected static registeredOverlays = new Map<Overlay, OverlaySettings>();
 
     protected static activeOverlays = new Set<Overlay>();
 
@@ -107,9 +87,13 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     protected _open = false;
 
-    protected marker!: Comment;
+    protected _marker!: Comment;
 
     protected isReattaching = false;
+
+    protected overlayTrigger?: OverlayTrigger;
+
+    protected positionController?: PositionController;
 
     @property({ converter: AttributeConverterNumber })
     tabindex = -1;
@@ -126,15 +110,9 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         return this._open;
     }
 
-
     get static (): typeof Overlay {
 
         return this.constructor as typeof Overlay;
-    }
-
-    get isRegistered (): boolean {
-
-        return this.static.registeredOverlays.has(this);
     }
 
     /**
@@ -142,17 +120,13 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
     */
     get isFocused (): boolean {
 
-        THROW_UNREGISTERED_OVERLAY(this);
-
-        return this.contains(activeElement());
+        return this.open && this.contains(activeElement());
     }
 
     /**
      * An overlay is considered active if it is either focused or has a descendant overlay which is focused.
      */
     get isActive (): boolean {
-
-        THROW_UNREGISTERED_OVERLAY(this);
 
         let isFound = false;
         let isActive = false;
@@ -182,16 +156,21 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         this.id = this.id || ID_GENERATOR.getNextID();
 
-        this.marker = document.createComment(this.id);
-
-        this.register();
+        this._marker = document.createComment(this.id);
     }
 
     disconnectedCallback () {
 
         if (this.isReattaching) return;
 
-        this.unregister();
+        // TODO: test that closing a disconnected overlay doesn't behave unexpected
+        this.hide();
+
+        this.overlayTrigger?.detach();
+        this.positionController?.detach();
+
+        this.overlayTrigger = undefined;
+        this.positionController = undefined;
 
         super.disconnectedCallback();
     }
@@ -252,8 +231,6 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
      * The parent overlay will be in the activeOverlays stack just before this one.
      */
     getParentOverlay (): Overlay | undefined {
-
-        THROW_UNREGISTERED_OVERLAY(this);
 
         if (this.config.stacked && this.open) {
 
@@ -353,9 +330,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         // instance, so we check the {@link ComponentEvent}'s detail.target property
         if (event.detail.target !== this) return;
 
-        console.log('Overlay.handleOpenChange()...', event.detail.current);
-
-        if (event.detail.current === true) {
+        if (this.open) {
 
             this.handleOpen();
 
@@ -363,76 +338,43 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
             this.handleClose();
         }
-
-        console.log('activeOverlays: ', this.static.activeOverlays);
     }
 
     protected handleOpen () {
 
         this.moveToRoot();
 
-        const positionController = this.static.registeredOverlays.get(this)?.positionController;
-
-        positionController?.attach(this);
-        positionController?.update();
+        this.positionController?.attach(this);
+        this.positionController?.update();
     }
 
     protected handleClose () {
 
-        this.static.registeredOverlays.get(this)?.positionController?.detach();
+        this.positionController?.detach();
 
         this.moveFromRoot();
-    }
-
-    protected register () {
-
-        if (this.isRegistered) throw ALREADY_REGISTERED_ERROR(this);
-
-        const settings: OverlaySettings = {
-            config: this.config,
-            events: new EventManager(),
-        };
-
-        this.static.registeredOverlays.set(this, settings);
-    }
-
-    protected unregister () {
-
-        if (!this.isRegistered) throw NOT_REGISTERED_ERROR(this);
-
-        const settings = this.static.registeredOverlays.get(this)!;
-
-        settings.overlayTrigger?.detach();
-        settings.positionController?.detach();
-
-        settings.overlayTrigger = undefined;
-        settings.positionController = undefined;
-
-        this.static.registeredOverlays.delete(this);
     }
 
     protected configure () {
 
         console.log('Overlay.configure()... config: ', this.config);
 
-        const settings = this.static.registeredOverlays.get(this)!;
-
         // dispose of the overlay trigger and position controller
-        settings.overlayTrigger?.detach();
-        settings.positionController?.detach();
+        this.overlayTrigger?.detach();
+        this.positionController?.detach();
 
         // recreate the overlay trigger and position controller from the config
-        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType!, this.config, this);
-        settings.positionController = this.static.positionControllerFactory.create(this.config.positionType!, this.config);
+        this.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType!, this.config, this);
+        this.positionController = this.static.positionControllerFactory.create(this.config.positionType!, this.config);
 
         // attach the overlay trigger
-        settings.overlayTrigger.attach(this.config.trigger);
+        this.overlayTrigger.attach(this.config.trigger);
 
         // attach the position controller, if the overlay is open
         if (this.open) {
 
-            settings.positionController?.attach(this);
-            settings.positionController?.update();
+            this.positionController?.attach(this);
+            this.positionController?.update();
         }
     }
 
@@ -442,7 +384,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         this.isReattaching = true;
 
-        replaceWith(this.marker, this);
+        replaceWith(this._marker, this);
 
         // TODO: think about this: if we move overlays in the DOM, then a component's selectors might
         // get lost if an update happens in that component while the overlay is open
@@ -459,7 +401,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         this.isReattaching = true;
 
-        replaceWith(this, this.marker);
+        replaceWith(this, this._marker);
 
         this.isReattaching = false;
     }
