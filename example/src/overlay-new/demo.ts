@@ -1,4 +1,4 @@
-import { Changes, Component, component, selector } from '@partkit/component';
+import { Changes, Component, component, selector, css } from '@partkit/component';
 import { html } from 'lit-html';
 import './overlay';
 import { Overlay } from './overlay';
@@ -6,6 +6,12 @@ import { OverlayConfig } from './overlay-config';
 
 @component<OverlayDemoComponent>({
     selector: 'overlay-demo',
+    styles: [css`
+    :host {
+        display: block;
+        padding-bottom: 20rem;
+    }
+    `],
     template: element => html`
     <h2>Overlay</h2>
 

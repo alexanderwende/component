@@ -1,13 +1,12 @@
-import { AttributeConverterBoolean, AttributeConverterNumber, AttributeConverterString, Changes, Component, component, css, listener, property, PropertyChangeDetectorObject, PropertyChangeEvent } from '@partkit/component';
+import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, css, listener, property, PropertyChangeEvent } from '@partkit/component';
 import { html } from 'lit-html';
 import { BehaviorFactory } from '../behavior/behavior-factory';
-import { replaceWith, activeElement } from '../dom';
+import { activeElement, replaceWith } from '../dom';
 import { EventManager } from '../events';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
-import { Position, PositionConfig, PositionController } from '../position';
-import { PositionControllerFactory } from '../position/position-controller-factory';
-import { DEFAULT_OVERLAY_CONFIG, OverlayConfig } from './overlay-config';
+import { PositionConfig, PositionController, PositionControllerFactory } from '../position';
+import { DEFAULT_OVERLAY_CONFIG, MixinOverlayConfig, OverlayConfig } from './overlay-config';
 import { OverlayTrigger, OverlayTriggerConfig, OverlayTriggerFactory } from './trigger';
 
 const ALREADY_INITIALIZED_ERROR = () => new Error('Cannot initialize Overlay. Overlay has already been initialized.');
@@ -59,7 +58,7 @@ export interface OverlaySettings {
     <slot></slot>
     `,
 })
-export class Overlay extends MixinRole(Component, 'dialog') {
+export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), { ...DEFAULT_OVERLAY_CONFIG }) {
 
     /** @internal */
     protected static _initialized = false;
@@ -189,7 +188,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         const overlay = document.createElement(Overlay.selector) as Overlay;
 
-        overlay.config = { ...DEFAULT_OVERLAY_CONFIG, ...config } as OverlayConfig;
+        overlay.config = config;
 
         return overlay;
     }
@@ -198,19 +197,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
 
         overlay.parentElement?.removeChild(overlay);
     }
-
-    /**
-     * The overlay's configuration
-     *
-     * @remarks
-     * Initially _config only contains a partial OverlayConfig, but once the overlay instance has been
-     * registered, _config will be a full OverlayConfig. This is to allow the BehaviorFactories for
-     * position and trigger to apply their default configuration, based on the behavior type which is
-     * created by the factories.
-     *
-     * @internal
-     * */
-    protected _config: OverlayConfig = { ...DEFAULT_OVERLAY_CONFIG } as OverlayConfig;
 
     protected _open = false;
 
@@ -233,102 +219,6 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         return this._open;
     }
 
-
-    @property({
-        attribute: false,
-        observe: PropertyChangeDetectorObject,
-    })
-    set config (value: Partial<OverlayConfig>) {
-        this._config = { ...this._config, ...value };
-    }
-    get config (): Partial<OverlayConfig> {
-        return this._config;
-    }
-
-
-    @property({ attribute: false })
-    set origin (value: Position | HTMLElement | 'viewport') {
-        this._config.origin = value;
-    }
-    get origin (): Position | HTMLElement | 'viewport' {
-        return this._config.origin;
-    }
-
-    @property({ converter: AttributeConverterString })
-    set positionType (value: string) {
-        this._config.positionType = value;
-    }
-    get positionType (): string {
-        return this._config.positionType;
-    }
-
-    @property({ attribute: false })
-    set trigger (value: HTMLElement | undefined) {
-        this._config.trigger = value;
-    }
-    get trigger (): HTMLElement | undefined {
-        return this._config.trigger;
-    }
-
-    @property({ converter: AttributeConverterString })
-    set triggerType (value: string) {
-        this._config.triggerType = value;
-    }
-    get triggerType (): string {
-        return this._config.triggerType;
-    }
-
-    // set width(value: string | number) {
-    //     this._config.width = value;
-    // };
-    // get width (): string | number {
-    //     return this._config.width;
-    // }
-    // set height(value: string | number) {
-    //     this._config.width = value;
-    // };
-    // get height (): string | number {
-    //     return this._config.height;
-    // }
-    // set maxWidth(value: string | number) {
-    //     this._config.width = value;
-    // };
-    // get maxWidth (): string | number {
-    //     return this._config.maxWidth;
-    // }
-    // set maxHeight(value: string | number) {
-    //     this._config.width = value;
-    // };
-    // get maxHeight (): string | number {
-    //     return this._config.maxHeight;
-    // }
-    // set minWidth(value: string | number) {
-    //     this._config.minWidth = value;
-    // };
-    // get minWidth (): string | number {
-    //     return this._config.minWidth;
-    // }
-    // set minHeight(value: string | number) {
-    //     this._config.minHeight = value;
-    // };
-    // get minHeight (): string | number{
-    //     return this._config.minHeight;
-    // }
-
-    // alignment: import("../position").AlignmentPair;
-    // tabbableSelector: string;
-    // wrapFocus: boolean;
-    // autoFocus: boolean;
-    // restoreFocus: boolean;
-    // initialFocus?: string | undefined;
-    // trapFocus: boolean;
-    // closeOnEscape: boolean;
-    // closeOnFocusLoss: boolean;
-    // stacked: boolean;
-    // template?: import("../template-function").TemplateFunction | undefined;
-    // context?: Component | undefined;
-    // backdrop: boolean;
-    // closeOnBackdropClick: boolean;
 
     get static (): typeof Overlay {
 
@@ -374,7 +264,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
                 this.notifyProperty('open', changes.get('open'), this.open);
             }
 
-            if (changes.has('config') || changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
+            // if (changes.has('config') || changes.has('trigger') || changes.has('origin') || changes.has('triggerType') || changes.has('positionType')) {
+            if (changes.has('config')) {
 
                 console.log('Overlay.updateCallback()... config: ', this.config);
 
@@ -407,7 +298,7 @@ export class Overlay extends MixinRole(Component, 'dialog') {
     protected updateStack (open: boolean) {
 
         // only stacked overlays participate in the stack management
-        if (!this._config.stacked) return;
+        if (!this.config.stacked) return;
 
         // turn stack into array and reverse it, as we want to start with the currently active overlay
         const activeOverlays = [...this.static.activeOverlays].reverse();
@@ -531,8 +422,8 @@ export class Overlay extends MixinRole(Component, 'dialog') {
         settings.positionController?.detach();
 
         // recreate the overlay trigger and position controller from the config
-        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this._config.triggerType, this.config, this);
-        settings.positionController = this.static.positionControllerFactory.create(this._config.positionType, this.config);
+        settings.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType!, this.config, this);
+        settings.positionController = this.static.positionControllerFactory.create(this.config.positionType!, this.config);
 
         // attach the overlay trigger
         settings.overlayTrigger.attach(this.config.trigger);
