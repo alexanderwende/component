@@ -35,21 +35,6 @@ export class OverlayTrigger extends Behavior {
         return true;
     }
 
-    show () {
-
-        this.overlay.show();
-    }
-
-    hide () {
-
-        this.overlay.hide();
-    }
-
-    toggle (open?: boolean) {
-
-        this.overlay.toggle(open);
-    }
-
     protected handleOpenChange (event: PropertyChangeEvent<boolean>) {
 
         // if it's an event bubbling up from a nested overlay, ignore it
@@ -91,7 +76,7 @@ export class OverlayTrigger extends Behavior {
 
         if (this.config.closeOnFocusLoss) {
 
-            this.hide();
+            this.overlay.hide();
         }
 
         // if we have a parent overlay, we let the parent know that our overlay has lost focus by dispatching the
@@ -109,7 +94,7 @@ export class OverlayTrigger extends Behavior {
 
                 cancel(event);
 
-                this.hide();
+                this.overlay.hide();
 
                 if (this.config.restoreFocus) {
 

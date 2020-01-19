@@ -51,7 +51,7 @@ export class DialogOverlayTrigger extends OverlayTrigger {
 
     protected handleClick (event: MouseEvent) {
 
-        this.toggle();
+        this.overlay.toggle();
     }
 
     protected handleKeydown (event: KeyboardEvent) {
@@ -65,7 +65,7 @@ export class DialogOverlayTrigger extends OverlayTrigger {
                 if (event.target === this.element) {
 
                     cancel(event);
-                    this.toggle();
+                    this.overlay.toggle();
                     break;
                 }
 
