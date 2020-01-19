@@ -1,8 +1,8 @@
 import { AttributeConverterString, Component, component, property, PropertyChangeDetectorObject } from '@partkit/component';
 import { Constructor } from '../mixins/constructor';
-import { AlignmentPair, Position, PositionConfig, POSITION_CONFIG_FIELDS } from '../position';
+import { AlignmentPair, Position, PositionConfig } from '../position';
 import { TemplateConfig, TemplateFunction } from '../template';
-import { OverlayTriggerConfig, OVERLAY_TRIGGER_CONFIG_FIELDS } from './trigger';
+import { OverlayTriggerConfig } from './trigger';
 
 export type OverlayConfig = PositionConfig & OverlayTriggerConfig & TemplateConfig & {
     positionType: string;
@@ -13,27 +13,11 @@ export type OverlayConfig = PositionConfig & OverlayTriggerConfig & TemplateConf
     closeOnBackdropClick: boolean;
 }
 
-// TODO: check if we need this
-export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
-    ...POSITION_CONFIG_FIELDS,
-    ...OVERLAY_TRIGGER_CONFIG_FIELDS,
-    'positionType',
-    'trigger',
-    'triggerType',
-    'stacked',
-    'template',
-    'context',
-    'backdrop',
-    'closeOnBackdropClick',
-];
-
 export const DEFAULT_OVERLAY_CONFIG: Partial<OverlayConfig> = {
     positionType: 'default',
     triggerType: 'default',
     trigger: undefined,
     stacked: true,
-    template: undefined,
-    context: undefined,
     backdrop: true,
     closeOnBackdropClick: true,
 };

@@ -98,22 +98,7 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     protected templateController?: TemplateController;
 
-    @property({ converter: AttributeConverterNumber })
-    tabindex = -1;
-
-    @property({ converter: AttributeConverterBoolean })
-    set open (value: boolean) {
-        // if open has changed we update the active overlay stack synchronously
-        if (this._open !== value) {
-            this._open = value;
-            this.updateStack(value);
-        }
-    }
-    get open (): boolean {
-        return this._open;
-    }
-
-    get static (): typeof Overlay {
+    protected get static (): typeof Overlay {
 
         return this.constructor as typeof Overlay;
     }
@@ -150,6 +135,21 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         return isActive;
     }
+
+    @property({ converter: AttributeConverterBoolean })
+    set open (value: boolean) {
+        // if open has changed we update the active overlay stack synchronously
+        if (this._open !== value) {
+            this._open = value;
+            this.updateStack(value);
+        }
+    }
+    get open (): boolean {
+        return this._open;
+    }
+
+    @property({ converter: AttributeConverterNumber })
+    tabindex = -1;
 
     connectedCallback () {
 

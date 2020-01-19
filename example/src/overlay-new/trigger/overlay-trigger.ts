@@ -1,12 +1,12 @@
 import { PropertyChangeEvent } from '@partkit/component';
 import { macroTask } from '@partkit/component/tasks';
-import { Behavior } from '../../behavior/behavior';
+import { Behavior } from '../../behavior';
 import { activeElement } from '../../dom';
+import { cancel } from '../../events';
 import { FocusChangeEvent, FocusMonitor, FocusTrap } from '../../focus';
 import { Escape } from '../../keys';
 import { Overlay } from '../overlay';
 import { OverlayTriggerConfig } from './overlay-trigger-config';
-import { cancel } from 'example/src/events';
 
 export class OverlayTrigger extends Behavior {
 

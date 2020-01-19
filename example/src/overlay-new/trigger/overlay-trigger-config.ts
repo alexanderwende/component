@@ -1,4 +1,4 @@
-import { FocusTrapConfig, DEFAULT_FOCUS_TRAP_CONFIG, FOCUS_TRAP_CONFIG_FIELDS } from '../../focus';
+import { DEFAULT_FOCUS_TRAP_CONFIG, FocusTrapConfig } from '../../focus';
 
 export type OverlayTriggerConfig = FocusTrapConfig & {
     trapFocus: boolean;
@@ -14,10 +14,3 @@ export const DEFAULT_OVERLAY_TRIGGER_CONFIG: OverlayTriggerConfig = {
     closeOnEscape: true,
     closeOnFocusLoss: true,
 };
-
-export const OVERLAY_TRIGGER_CONFIG_FIELDS: (keyof OverlayTriggerConfig)[] = [
-    ...FOCUS_TRAP_CONFIG_FIELDS,
-    'trapFocus',
-    'closeOnEscape',
-    'closeOnFocusLoss',
-];

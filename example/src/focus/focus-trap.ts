@@ -56,17 +56,6 @@ export const DEFAULT_FOCUS_TRAP_CONFIG: FocusTrapConfig = {
 };
 
 /**
- * An array of {@link FocusTrapConfig} property names
- */
-export const FOCUS_TRAP_CONFIG_FIELDS: (keyof FocusTrapConfig)[] = [
-    'autoFocus',
-    'wrapFocus',
-    'initialFocus',
-    'restoreFocus',
-    'tabbableSelector',
-];
-
-/**
  * The FocusTrap behavior
  *
  * @remarks

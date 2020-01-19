@@ -20,17 +20,6 @@ export interface PositionConfig extends Size {
     alignment: AlignmentPair;
 }
 
-export const POSITION_CONFIG_FIELDS: (keyof PositionConfig)[] = [
-    'width',
-    'height',
-    'maxWidth',
-    'maxHeight',
-    'minWidth',
-    'minHeight',
-    'origin',
-    'alignment',
-];
-
 export const DEFAULT_POSITION_CONFIG: PositionConfig = {
     width: 'auto',
     height: 'auto',
