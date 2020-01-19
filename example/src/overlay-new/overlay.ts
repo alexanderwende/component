@@ -1,10 +1,11 @@
 import { AttributeConverterBoolean, AttributeConverterNumber, Changes, Component, component, css, listener, property, PropertyChangeEvent } from '@partkit/component';
 import { html } from 'lit-html';
-import { BehaviorFactory } from '../behavior/behavior-factory';
+import { BehaviorFactory } from '../behavior';
 import { activeElement, replaceWith } from '../dom';
 import { IDGenerator } from '../id-generator';
 import { MixinRole } from '../mixins/role';
 import { PositionConfig, PositionController, PositionControllerFactory } from '../position';
+import { TemplateController } from '../template';
 import { DEFAULT_OVERLAY_CONFIG, MixinOverlayConfig } from './overlay-config';
 import { OverlayTrigger, OverlayTriggerConfig, OverlayTriggerFactory } from './trigger';
 
@@ -94,6 +95,8 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
     protected overlayTrigger?: OverlayTrigger;
 
     protected positionController?: PositionController;
+
+    protected templateController?: TemplateController;
 
     @property({ converter: AttributeConverterNumber })
     tabindex = -1;
@@ -311,7 +314,6 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         open ? this.static.activeOverlays.add(this) : this.static.activeOverlays.delete(this);
     }
 
-
     /**
      * Handle the overlay's open-changed event
      *
@@ -346,11 +348,15 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
         this.positionController?.attach(this);
         this.positionController?.update();
+
+        this.templateController?.attach(this);
+        this.templateController?.update();
     }
 
     protected handleClose () {
 
         this.positionController?.detach();
+        this.templateController?.detach();
 
         this.moveFromRoot();
     }
@@ -362,10 +368,12 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         // dispose of the overlay trigger and position controller
         this.overlayTrigger?.detach();
         this.positionController?.detach();
+        this.templateController?.detach();
 
         // recreate the overlay trigger and position controller from the config
         this.overlayTrigger = this.static.overlayTriggerFactory.create(this.config.triggerType!, this.config, this);
         this.positionController = this.static.positionControllerFactory.create(this.config.positionType!, this.config);
+        this.templateController = new TemplateController(this.config);
 
         // attach the overlay trigger
         this.overlayTrigger.attach(this.config.trigger);
@@ -373,8 +381,11 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         // attach the position controller, if the overlay is open
         if (this.open) {
 
-            this.positionController?.attach(this);
-            this.positionController?.update();
+            this.positionController.attach(this);
+            this.positionController.update();
+
+            this.templateController.attach(this);
+            this.templateController.update();
         }
     }
 

@@ -1,5 +1,5 @@
 import { Component } from '@partkit/component';
-import { TemplateFunction } from '../template-function';
+import { TemplateFunction } from '../template';
 import { DEFAULT_OVERLAY_CONTROLLER_CONFIG, OverlayControllerConfig } from './controller/overlay-controller-config';
 import { DEFAULT_POSITION_CONFIG, PositionConfig } from './position/position-config';
 

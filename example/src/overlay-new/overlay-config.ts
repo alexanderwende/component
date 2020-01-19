@@ -1,21 +1,19 @@
 import { AttributeConverterString, Component, component, property, PropertyChangeDetectorObject } from '@partkit/component';
 import { Constructor } from '../mixins/constructor';
-import { AlignmentPair, Position } from '../position';
-import { PositionConfig, POSITION_CONFIG_FIELDS } from '../position/position-config';
-import { TemplateFunction } from '../template-function';
-import { OverlayTriggerConfig, OVERLAY_TRIGGER_CONFIG_FIELDS } from './trigger/overlay-trigger-config';
+import { AlignmentPair, Position, PositionConfig, POSITION_CONFIG_FIELDS } from '../position';
+import { TemplateConfig, TemplateFunction } from '../template';
+import { OverlayTriggerConfig, OVERLAY_TRIGGER_CONFIG_FIELDS } from './trigger';
 
-export type OverlayConfig = PositionConfig & OverlayTriggerConfig & {
+export type OverlayConfig = PositionConfig & OverlayTriggerConfig & TemplateConfig & {
     positionType: string;
     triggerType: string;
     trigger?: HTMLElement;
     stacked: boolean;
-    template?: TemplateFunction;
-    context?: Component;
     backdrop: boolean;
     closeOnBackdropClick: boolean;
 }
 
+// TODO: check if we need this
 export const OVERLAY_CONFIG_FIELDS: (keyof OverlayConfig)[] = [
     ...POSITION_CONFIG_FIELDS,
     ...OVERLAY_TRIGGER_CONFIG_FIELDS,

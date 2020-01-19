@@ -2,7 +2,7 @@ import { AttributeConverterARIABoolean, AttributeConverterBoolean, AttributeConv
 import { html } from 'lit-html';
 import { dispatch } from '../events';
 import { IDGenerator } from '../id-generator';
-import { TemplateFunction } from '../template-function';
+import { TemplateFunction } from '../template';
 import { DEFAULT_OVERLAY_CONFIG, OverlayConfig, OVERLAY_CONFIG_FIELDS } from './overlay-config';
 
 const ID_GENERATOR = new IDGenerator('partkit-overlay-');

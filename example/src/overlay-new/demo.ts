@@ -1,4 +1,4 @@
-import { Changes, Component, component, selector, css } from '@partkit/component';
+import { Changes, Component, component, selector, css, property } from '@partkit/component';
 import { html } from 'lit-html';
 import './overlay';
 import { Overlay } from './overlay';
@@ -89,6 +89,8 @@ import { OverlayConfig } from './overlay-config';
 })
 export class OverlayDemoComponent extends Component {
 
+    protected timeout?: number;
+
     programmaticOverlay?: Overlay;
 
     @selector({ query: '#overlay' })
@@ -148,6 +150,25 @@ export class OverlayDemoComponent extends Component {
         }
     }
 
+    @property({ attribute: false })
+    counter = 0;
+
+    connectedCallback () {
+
+        super.connectedCallback();
+
+        this.count();
+    }
+
+    disconnectedCallback () {
+
+        super.disconnectedCallback();
+
+        clearTimeout(this.timeout);
+
+        this.counter = 0;
+    }
+
     updateCallback (changes: Changes, firstUpdate: boolean) {
 
 
@@ -164,7 +185,8 @@ export class OverlayDemoComponent extends Component {
 
             const template = () => html`
                 <h3>Programmatic Overlay</h3>
-                <p>This is some overlay content.</p>
+                <p>This is some overlay content from a template function.</p>
+                <p>This counter is from the demo component's context: ${ this.counter }</p>
                 <p><button @click=${ this.toggleProgrammaticOverlay }>Got it</button></p>
             `;
 
@@ -181,5 +203,16 @@ export class OverlayDemoComponent extends Component {
 
             this.programmaticOverlay.toggle();
         }
+    }
+
+    protected count () {
+
+        this.timeout = setTimeout(() => {
+
+            this.counter++;
+
+            this.count();
+
+        }, 1000);
     }
 }
