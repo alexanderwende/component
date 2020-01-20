@@ -17,6 +17,7 @@ export interface OverlayInit {
     overlayTriggerFactory: BehaviorFactory<OverlayTrigger, OverlayTriggerConfig>;
     positionControllerFactory: BehaviorFactory<PositionController, PositionConfig>;
     overlayRoot?: HTMLElement;
+    zIndex?: number;
 }
 
 @component({
@@ -51,6 +52,8 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
 
     /** @internal */
     protected static _overlayRoot?: HTMLElement;
+
+    protected static _zIndex = 1_000_000;
 
     protected static activeOverlays = new Set<Overlay>();
 
@@ -151,6 +154,9 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
     @property({ converter: AttributeConverterNumber })
     tabindex = -1;
 
+    @property({ attribute: false, converter: AttributeConverterNumber })
+    zindex = 1;
+
     connectedCallback () {
 
         if (this.isReattaching) return;
@@ -179,6 +185,8 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
     }
 
     updateCallback (changes: Changes, firstUpdate: boolean) {
+
+        this.style.zIndex = this.zindex.toString();
 
         if (firstUpdate) {
 
@@ -279,6 +287,8 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
      */
     protected updateStack (open: boolean) {
 
+        // TODO: non-stacked overlays should get a higher z-index
+
         // only stacked overlays participate in the stack management
         if (!this.config.stacked) return;
 
@@ -311,7 +321,18 @@ export class Overlay extends MixinOverlayConfig(MixinRole(Component, 'dialog'), 
         });
 
         // finally we add/remove this overlay to/from the stack
-        open ? this.static.activeOverlays.add(this) : this.static.activeOverlays.delete(this);
+        // open ? this.static.activeOverlays.add(this) : this.static.activeOverlays.delete(this);
+
+        if (open) {
+
+            this.static.activeOverlays.add(this);
+            this.zindex = this.static._zIndex + this.static.activeOverlays.size;
+
+        } else {
+
+            this.static.activeOverlays.delete(this);
+            this.zindex = 0;
+        }
     }
 
     /**
